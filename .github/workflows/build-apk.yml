@@ -41,10 +41,10 @@ jobs:
           s=p.read_text()
           css='\n'.join(Path(x).read_text() for x in ['www/theme-v2.css','www/create-studio.css','www/files-workspace.css','www/planner.css'])
           s=s.replace('</head>',f'<style>{css}</style></head>')
-          home='<button class="planner-home" data-planner-open data-calendar-home onclick="window.MSAPlanner&&MSAPlanner.open()"><span>📅</span><div><b>Calendar & Daily Planner</b><small>Diary · programs · plans · notes</small></div><strong>›</strong></button>'
+          home='<div class="build-id" data-build-id="MSA-ONE-35">MSA One 35 · Portrait Fit</div><button class="planner-home" data-planner-open data-calendar-home onclick="window.MSAPlanner&&MSAPlanner.open()"><span>📅</span><div><b>Calendar & Daily Planner</b><small>Diary · programs · plans · notes</small></div><strong>›</strong></button>'
           hero_end='</p></section><div class="cap">QUICK START</div>'
           s=s.replace(hero_end,'</p></section>'+home+'<div class="cap">QUICK START</div>',1)
-          me='<button class="planner-home" data-calendar-me onclick="window.MSAPlanner&&MSAPlanner.open()"><span>📅</span><div><b>Calendar & Daily Planner</b><small>Diary · daily program · plans · notes</small></div><strong>›</strong></button><div class="build-id" data-build-id="MSA-ONE-28">MSA One 28 · Calendar Build 28</div>'
+          me='<button class="planner-home" data-calendar-me onclick="window.MSAPlanner&&MSAPlanner.open()"><span>📅</span><div><b>Calendar & Daily Planner</b><small>Diary · daily program · plans · notes</small></div><strong>›</strong></button><div class="build-id" data-build-id="MSA-ONE-35">MSA One 35 · Portrait Fit</div>'
           marker='<div class="cap">MY WORKSPACE</div>'
           pos=s.find(marker,s.find('id="me"'))
           if pos < 0: raise SystemExit('Me workspace marker not found')
@@ -57,36 +57,37 @@ jobs:
         run: |
           grep -q 'data-calendar-home' www/index.html
           grep -q 'data-calendar-me' www/index.html
-          grep -q 'MSA-ONE-28' www/index.html
-          grep -q 'Calendar & Daily Planner' www/index.html
-          grep -q 'window.MSAPlanner' www/index.html
+          grep -q 'MSA-ONE-35' www/index.html
+          grep -q '@media(orientation:portrait)' www/index.html
+          grep -q 'grid-template-columns:minmax(0,1fr)' www/index.html
       - name: Install dependencies
         run: npm install
       - name: Create Android project
         run: npx cap add android
       - name: Sync web app
         run: npx cap sync android
-      - name: Set Android Build 28 version
+      - name: Set Android Build 35 version
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('android/app/build.gradle')
-          s=p.read_text().replace('versionCode 1','versionCode 28').replace('versionName "1.0"','versionName "28.0"')
+          s=p.read_text().replace('versionCode 1','versionCode 35').replace('versionName "1.0"','versionName "35.0"')
           p.write_text(s)
           PY
       - name: Verify Android package and assets
         run: |
           grep -q 'data-calendar-home' android/app/src/main/assets/public/index.html
           grep -q 'data-calendar-me' android/app/src/main/assets/public/index.html
-          grep -q 'MSA-ONE-28' android/app/src/main/assets/public/index.html
+          grep -q 'MSA-ONE-35' android/app/src/main/assets/public/index.html
+          grep -q '@media(orientation:portrait)' android/app/src/main/assets/public/index.html
           grep -q 'com.msa.one.build28' android/app/build.gradle
-          grep -q 'versionCode 28' android/app/build.gradle
+          grep -q 'versionCode 35' android/app/build.gradle
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MSA-One-28-CALENDAR-FIXED-APK
+          name: MSA-One-35-PORTRAIT-FIT-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
