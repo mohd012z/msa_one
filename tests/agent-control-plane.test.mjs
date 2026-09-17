@@ -1,0 +1,13 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const paths=['www/agent-registry.js','www/agent-router.js','www/agent-audit.js'];
+for(const p of paths)assert.ok(fs.existsSync(p),'missing Agent Control Plane '+p);
+const registry=fs.readFileSync(paths[0],'utf8'),router=fs.readFileSync(paths[1],'utf8'),audit=fs.readFileSync(paths[2],'utf8');
+for(const id of ['kaga','raga','celeb','anwar','sahab'])assert.ok(registry.includes(id),'missing agent manifest '+id);
+for(const k of ['allowedTools','deniedTools','knowledgePacks','capabilityVersion','status'])assert.ok(registry.includes(k),'missing manifest field '+k);
+assert.ok(registry.includes('Universal Converter'),'Raga role must be universal converter');
+assert.ok(registry.includes('Multi-Thinker'),'Anwar role must be multi-thinker knowledge agent');
+assert.ok(registry.includes('Planning Library'),'Celeb role must preserve planning specialization');
+assert.ok(registry.includes('APK Quality & Security'),'Sahab role must include APK security');
+for(const k of ['route','authorize','DENIED','audit'])assert.ok(router.includes(k),'missing router control '+k);
+for(const k of ['record','events','agentId','action','result'])assert.ok(audit.includes(k),'missing agent audit '+k);
+console.log('agent control plane contract passed');
