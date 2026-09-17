@@ -27,6 +27,17 @@ jobs:
           java-version: '21'
       - name: Install dependencies
         run: npm install
+      - name: Apply MSA One premium theme
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('www/index.html')
+          s=p.read_text()
+          tag='<link rel="stylesheet" href="msa-theme.css">'
+          if tag not in s:
+              s=s.replace('</head>', tag+'</head>')
+          p.write_text(s)
+          PY
       - name: Create Android project
         run: npx cap add android
       - name: Sync web app
