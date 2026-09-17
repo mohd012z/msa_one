@@ -30,34 +30,35 @@ Purpose: create and improve open-source Office-style work, templates and reusabl
 - Template intelligence: template metadata, required fields, sample data, recommended sections, device/page constraints, accessibility tags.
 - Kaga never changes the underlying project without an explicit create/apply action and undo snapshot.
 
-### Raga — Conversion & Report Agent
-Purpose: convert between supported Office/open formats and MSA/HTML representations and build reports.
+### Raga — Universal Converter Library Agent
+Purpose: expert conversion specialist for every format supported by an installed, validated converter adapter. Raga detects the input, selects the best available converter, validates the result, tries a safe fallback where available, and reports fidelity/loss instead of promising impossible conversion.
 
 - Canonical intermediate representation: `MSA Document IR` for paragraphs, styles, tables, media references, sheets/cells, slides and metadata.
 - Pipelines: HTML ↔ MSA Document; CSV ↔ Sheet; MSA Document → printable HTML/PDF path; later DOCX/XLSX/PPTX import/export only after a free library passes fixture tests.
 - Produces a conversion report: imported, preserved, approximated, unsupported, warnings and loss-risk.
 - Never silently drops unsupported content; preserves source file and reports fidelity limitations.
 
-### Celeb — Planner Agent
-Purpose: daily plan, calendar, diary, programs, tasks, notes and follow-up.
+### Celeb — Multi-Purpose Planning Library Agent
+Purpose: plan daily and future work, projects, transfers/integrations, calendars, programs, tasks and follow-up while preserving prior plan inputs, outputs, revisions, actual results and reports so a later plan can continue from evidence.
 
 - Daily/weekly/monthly views, agenda, recurring plans, priorities, due dates, completion and notes.
 - Local reminders are separate from external calendar synchronization.
 - Can turn a plan into a Kaga document/template or Raga report without duplicating project state.
 - Does not invent calendar events; distinguishes saved events, suggestions and drafts.
 
-### Anwar — AI Lens / Knowledge Answer Agent
-Purpose: answer user questions across MSA One using controlled local knowledge and optional future providers.
+### Anwar — Multi-Thinker Knowledge Agent
+Purpose: the conversational front door for answering, explaining, teaching, writing, rewriting, documentation, comparison, analysis, brainstorming, research approach and troubleshooting using controlled evidence and optional future providers.
 
 - Searches approved local knowledge packs, project metadata and explicitly selected user documents.
 - Response pipeline: classify intent → retrieve evidence → answer → show source/evidence scope → offer action through Kaga/Raga/Celeb when relevant.
 - Local deterministic help/search works without cloud AI. Optional model providers are adapters and remain Premium/Later unless genuinely free and configured.
 - Must say when evidence is missing or a capability is unavailable; no fabricated document facts.
 
-### Agent Sahab — Quality & Release Gate
-Purpose: inspect the work of all agents and the packaged Android app.
+### Agent Sahab — APK Quality & Security Library Agent
+Purpose: inspect and test the work of all agents and the packaged Android app, continuously improve security checks, and validate encryption/decryption architecture without inventing custom cryptography.
 
 - Validates tests, agent permissions, Free-First rules, storage/lifecycle, conversion fixtures, template schema, security boundaries, display fit, Android lint, packaged assets and APK integrity.
+- Audits input validation, import boundaries, secret leakage, dependency risk, backup protection, secure-storage design and cryptographic configuration. Encryption/decryption must use established primitives/platform facilities; Sahab never treats obscurity as encryption.
 - `CHANGES REQUIRED` blocks APK publication. `APPROVED` only describes checks actually executed.
 
 ## Knowledge Improvement System
