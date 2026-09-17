@@ -1,6 +1,6 @@
 {
-  "appId": "com.msa.one",
-  "appName": "MSA One",
+  "appId": "com.msa.one.build28",
+  "appName": "MSA One 28",
   "webDir": "www",
   "server": {
     "androidScheme": "https"
