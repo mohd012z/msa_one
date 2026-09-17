@@ -31,14 +31,15 @@ jobs:
           node tests/theme-contract.test.mjs
           node tests/button-studio.test.mjs
           node tests/create-studio.test.mjs
+          node tests/files-workspace.test.mjs
       - name: Inject MSA One modules
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('www/index.html')
           s=p.read_text()
-          css='\n'.join(Path(x).read_text() for x in ['www/theme-v2.css','www/create-studio.css'])
-          js='\n'.join(Path(x).read_text() for x in ['www/settings-v2.js','www/create-studio.js'])
+          css='\n'.join(Path(x).read_text() for x in ['www/theme-v2.css','www/create-studio.css','www/files-workspace.css'])
+          js='\n'.join(Path(x).read_text() for x in ['www/settings-v2.js','www/create-studio.js','www/files-workspace.js'])
           s=s.replace('</head>',f'<style>{css}</style></head>')
           s=s.replace('</body>',f'<script>{js}</script></body>')
           p.write_text(s)
