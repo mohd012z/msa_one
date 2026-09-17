@@ -6,7 +6,7 @@ on:
     paths: ['www/**','tests/**','scripts/**','package.json','capacitor.config.json','.github/workflows/build-apk.yml']
 jobs:
   build:
-    name: Build + Agent Sahab Audit
+    name: Agent Sahab Bot — Inspect, Build, Approve
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -37,12 +37,14 @@ jobs:
               s=s.replace('</body>','<script>'+Path(x).read_text()+'</script></body>')
           p.write_text(s)
           PY
-      - name: Agent Sahab — source audit
+      - name: Agent Sahab — regression contracts
         run: |
           for test in tests/*.test.mjs; do
             case "$test" in tests/calendar-visibility.test.mjs) continue ;; esac
             echo "Agent Sahab checking $test"; node "$test"
           done
+      - name: Agent Sahab — source bot
+        run: node scripts/agent-sahab-source-audit.mjs
       - name: Verify packaged modules
         run: |
           grep -q 'data-calendar-home' www/index.html
@@ -78,21 +80,27 @@ jobs:
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug
-      - name: Agent Sahab — post-build APK audit
+      - name: Agent Sahab — APK inspector
         run: bash scripts/agent-sahab-audit.sh
-      - name: Upload Agent Sahab audit report
+      - name: Agent Sahab — final verdict
+        run: node scripts/agent-sahab-verdict.mjs
+      - name: Upload Agent Sahab evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: Agent-Sahab-Audit-Report
           path: |
+            agent-sahab-source.json
+            agent-sahab-source.md
             agent-sahab-report.md
             agent-sahab-badging.txt
+            agent-sahab-verdict.json
+            agent-sahab-verdict.md
             android/app/build/reports/lint-results-debug.html
           if-no-files-found: warn
-      - name: Publish audited APK
+      - name: Publish Agent Sahab APPROVED APK
         uses: actions/upload-artifact@v4
         with:
-          name: MSA-One-37-CREATE-STUDIO-AUDITED-APK
+          name: MSA-One-37-AGENT-SAHAB-APPROVED-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
