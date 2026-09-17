@@ -3,9 +3,10 @@ on:
   workflow_dispatch:
   push:
     branches: [ main, feature/create-studio-plan-complete ]
-    paths: ['www/**','tests/**','package.json','capacitor.config.json','.github/workflows/build-apk.yml']
+    paths: ['www/**','tests/**','scripts/**','package.json','capacitor.config.json','.github/workflows/build-apk.yml']
 jobs:
   build:
+    name: Build + Agent Sahab Audit
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -36,11 +37,11 @@ jobs:
               s=s.replace('</body>','<script>'+Path(x).read_text()+'</script></body>')
           p.write_text(s)
           PY
-      - name: Test source modules
+      - name: Agent Sahab — source audit
         run: |
           for test in tests/*.test.mjs; do
             case "$test" in tests/calendar-visibility.test.mjs) continue ;; esac
-            echo "Running $test"; node "$test"
+            echo "Agent Sahab checking $test"; node "$test"
           done
       - name: Verify packaged modules
         run: |
@@ -71,12 +72,27 @@ jobs:
           grep -q 'renderSheet' android/app/src/main/assets/public/index.html
           grep -q 'renderSlides' android/app/src/main/assets/public/index.html
           grep -q 'data-calendar-home' android/app/src/main/assets/public/index.html
+      - name: Agent Sahab — Android lint
+        working-directory: android
+        run: ./gradlew lintDebug
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug
-      - name: Upload APK
+      - name: Agent Sahab — post-build APK audit
+        run: bash scripts/agent-sahab-audit.sh
+      - name: Upload Agent Sahab audit report
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: MSA-One-37-CREATE-STUDIO-APK
+          name: Agent-Sahab-Audit-Report
+          path: |
+            agent-sahab-report.md
+            agent-sahab-badging.txt
+            android/app/build/reports/lint-results-debug.html
+          if-no-files-found: warn
+      - name: Publish audited APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: MSA-One-37-CREATE-STUDIO-AUDITED-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
