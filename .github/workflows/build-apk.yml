@@ -1,16 +1,9 @@
 name: Build MSA One APK
-
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
-    paths:
-      - 'www/**'
-      - 'tests/**'
-      - 'package.json'
-      - 'capacitor.config.json'
-      - '.github/workflows/build-apk.yml'
-
+    paths: ['www/**','tests/**','package.json','capacitor.config.json','.github/workflows/build-apk.yml']
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -19,75 +12,62 @@ jobs:
         uses: actions/checkout@v4
       - name: Setup Node
         uses: actions/setup-node@v4
-        with:
-          node-version: '22'
+        with: {node-version: '22'}
       - name: Setup Java
         uses: actions/setup-java@v5
-        with:
-          distribution: temurin
-          java-version: '21'
-      - name: Test source modules
+        with: {distribution: temurin, java-version: '21'}
+      - name: Test all web contracts
         run: |
-          node tests/theme-contract.test.mjs
-          node tests/button-studio.test.mjs
-          node tests/create-studio.test.mjs
-          node tests/files-workspace.test.mjs
-          node tests/planner.test.mjs
-      - name: Package permanent Calendar UI
+          for test in tests/*.test.mjs; do echo "Running $test"; node "$test"; done
+      - name: Package Calendar and adaptive display UI
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p=Path('www/index.html')
-          s=p.read_text()
+          p=Path('www/index.html'); s=p.read_text()
+          s=s.replace('width=device-width,initial-scale=1,viewport-fit=cover','width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover')
           css='\n'.join(Path(x).read_text() for x in ['www/theme-v2.css','www/create-studio.css','www/files-workspace.css','www/planner.css'])
           s=s.replace('</head>',f'<style>{css}</style></head>')
-          home='<div class="build-id" data-build-id="MSA-ONE-35">MSA One 35 · Portrait Fit</div><button class="planner-home" data-planner-open data-calendar-home onclick="window.MSAPlanner&&MSAPlanner.open()"><span>📅</span><div><b>Calendar & Daily Planner</b><small>Diary · programs · plans · notes</small></div><strong>›</strong></button>'
-          hero_end='</p></section><div class="cap">QUICK START</div>'
-          s=s.replace(hero_end,'</p></section>'+home+'<div class="cap">QUICK START</div>',1)
-          me='<button class="planner-home" data-calendar-me onclick="window.MSAPlanner&&MSAPlanner.open()"><span>📅</span><div><b>Calendar & Daily Planner</b><small>Diary · daily program · plans · notes</small></div><strong>›</strong></button><div class="build-id" data-build-id="MSA-ONE-35">MSA One 35 · Portrait Fit</div>'
-          marker='<div class="cap">MY WORKSPACE</div>'
-          pos=s.find(marker,s.find('id="me"'))
-          if pos < 0: raise SystemExit('Me workspace marker not found')
-          pos+=len(marker); s=s[:pos]+me+s[pos:]
-          for x in ['www/planner.js','www/settings-v2.js','www/create-studio.js','www/files-workspace.js']:
-              s=s.replace('</body>','<script>'+Path(x).read_text()+'</script></body>')
+          home='<div class="build-id" data-build-id="MSA-ONE-37">MSA One 37 · AUTO DISPLAY FIT</div><button class="planner-home" data-planner-open data-calendar-home onclick="window.MSAPlanner&&MSAPlanner.open()"><span>📅</span><div><b>Calendar & Daily Planner</b><small>Diary · programs · plans · notes</small></div><strong>›</strong></button>'
+          marker='</p></section><div class="cap">QUICK START</div>'; s=s.replace(marker,'</p></section>'+home+'<div class="cap">QUICK START</div>',1)
+          me='<button class="planner-home" data-calendar-me onclick="window.MSAPlanner&&MSAPlanner.open()"><span>📅</span><div><b>Calendar & Daily Planner</b><small>Diary · daily program · plans · notes</small></div><strong>›</strong></button><div class="build-id" data-build-id="MSA-ONE-37">MSA One 37 · AUTO DISPLAY FIT</div>'
+          m='<div class="cap">MY WORKSPACE</div>'; pos=s.find(m,s.find('id="me"')); pos+=len(m); s=s[:pos]+me+s[pos:]
+          for x in ['www/planner.js','www/settings-v2.js','www/create-studio.js','www/files-workspace.js']: s=s.replace('</body>','<script>'+Path(x).read_text()+'</script></body>')
           p.write_text(s)
           PY
-      - name: Verify packaged web UI
+      - name: Verify adaptive packaged UI
         run: |
-          grep -q 'data-calendar-home' www/index.html
-          grep -q 'data-calendar-me' www/index.html
-          grep -q 'MSA-ONE-35' www/index.html
-          grep -q '@media(orientation:portrait)' www/index.html
-          grep -q 'grid-template-columns:minmax(0,1fr)' www/index.html
+          grep -q 'MSA-ONE-37' www/index.html
+          grep -q -- '--msa-screen-width' www/index.html
+          grep -q 'screen.width' www/index.html
+          grep -q 'visualViewport' www/index.html
+          grep -q 'devicePixelRatio' www/index.html
+          grep -q 'data-display-info' www/index.html
       - name: Install dependencies
         run: npm install
       - name: Create Android project
         run: npx cap add android
       - name: Sync web app
         run: npx cap sync android
-      - name: Set Android Build 35 version
+      - name: Set Android Build 37 version
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p=Path('android/app/build.gradle')
-          s=p.read_text().replace('versionCode 1','versionCode 35').replace('versionName "1.0"','versionName "35.0"')
-          p.write_text(s)
+          p=Path('android/app/build.gradle'); s=p.read_text().replace('versionCode 1','versionCode 37').replace('versionName "1.0"','versionName "37.0"'); p.write_text(s)
           PY
-      - name: Verify Android package and assets
+      - name: Verify Android package and adaptive assets
         run: |
-          grep -q 'data-calendar-home' android/app/src/main/assets/public/index.html
-          grep -q 'data-calendar-me' android/app/src/main/assets/public/index.html
-          grep -q 'MSA-ONE-35' android/app/src/main/assets/public/index.html
-          grep -q '@media(orientation:portrait)' android/app/src/main/assets/public/index.html
-          grep -q 'com.msa.one.build28' android/app/build.gradle
-          grep -q 'versionCode 35' android/app/build.gradle
+          grep -q 'com.msa.one.displayfit37' android/app/build.gradle
+          grep -q 'versionCode 37' android/app/build.gradle
+          grep -q 'MSA-ONE-37' android/app/src/main/assets/public/index.html
+          grep -q 'screen.width' android/app/src/main/assets/public/index.html
+          grep -q 'visualViewport' android/app/src/main/assets/public/index.html
+          grep -q -- '--msa-screen-width' android/app/src/main/assets/public/index.html
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MSA-One-35-PORTRAIT-FIT-APK
+          name: MSA-One-37-AUTO-DISPLAY-FIT-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
