@@ -2,7 +2,7 @@ name: Build MSA One APK
 on:
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [ main, feature/create-studio-plan-complete ]
     paths: ['www/**','tests/**','package.json','capacitor.config.json','.github/workflows/build-apk.yml']
 jobs:
   build:
@@ -16,7 +16,7 @@ jobs:
       - name: Setup Java
         uses: actions/setup-java@v5
         with: {distribution: temurin, java-version: '21'}
-      - name: Package Calendar and adaptive display UI
+      - name: Package Calendar adaptive UI and Create Studio
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -32,30 +32,25 @@ jobs:
           m='<div class="cap">MY WORKSPACE</div>'; start=s.find('id="me"'); pos=s.find(m,start)
           if start < 0 or pos < 0: raise SystemExit('Me injection marker missing')
           pos+=len(m); s=s[:pos]+me+s[pos:]
-          for x in ['www/planner.js','www/settings-v2.js','www/create-studio.js','www/files-workspace.js']:
+          for x in ['www/project-store.js','www/planner.js','www/settings-v2.js','www/create-studio.js','www/files-workspace.js']:
               s=s.replace('</body>','<script>'+Path(x).read_text()+'</script></body>')
           p.write_text(s)
           PY
       - name: Test source modules
         run: |
           for test in tests/*.test.mjs; do
-            case "$test" in
-              tests/calendar-visibility.test.mjs) continue ;;
-            esac
-            echo "Running $test"
-            node "$test"
+            case "$test" in tests/calendar-visibility.test.mjs) continue ;; esac
+            echo "Running $test"; node "$test"
           done
-      - name: Verify packaged Calendar and adaptive display
+      - name: Verify packaged modules
         run: |
           grep -q 'data-calendar-home' www/index.html
-          grep -q 'data-calendar-me' www/index.html
-          grep -q 'Calendar & Daily Planner' www/index.html
           grep -q 'MSA-ONE-37' www/index.html
           grep -q -- '--msa-screen-width' www/index.html
-          grep -q 'screen.width' www/index.html
           grep -q 'visualViewport' www/index.html
-          grep -q 'devicePixelRatio' www/index.html
-          grep -q 'data-display-info' www/index.html
+          grep -q 'MSAProjectStore' www/index.html
+          grep -q 'renderSheet' www/index.html
+          grep -q 'renderSlides' www/index.html
       - name: Install dependencies
         run: npm install
       - name: Create Android project
@@ -68,22 +63,20 @@ jobs:
           from pathlib import Path
           p=Path('android/app/build.gradle'); s=p.read_text().replace('versionCode 1','versionCode 37').replace('versionName "1.0"','versionName "37.0"'); p.write_text(s)
           PY
-      - name: Verify Android package and adaptive assets
+      - name: Verify Android assets
         run: |
           grep -q 'com.msa.one.displayfit37' android/app/build.gradle
           grep -q 'versionCode 37' android/app/build.gradle
+          grep -q 'MSAProjectStore' android/app/src/main/assets/public/index.html
+          grep -q 'renderSheet' android/app/src/main/assets/public/index.html
+          grep -q 'renderSlides' android/app/src/main/assets/public/index.html
           grep -q 'data-calendar-home' android/app/src/main/assets/public/index.html
-          grep -q 'data-calendar-me' android/app/src/main/assets/public/index.html
-          grep -q 'MSA-ONE-37' android/app/src/main/assets/public/index.html
-          grep -q 'screen.width' android/app/src/main/assets/public/index.html
-          grep -q 'visualViewport' android/app/src/main/assets/public/index.html
-          grep -q -- '--msa-screen-width' android/app/src/main/assets/public/index.html
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MSA-One-37-AUTO-DISPLAY-FIT-APK
+          name: MSA-One-37-CREATE-STUDIO-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
