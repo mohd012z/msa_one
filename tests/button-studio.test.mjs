@@ -1,0 +1,12 @@
+import fs from 'node:fs';
+import assert from 'node:assert/strict';
+const css=fs.readFileSync('www/theme-v2.css','utf8');
+const js=fs.readFileSync('www/settings-v2.js','utf8');
+for(const effect of ['gradient','glass','glow','neon','minimal']) assert.ok(js.includes(effect),'missing button effect '+effect);
+assert.ok(js.includes('msaButtonEffect'),'effect must persist');
+assert.ok(js.includes('msaButtonIntensity'),'intensity must persist');
+assert.ok(js.includes('button-studio'),'modern Button Studio must mount');
+assert.ok(css.includes('.studio-shapes'),'compact visual shape picker required');
+assert.ok(css.includes('.effect-chip'),'effect picker required');
+assert.ok(css.includes('.studio-range'),'effect intensity control required');
+console.log('button studio contract passed');
