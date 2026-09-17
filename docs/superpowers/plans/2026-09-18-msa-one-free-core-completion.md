@@ -1,140 +1,170 @@
-# MSA One Free Core Completion Implementation Plan
+# MSA One Free Core + Agent Team Completion Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Complete the useful free/offline MSA One core across local storage, Files, Document, Smart HTML, Spreadsheet, Presentation, PDF workspace, Calendar, mobile usability, security and APK delivery.
+**Goal:** Complete a useful free/offline MSA One core with a controlled multi-agent architecture for Office-style creation, conversion, planning, knowledge assistance, local recovery and audited APK delivery.
 
-**Architecture:** Keep one local-first project graph through `MSAProjectStore`, one Files workspace, and one Create Studio shell. Each feature batch is implemented with TDD and must pass the permanent Agent Sahab source/Android/APK gate before the next major batch is accepted.
+**Architecture:** `MSAProjectStore` is the single local project graph. Kaga, Raga, Celeb and Anwar are named software roles with explicit capabilities, permissions and knowledge packs; they do not pretend to be independent humans. Agent Sahab is the verification gate and can block publication. Each agent calls shared deterministic tools instead of maintaining incompatible copies of document data.
 
-**Tech Stack:** Vanilla HTML/CSS/JavaScript, IndexedDB + localStorage recovery mirror, Capacitor Android, Node contract/behavior tests, Gradle lint/build, GitHub Actions.
-
-**Spec:** Approved Create Studio design and `docs/superpowers/plans/2026-09-18-create-studio.md`; Agent Sahab policy in Issue #2 and `docs/superpowers/plans/2026-09-18-agent-sahab-bot.md`.
+**Tech Stack:** Vanilla HTML/CSS/JavaScript, IndexedDB + recovery mirror, Capacitor Android, Node tests, Gradle lint/build, GitHub Actions, free/open-source libraries only after license/size/security/Android-offline validation.
 
 ## Global Constraints
+- Free-first core; no paid API/cloud/subscription required.
+- Preserve Build 37 adaptive display and `com.msa.one.displayfit37` until separate migration.
+- Local/private by default; explicit import/export.
+- No claim of DOCX/XLSX/PPTX/PDF fidelity until fixtures prove it.
+- Every batch: RED → GREEN → Agent Sahab → Android lint/build/APK inspection.
+- Agent knowledge is versioned, attributable and reversible; user documents are not silently promoted into global knowledge.
 
-- Free-first core: no paid API, SDK, cloud service, subscription or premium infrastructure required.
-- Preserve Build 37 adaptive display behavior and narrow Android portrait fit.
-- Preserve current `com.msa.one.displayfit37` application ID until a separate migration is approved.
-- Autosave and recovery must survive Android lifecycle exits as far as browser/OS storage permits.
-- User content remains local by default; imports/exports are explicit user actions.
-- Do not claim native Office/PDF conversion unless a real free implementation exists and passes tests.
-- Every major batch uses RED → GREEN → Agent Sahab → Android lint/build/APK inspection.
-- Agent Sahab recommendations are separated from blocking failures; only blocking failures prevent APK publication.
+## Agent Control Plane
 
----
+Each agent has a manifest: `id`, `name`, `role`, `allowedTools`, `deniedTools`, `knowledgePacks`, `capabilityVersion`, `confidence/evidence policy`, and audit events. `agent-router.js` routes requests; `agent-registry.js` enforces permissions. Agents return structured results and evidence, not arbitrary cross-agent mutation. Agent Sahab validates manifests, permissions and regression contracts.
 
-### Task 1: Storage & Recovery Hardening
+### Kaga — Library Foundation / Office Creator
+Purpose: create and improve open-source Office-style work, templates and reusable components.
 
-**Files:** Modify `www/project-store.js`; tests `tests/project-store.test.mjs` plus focused behavior tests.
+- Document: reports, letters, manuals, SOP/OJT, proposals, forms, checklists, cover pages, headers/footers, TOC, tables, image blocks, page styles.
+- Spreadsheet: workbook templates, tables, formulas supported by the local engine, charts, dashboards, schedules, registers.
+- Presentation: themes, masters/layouts, title/content/chart/image/timeline slides, speaker-note structures.
+- PDF/HTML: printable report layouts and reusable document blocks.
+- Template intelligence: template metadata, required fields, sample data, recommended sections, device/page constraints, accessibility tags.
+- Kaga never changes the underlying project without an explicit create/apply action and undo snapshot.
 
-- [ ] Add RED tests for primary-store corruption, backup recovery, restore validation, duplicate IDs and lifecycle flush.
-- [ ] Add backup-key recovery and deterministic IndexedDB/localStorage reconciliation.
-- [ ] Validate restored project schema/type/id and bound unsafe/oversized fields.
-- [ ] Preserve last-known-good backup before destructive restore/migration.
-- [ ] GREEN all storage tests.
-- [ ] Run Agent Sahab gate; fix blockers before Task 2.
+### Raga — Conversion & Report Agent
+Purpose: convert between supported Office/open formats and MSA/HTML representations and build reports.
 
-### Task 2: Files Workspace Complete Flow
+- Canonical intermediate representation: `MSA Document IR` for paragraphs, styles, tables, media references, sheets/cells, slides and metadata.
+- Pipelines: HTML ↔ MSA Document; CSV ↔ Sheet; MSA Document → printable HTML/PDF path; later DOCX/XLSX/PPTX import/export only after a free library passes fixture tests.
+- Produces a conversion report: imported, preserved, approximated, unsupported, warnings and loss-risk.
+- Never silently drops unsupported content; preserves source file and reports fidelity limitations.
 
-**Files:** Modify `www/files-workspace.js`, `www/files-workspace.css`; tests `tests/files-workspace.test.mjs`.
+### Celeb — Planner Agent
+Purpose: daily plan, calendar, diary, programs, tasks, notes and follow-up.
 
-- [ ] Add RED tests for safe project IDs/titles and import/export controls.
-- [ ] Harden DOM rendering against restored-data attribute injection.
-- [ ] Add local MSA backup export/import using `MSAProjectStore.backup/restore`.
-- [ ] Improve search, empty state, rename, duplicate and delete recovery UX.
-- [ ] Add explicit file type/update metadata without breaking narrow portrait layout.
-- [ ] GREEN tests and Agent Sahab gate.
+- Daily/weekly/monthly views, agenda, recurring plans, priorities, due dates, completion and notes.
+- Local reminders are separate from external calendar synchronization.
+- Can turn a plan into a Kaga document/template or Raga report without duplicating project state.
+- Does not invent calendar events; distinguishes saved events, suggestions and drafts.
 
-### Task 3: Document Editor Free Core
+### Anwar — AI Lens / Knowledge Answer Agent
+Purpose: answer user questions across MSA One using controlled local knowledge and optional future providers.
 
-**Files:** Modify `www/create-studio.js`, `www/create-studio.css`; extend Create Studio tests.
+- Searches approved local knowledge packs, project metadata and explicitly selected user documents.
+- Response pipeline: classify intent → retrieve evidence → answer → show source/evidence scope → offer action through Kaga/Raga/Celeb when relevant.
+- Local deterministic help/search works without cloud AI. Optional model providers are adapters and remain Premium/Later unless genuinely free and configured.
+- Must say when evidence is missing or a capability is unavailable; no fabricated document facts.
 
-- [ ] Add RED tests for document autosave, title/content restore, undo-safe editing and export.
-- [ ] Isolate deprecated `document.execCommand` behind a compatibility adapter.
-- [ ] Add dependable plain HTML/text export and local share/download path supported by the browser/Capacitor environment.
-- [ ] Improve mobile toolbar focus, selection and keyboard behavior.
-- [ ] GREEN tests and Agent Sahab gate.
+### Agent Sahab — Quality & Release Gate
+Purpose: inspect the work of all agents and the packaged Android app.
 
-### Task 4: Smart HTML Workspace
+- Validates tests, agent permissions, Free-First rules, storage/lifecycle, conversion fixtures, template schema, security boundaries, display fit, Android lint, packaged assets and APK integrity.
+- `CHANGES REQUIRED` blocks APK publication. `APPROVED` only describes checks actually executed.
 
-**Files:** Modify `www/create-studio.js`; tests `tests/create-formats.test.mjs`.
+## Knowledge Improvement System
 
-- [ ] Add RED tests for sandbox policy, source persistence, preview refresh and import/export.
-- [ ] Keep preview iframe sandboxed without unsafe same-origin privilege combination.
-- [ ] Add HTML import, editable source, refresh/reset preview and `.html` export.
-- [ ] Preserve source exactly; never execute imported HTML in the parent app context.
-- [ ] GREEN tests and Agent Sahab gate.
+Create versioned knowledge packs under `www/knowledge/` with manifest, topic, version, source/provenance, updated date, trust tier and test cases. Built-in packs cover MSA help, editor capabilities, template rules, conversion rules and planner behavior. User documents stay project-scoped unless the user explicitly adds them to a local personal knowledge collection. Knowledge updates use staging → validation → Agent Sahab tests → activation; rollback keeps the previous pack. Anwar retrieval must prefer exact project evidence over generic guidance and must expose uncertainty. Kaga learns new templates by registering reviewed template definitions, not by silently rewriting its rules. Raga improves only when new conversion fixtures prove round-trip behavior. Celeb improves planner rules through tested scheduling/recurrence fixtures.
 
-### Task 5: Spreadsheet Practical Editor
+## Coding Tasks
 
-**Files:** Prefer focused `www/studio-spreadsheet.js` if existing Create Studio file becomes unwieldy; otherwise modify `www/create-studio.js`; CSS/tests accordingly.
+### Task 1 — Storage & Recovery v2
+- [ ] RED tests for corruption, backup recovery, restore validation, duplicate IDs and lifecycle flush.
+- [ ] Deterministic IndexedDB/recovery reconciliation and last-known-good backup.
+- [ ] Validate project/agent/knowledge schemas and bound unsafe fields.
+- [ ] GREEN + Agent Sahab gate.
 
-- [ ] Add RED tests for row/column editing, persistence, CSV import/export and mobile containment.
-- [ ] Implement editable grid with add/delete rows/columns and safe cell text.
-- [ ] Add CSV import/export without claiming `.xlsx` support.
-- [ ] Add simple deterministic formulas only if they can be implemented safely offline; otherwise label as Later.
-- [ ] GREEN tests and Agent Sahab gate.
+### Task 2 — Agent Registry & Router
+- [ ] RED tests for Kaga/Raga/Celeb/Anwar manifests, permissions and denied cross-role operations.
+- [ ] Create `www/agent-registry.js`, `www/agent-router.js`, `www/agent-audit.js`.
+- [ ] Add capability/version/status UI and audit trail.
+- [ ] GREEN + Agent Sahab gate.
 
-### Task 6: Presentation Practical Editor
+### Task 3 — Kaga Library Foundation
+- [ ] Create `www/kaga-library.js`, template schema/catalog and tests.
+- [ ] Seed high-quality Document, Sheet and Presentation template families with sample content.
+- [ ] Add preview, search/category, duplicate/customize, apply and undo snapshot.
+- [ ] Responsive template rules for phone/tablet/desktop and print.
+- [ ] GREEN + Agent Sahab gate.
 
-**Files:** Prefer focused `www/studio-presentation.js` if needed; CSS/tests accordingly.
+### Task 4 — Universal MSA Document IR
+- [ ] Define versioned IR for document blocks, sheets, slides, media refs and metadata.
+- [ ] Add validators/migrations and round-trip tests.
+- [ ] Connect Create Studio and ProjectStore without breaking existing projects.
+- [ ] GREEN + Agent Sahab gate.
 
-- [ ] Add RED tests for slide add/delete/reorder, persistence and presentation preview.
-- [ ] Implement title/body slide editing and reorder controls.
-- [ ] Add local JSON/HTML presentation export where truthful and reliable.
-- [ ] Keep PowerPoint `.pptx` generation marked Later unless a tested free engine is added deliberately.
-- [ ] GREEN tests and Agent Sahab gate.
+### Task 5 — Document Studio v2
+- [ ] Pages, styles, headings, tables, images, reusable blocks, headers/footers, page numbers, TOC model, undo/redo.
+- [ ] Kaga template application and safe local export.
+- [ ] Mobile toolbar/keyboard/selection improvements.
+- [ ] GREEN + Agent Sahab gate.
 
-### Task 7: PDF Workspace Free Scope
+### Task 6 — Spreadsheet Studio v2
+- [ ] Multi-sheet model, safe cells, formulas in supported subset, formatting, sort/filter, freeze, charts/dashboard blocks.
+- [ ] CSV import/export and Kaga workbook templates.
+- [ ] Formula/parser fixture tests; never use arbitrary JS evaluation.
+- [ ] GREEN + Agent Sahab gate.
 
-**Files:** Modify/create focused PDF workspace module and tests.
+### Task 7 — Presentation Studio v2
+- [ ] Slides, themes/layouts, reorder, notes, images/tables/charts, presentation mode and local HTML export.
+- [ ] Kaga slide templates and reusable theme tokens.
+- [ ] GREEN + Agent Sahab gate.
 
-- [ ] Add RED tests defining supported PDF workspace behavior.
-- [ ] Support project notes/metadata and safe PDF-related workspace state that is genuinely implemented offline.
-- [ ] Do not claim PDF→Word, Office→PDF or native PDF authoring without a tested engine.
-- [ ] Provide clear `Prepared / Available / Later` capability labels.
-- [ ] GREEN tests and Agent Sahab gate.
+### Task 8 — Raga Conversion Engine
+- [ ] Create `www/raga-converter.js`, adapters and conversion-report UI.
+- [ ] HTML ↔ Document IR and CSV ↔ Sheet first.
+- [ ] Evaluate free/open-source DOCX/XLSX/PPTX/PDF libraries by license, bundle size, offline Android support, fidelity and security before dependency adoption.
+- [ ] Build golden fixture corpus and round-trip tests before advertising each format.
+- [ ] Preserve unsupported source and show fidelity/loss report.
+- [ ] GREEN + Agent Sahab gate.
 
-### Task 8: Calendar & Planner Completion
+### Task 9 — PDF Workspace
+- [ ] Safe PDF workspace, metadata/notes/organization and printable report path supported by actual implementation.
+- [ ] Raga PDF conversion capabilities remain capability-gated by fixtures.
+- [ ] GREEN + Agent Sahab gate.
 
-**Files:** Modify `tests/calendar-visibility.test.mjs`, `www/planner.js`, `www/planner.css` only where test exposes a real defect; workflow.
+### Task 10 — Celeb Planner v2
+- [ ] Repair stale Calendar test and remove workflow skip.
+- [ ] Daily/weekly/monthly/agenda, recurring items, priorities, completion, diary/notes and follow-up.
+- [ ] Planner → Kaga document and Planner → Raga report actions.
+- [ ] GREEN all tests with no Calendar bypass + Agent Sahab gate.
 
-- [ ] Repair the stale Calendar visibility contract against current planner behavior.
-- [ ] Remove the workflow skip for `calendar-visibility.test.mjs`.
-- [ ] Verify every `tests/*.test.mjs` runs.
-- [ ] Check planner persistence, reopen behavior and narrow-screen containment.
-- [ ] GREEN tests and Agent Sahab gate.
+### Task 11 — Anwar AI Lens Foundation
+- [ ] Create `www/anwar-lens.js`, retrieval index, evidence model and knowledge-pack loader.
+- [ ] Local help/Q&A over approved knowledge and explicitly selected project documents.
+- [ ] Add source scope, confidence/evidence state, “not found” behavior and action handoff to other agents.
+- [ ] Optional provider adapter interface without making cloud AI a core dependency.
+- [ ] RED/GREEN retrieval tests including conflicting/stale/missing evidence + Agent Sahab gate.
 
-### Task 9: Accessibility, Security & Mobile Hardening
+### Task 12 — Knowledge Pack Manager
+- [ ] Create versioned manifests, staging, validation, activation and rollback.
+- [ ] Built-in capability/template/conversion/planner/help packs.
+- [ ] Explicit opt-in for adding user material to personal local knowledge.
+- [ ] Agent Sahab checks provenance fields, schema and regression questions before activation.
 
-**Files:** Create/extend audit tests; modify affected modules only for demonstrated findings.
+### Task 13 — Files Workspace v2
+- [ ] Safe rendering, folders/tags, search, recent/starred, rename/duplicate/delete, backup import/export and version metadata.
+- [ ] Cross-studio project navigation and agent-generated artifacts remain in one project graph.
+- [ ] GREEN + Agent Sahab gate.
 
-- [ ] Test accessible names, keyboard/focus behavior, touch targets and responsive containment.
-- [ ] Audit HTML injection surfaces and imported project validation.
-- [ ] Audit iframe sandbox, external navigation and file import handling.
-- [ ] Verify lifecycle flush and no data reset on refresh/reopen.
-- [ ] Keep recommendations vs blockers explicit.
-- [ ] GREEN tests and Agent Sahab gate.
+### Task 14 — Smart HTML v2
+- [ ] Safe source editor/import/export and sandbox preview.
+- [ ] Raga HTML conversion actions and Kaga web/report templates.
+- [ ] No imported script executes in parent context.
+- [ ] GREEN + Agent Sahab gate.
 
-### Task 10: Agent Sahab Full-App Completion Audit
+### Task 15 — Mobile, Accessibility & Security
+- [ ] Responsive containment, focus, labels, touch targets, keyboard shortcuts and undo/redo.
+- [ ] Audit imports, HTML injection, sandbox, agent permissions, external navigation and lifecycle recovery.
+- [ ] GREEN + Agent Sahab gate.
 
-**Files:** `scripts/agent-sahab-source-audit.mjs`, `scripts/agent-sahab-audit.sh`, `scripts/agent-sahab-verdict.mjs`, workflow and Issue #2 audit record.
+### Task 16 — Full Agent Sahab Completion Audit
+- [ ] Run every test with no skips.
+- [ ] Source/agent/knowledge/conversion/template audits.
+- [ ] Gradle `lintDebug` and Android build.
+- [ ] APK manifest/assets/package/version/SHA-256 inspection.
+- [ ] Upload evidence and publish APK only after final `APPROVED`.
 
-- [ ] Inventory all shipped `www/*.js`, required CSS, tests and packaged Android assets.
-- [ ] Run all Node tests with no skip.
-- [ ] Run Agent Sahab source audit.
-- [ ] Run Gradle `lintDebug`.
-- [ ] Build debug APK.
-- [ ] Inspect APK ZIP, manifest, dex, packaged web assets, package/version and SHA-256.
-- [ ] Require final `APPROVED` verdict before artifact publication.
-- [ ] Upload Agent Sahab source report, APK report, lint evidence and verdict.
-- [ ] Publish audited APK only after all blocking checks pass.
-- [ ] Record final evidence in Issue #2 and verify PR status before integration.
+## Capability Truth Model
+Every feature is `AVAILABLE`, `PREVIEW`, `LATER`, or `UNAVAILABLE`. Kaga/Raga/Celeb/Anwar must query the registry rather than promise unsupported features. Office format fidelity is measured with fixtures; the UI displays conversion warnings. Agent Sahab verifies these capability labels against implementation.
 
-## Agent Sahab Responsibilities for Every Batch
-
-Agent Sahab is the technical gate, not a fictional human reviewer. For each batch it must check the regression contracts and relevant behavior tests, source architecture rules, Free-First policy, display-fit non-regression, storage/lifecycle requirements, obvious security boundaries, Android packaged assets, Gradle lint, APK integrity and final evidence. A failing blocker returns **CHANGES REQUIRED** and prevents APK publication. Passing all implemented blocking checks returns **APPROVED**; advisory ideas remain non-blocking and Premium/Later items cannot block the free core.
-
-## Definition of Free-Core Complete
-
-The free core is complete only when Tasks 1–9 are implemented to their stated truthful scope, all tests run without a skip, Agent Sahab returns APPROVED, Android lint/build pass, APK inspection passes, and the audited APK artifact exists. Premium/cloud AI, proprietary Office conversion engines and other paid services are separate future work and are not part of this completion definition.
+## Definition of Complete
+Free-core complete means Tasks 1–15 reach their truthful implemented scope, all tests run without bypass, knowledge and conversion fixtures pass, Agent Sahab returns APPROVED, Android lint/build and APK inspection pass, and an audited APK artifact exists. Optional cloud AI and proprietary/high-fidelity features remain separate adapters and do not block the free core.
