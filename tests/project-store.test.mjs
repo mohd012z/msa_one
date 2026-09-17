@@ -1,0 +1,1 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';const js=fs.readFileSync('www/project-store.js','utf8');for(const k of ['MSAProjectStore','msaOneProjectsV1','list','get','save','remove','rename','duplicate','msa:projects-changed'])assert.ok(js.includes(k),'missing project store '+k);console.log('project store contract passed');
