@@ -33,7 +33,7 @@ jobs:
           node tests/create-studio.test.mjs
           node tests/files-workspace.test.mjs
           node tests/planner.test.mjs
-      - name: Inject isolated modules and permanent Calendar entries
+      - name: Package permanent Calendar UI
         run: |
           python3 - <<'PY'
           from pathlib import Path
@@ -44,22 +44,20 @@ jobs:
           home='<button class="planner-home" data-planner-open data-calendar-home onclick="window.MSAPlanner&&MSAPlanner.open()"><span>📅</span><div><b>Calendar & Daily Planner</b><small>Diary · programs · plans · notes</small></div><strong>›</strong></button>'
           hero_end='</p></section><div class="cap">QUICK START</div>'
           s=s.replace(hero_end,'</p></section>'+home+'<div class="cap">QUICK START</div>',1)
-          me='<button class="planner-home" data-calendar-me onclick="window.MSAPlanner&&MSAPlanner.open()"><span>📅</span><div><b>Calendar & Daily Planner</b><small>Diary · daily program · plans · notes</small></div><strong>›</strong></button><div class="build-id" data-build-id="MSA-ONE-27">MSA One · Build MSA-ONE-27 · Calendar Verified</div>'
+          me='<button class="planner-home" data-calendar-me onclick="window.MSAPlanner&&MSAPlanner.open()"><span>📅</span><div><b>Calendar & Daily Planner</b><small>Diary · daily program · plans · notes</small></div><strong>›</strong></button><div class="build-id" data-build-id="MSA-ONE-28">MSA One 28 · Calendar Build 28</div>'
           marker='<div class="cap">MY WORKSPACE</div>'
           pos=s.find(marker,s.find('id="me"'))
-          if pos!=-1:
-              pos+=len(marker); s=s[:pos]+me+s[pos:]
-          scripts=[]
+          if pos < 0: raise SystemExit('Me workspace marker not found')
+          pos+=len(marker); s=s[:pos]+me+s[pos:]
           for x in ['www/planner.js','www/settings-v2.js','www/create-studio.js','www/files-workspace.js']:
-              scripts.append('<script>'+Path(x).read_text()+'</script>')
-          s=s.replace('</body>',''.join(scripts)+'</body>')
+              s=s.replace('</body>','<script>'+Path(x).read_text()+'</script></body>')
           p.write_text(s)
           PY
-      - name: Verify packaged Calendar contract
+      - name: Verify packaged web UI
         run: |
           grep -q 'data-calendar-home' www/index.html
           grep -q 'data-calendar-me' www/index.html
-          grep -q 'MSA-ONE-27' www/index.html
+          grep -q 'MSA-ONE-28' www/index.html
           grep -q 'Calendar & Daily Planner' www/index.html
           grep -q 'window.MSAPlanner' www/index.html
       - name: Install dependencies
@@ -68,17 +66,27 @@ jobs:
         run: npx cap add android
       - name: Sync web app
         run: npx cap sync android
-      - name: Verify Android asset contains Calendar
+      - name: Set Android Build 28 version
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('android/app/build.gradle')
+          s=p.read_text().replace('versionCode 1','versionCode 28').replace('versionName "1.0"','versionName "28.0"')
+          p.write_text(s)
+          PY
+      - name: Verify Android package and assets
         run: |
           grep -q 'data-calendar-home' android/app/src/main/assets/public/index.html
           grep -q 'data-calendar-me' android/app/src/main/assets/public/index.html
-          grep -q 'MSA-ONE-27' android/app/src/main/assets/public/index.html
+          grep -q 'MSA-ONE-28' android/app/src/main/assets/public/index.html
+          grep -q 'com.msa.one.build28' android/app/build.gradle
+          grep -q 'versionCode 28' android/app/build.gradle
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: msa-one-build-27-calendar-verified
+          name: MSA-One-28-CALENDAR-FIXED-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
