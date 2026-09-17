@@ -1,0 +1,12 @@
+import fs from 'node:fs';
+const source=fs.existsSync('agent-sahab-source.json')?JSON.parse(fs.readFileSync('agent-sahab-source.json','utf8')):null;
+const apkReport=fs.existsSync('agent-sahab-report.md')?fs.readFileSync('agent-sahab-report.md','utf8'):'';
+const apk='android/app/build/outputs/apk/debug/app-debug.apk';
+const evidence={sourceApproved:source?.status==='SOURCE APPROVED',lintReport:fs.existsSync('android/app/build/reports/lint-results-debug.html'),apkExists:fs.existsSync(apk)&&fs.statSync(apk).size>0,apkAuditPassed:apkReport.includes('PASS — Agent Sahab found no blocking contract errors.')};
+const approved=Object.values(evidence).every(Boolean);
+const status=approved?'APPROVED':'CHANGES REQUIRED';
+const out={bot:'Agent Sahab',policy:'FREE_FIRST',status,sha:process.env.GITHUB_SHA||'local',checkedAt:new Date().toISOString(),evidence,publishApk:approved,reportFiles:['agent-sahab-verdict.json','agent-sahab-verdict.md']};
+fs.writeFileSync('agent-sahab-verdict.json',JSON.stringify(out,null,2));
+fs.writeFileSync('agent-sahab-verdict.md',`# Agent Sahab — Final Verdict\n\n## ${status}\n\nPolicy: **FREE_FIRST**\n\n${Object.entries(evidence).map(([k,v])=>`- ${v?'PASS':'FAIL'} — ${k}`).join('\n')}\n\n${approved?'APK may be published by the audited workflow.':'APK must not be published. Correct blocking findings and run Agent Sahab again.'}\n`);
+console.log(`Agent Sahab final verdict: ${status}`);
+if(!approved)process.exit(3);
