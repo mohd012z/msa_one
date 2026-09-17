@@ -1,1 +1,11 @@
-import fs from 'node:fs';import assert from 'node:assert/strict';const js=fs.readFileSync('www/project-store.js','utf8');for(const k of ['MSAProjectStore','msaOneProjectsV1','list','get','save','remove','rename','duplicate','msa:projects-changed'])assert.ok(js.includes(k),'missing project store '+k);console.log('project store contract passed');
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const js=fs.readFileSync('www/project-store.js','utf8');
+for(const k of ['MSAProjectStore','msaOneProjectsV1','list','get','save','remove','rename','duplicate','msa:projects-changed'])assert.ok(js.includes(k),'missing project store '+k);
+for(const k of ['MSA_ONE_DB','indexedDB','migrateLegacy','backup','restore','flush','pagehide','visibilitychange'])assert.ok(js.includes(k),'missing Agent Sahab recovery contract '+k);
+const files=fs.readFileSync('www/files-workspace.js','utf8');
+assert.ok(files.includes('MSAProjectStore'),'Files must use the shared project store');
+assert.ok(files.includes('msa:projects-changed'),'Files must react to project-store changes');
+const studio=fs.readFileSync('www/create-studio.js','utf8');
+assert.ok(!studio.includes("if(state.type==='pdf')return"),'PDF shell must be persistable');
+assert.ok(studio.includes('pagehide'),'Studio must flush pending autosave on Android lifecycle exit');
+console.log('project store recovery contract passed');
