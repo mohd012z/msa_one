@@ -26,37 +26,59 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Test UI contracts
+      - name: Test source modules
         run: |
           node tests/theme-contract.test.mjs
           node tests/button-studio.test.mjs
           node tests/create-studio.test.mjs
           node tests/files-workspace.test.mjs
           node tests/planner.test.mjs
-      - name: Inject MSA One modules
+      - name: Inject isolated modules and permanent Calendar entries
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('www/index.html')
           s=p.read_text()
           css='\n'.join(Path(x).read_text() for x in ['www/theme-v2.css','www/create-studio.css','www/files-workspace.css','www/planner.css'])
-          js='\n'.join(Path(x).read_text() for x in ['www/settings-v2.js','www/create-studio.js','www/files-workspace.js','www/planner.js'])
           s=s.replace('</head>',f'<style>{css}</style></head>')
-          s=s.replace('</body>',f'<script>{js}</script></body>')
+          home='<button class="planner-home" data-planner-open data-calendar-home onclick="window.MSAPlanner&&MSAPlanner.open()"><span>📅</span><div><b>Calendar & Daily Planner</b><small>Diary · programs · plans · notes</small></div><strong>›</strong></button>'
+          hero_end='</p></section><div class="cap">QUICK START</div>'
+          s=s.replace(hero_end,'</p></section>'+home+'<div class="cap">QUICK START</div>',1)
+          me='<button class="planner-home" data-calendar-me onclick="window.MSAPlanner&&MSAPlanner.open()"><span>📅</span><div><b>Calendar & Daily Planner</b><small>Diary · daily program · plans · notes</small></div><strong>›</strong></button><div class="build-id" data-build-id="MSA-ONE-27">MSA One · Build MSA-ONE-27 · Calendar Verified</div>'
+          marker='<div class="cap">MY WORKSPACE</div>'
+          pos=s.find(marker,s.find('id="me"'))
+          if pos!=-1:
+              pos+=len(marker); s=s[:pos]+me+s[pos:]
+          scripts=[]
+          for x in ['www/planner.js','www/settings-v2.js','www/create-studio.js','www/files-workspace.js']:
+              scripts.append('<script>'+Path(x).read_text()+'</script>')
+          s=s.replace('</body>',''.join(scripts)+'</body>')
           p.write_text(s)
           PY
+      - name: Verify packaged Calendar contract
+        run: |
+          grep -q 'data-calendar-home' www/index.html
+          grep -q 'data-calendar-me' www/index.html
+          grep -q 'MSA-ONE-27' www/index.html
+          grep -q 'Calendar & Daily Planner' www/index.html
+          grep -q 'window.MSAPlanner' www/index.html
       - name: Install dependencies
         run: npm install
       - name: Create Android project
         run: npx cap add android
       - name: Sync web app
         run: npx cap sync android
+      - name: Verify Android asset contains Calendar
+        run: |
+          grep -q 'data-calendar-home' android/app/src/main/assets/public/index.html
+          grep -q 'data-calendar-me' android/app/src/main/assets/public/index.html
+          grep -q 'MSA-ONE-27' android/app/src/main/assets/public/index.html
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: msa-one-debug-apk
+          name: msa-one-build-27-calendar-verified
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
