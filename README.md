@@ -2,62 +2,60 @@
 
 MSA One is an all-in-one mobile office workspace for local documents, spreadsheets, presentations, PDF text documents, Smart HTML, planning data and workspace backups.
 
-## Current build — MSA One 41
+## Current build — MSA One 42
 
-MSA One 41 keeps the Android application ID `com.msa.one.displayfit37` so it can update the existing MSA One installation instead of appearing as a separate app.
+MSA One 42 keeps the Android application ID `com.msa.one.displayfit37` so it can update the existing MSA One installation instead of appearing as a separate app.
 
 ### Working offline/on-device
 
 - Responsive Home, Files, Create, AI, Calendar and Me pages
 - Android display auto-fit and portrait/landscape guards
-- Document editor with headings, bold, italic, underline, lists and simple tables
-- DOCX export preserving the supported rich document structures
-- DOCX import for paragraphs, headings, basic run formatting, tables and practical embedded images
-- Spreadsheet grid with formulas, formula result preview and quick bar-chart preview
-- Local formula support for arithmetic cell references plus `SUM`, `AVERAGE`, `MIN` and `MAX`
-- Multi-sheet spreadsheets with add, switch, rename and delete sheet controls
-- XLSX export with multiple worksheets, formula cells and Excel recalculation
-- XLSX import with worksheet names, multiple sheets, shared strings, values and formulas
-- CSV / TSV import and CSV export
-- Presentation editor with multiple slides, image attachment/resizing and three layouts
-- PPTX export with embedded JPEG/PNG media
-- PPTX import for slide order, slide text and a practical first embedded image per slide
-- PDF text editor with PDF export
+- Document editor with headings, bold, italic, underline, lists, tables and image insertion
+- Document images are resized locally before storage to reduce project size
+- DOCX export now packages supported document images into `word/media`, creates document relationships and writes DrawingML image elements
+- DOCX import restores practical embedded images, so supported images can survive DOCX → MSA One → DOCX
+- Spreadsheet formulas, formula preview, chart preview and multi-sheet editing
+- Multi-sheet XLSX import/export with shared strings, formulas and worksheet names
+- Presentation editor with embedded image support and PPTX image import/export
+- PDF text workspace and PDF export
 - Smart HTML editor with sandbox preview and HTML export
-- IndexedDB mirror for important local data
-- JSON workspace backup and restore for drafts, planner and settings
-- Calendar / Daily Planner with Daily Program, Plan, Diary and Note entries
-- Button Studio appearance settings
-- File/image picker and supported-device voice input shortcuts
-- Offline task routing from the AI workspace
+- IndexedDB mirror plus JSON workspace backup/restore
+- Calendar / Daily Planner
+- Button Studio customization
 
-### Office import architecture
+### Files workspace
 
-`www/import-engine.js` reads OOXML ZIP packages directly in the WebView. It supports stored ZIP entries and standard deflated ZIP entries through `DecompressionStream`, follows Office relationship files and extracts the parts MSA One can edit.
+The Files page now includes **Open Office File**. A DOCX, XLSX or PPTX can be selected directly from Files without first choosing a Create workspace.
 
-The supported native Office import formats are:
+MSA One detects the Office type, imports it with the OOXML engine, saves it as a local editable project and opens the correct editor automatically.
 
-- `.docx` → Document
-- `.xlsx` → Spreadsheet
-- `.pptx` → Presentation
+### Office round-trip architecture
 
-Simpler local imports remain available for TXT, HTML, CSV, TSV, images and presentation JSON.
+- `www/office-engine.js` creates DOCX, XLSX, PPTX and PDF files
+- `www/import-engine.js` reads DOCX, XLSX and PPTX OOXML ZIP packages
+- `www/formula-engine.js` evaluates the supported local spreadsheet formulas
+- `www/storage-engine.js` mirrors important app data to IndexedDB
+
+DOCX media round-trip currently targets PNG/JPEG images. Imported Office images are size-limited for safer WebView storage.
 
 ### Quality checks
 
-`npm test` performs JavaScript syntax checks before running Node tests. Build 41 includes an executable round-trip test that:
+`npm test` performs JavaScript syntax checks before running the contract/unit tests. CI also verifies:
 
-1. creates a two-sheet XLSX with MSA One,
-2. opens the generated OOXML ZIP with the import engine,
-3. verifies both worksheet files and names,
-4. verifies that a formula cell remains present.
+- Office importer packaging
+- multi-sheet XLSX round-trip
+- formula preservation
+- DOCX image relationship/media code
+- Files-level Office opener
+- Build 42 Android package/version consistency
 
 ### Current limitations
 
-- Complex Word layouts, floating objects, comments, tracked changes and advanced styles are only partially represented
-- Excel styles, macros, pivot tables, conditional formatting and native chart objects are not fully imported
-- PowerPoint animations, audio/video, SmartArt and complex masters are not fully imported
-- Imported Office images are intentionally limited in size for safer on-device storage
+- Complex Word floating layouts, comments, tracked changes and advanced styles are only partially represented
+- DOCX image layout is simplified to inline images during MSA One export
+- Excel macros, pivot tables, advanced formatting and native embedded chart objects are not fully supported
+- PowerPoint animations, audio/video, SmartArt and complex masters are not fully supported
+- Very large imported media may be skipped or resized to protect local storage
 - Some older WebViews without raw-deflate `DecompressionStream` support may not open normally compressed third-party Office files
 - Real generative AI responses still require an AI backend
 - Cloud synchronization and production presenter services are not connected
@@ -72,9 +70,9 @@ GitHub Actions builds the Android debug APK with Capacitor.
 1. Open **Actions → Build MSA One APK**.
 2. Run the workflow manually or push a relevant source change to `main`.
 3. Open the successful run.
-4. Download **MSA-One-41-APK**.
+4. Download **MSA-One-42-APK**.
 
-The workflow runs syntax checks and tests, verifies the Calendar plus storage/Office/import/formula engines, syncs the same `www` source into Capacitor, sets Android `versionCode 41` / `versionName 41.0`, builds the APK and uploads it as an artifact.
+The workflow runs syntax checks and tests, verifies Calendar plus storage/Office/import/formula/media features, syncs the same `www` source into Capacitor, sets Android `versionCode 42` / `versionName 42.0`, builds the APK and uploads it as an artifact.
 
 ## Development
 
