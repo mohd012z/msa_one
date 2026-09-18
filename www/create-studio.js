@@ -41,7 +41,8 @@
     const p=state.id&&get(state.id);x.querySelector('[data-title]').value=p?.title||'Untitled '+TYPES[state.type][1];
 
     if(state.type==='document'){
-      w.innerHTML='<div class="studio-tools"><button class="studio-tool" data-cmd="bold"><b>B</b></button><button class="studio-tool" data-cmd="italic"><i>I</i></button><button class="studio-tool" data-cmd="underline"><u>U</u></button><button class="studio-tool" data-block="H1">H1</button><button class="studio-tool" data-block="H2">H2</button><button class="studio-tool" data-block="P">P</button><button class="studio-tool" data-cmd="insertUnorderedList">☷ List</button><button class="studio-tool" data-table>▦ Table</button><button class="studio-tool" data-doc-image>🖼 Image</button><button class="studio-tool" data-doc-pdf>PDF</button></div><article class="studio-editor" contenteditable="true" data-doc>'+(p?.content||'<h2>Start writing</h2><p>Your document keeps rich headings, bold, italic, underline, lists and simple tables when exported to DOCX.</p>')+'</article>';
+      const safeDoc=sanitizeHTML(p?.content||'<h2>Start writing</h2><p>Your document keeps rich headings, bold, italic, underline, lists and simple tables when exported to DOCX.</p>');
+      w.innerHTML='<div class="studio-tools"><button class="studio-tool" data-cmd="bold"><b>B</b></button><button class="studio-tool" data-cmd="italic"><i>I</i></button><button class="studio-tool" data-cmd="underline"><u>U</u></button><button class="studio-tool" data-block="H1">H1</button><button class="studio-tool" data-block="H2">H2</button><button class="studio-tool" data-block="P">P</button><button class="studio-tool" data-cmd="insertUnorderedList">☷ List</button><button class="studio-tool" data-table>▦ Table</button><button class="studio-tool" data-doc-image>🖼 Image</button><button class="studio-tool" data-doc-pdf>PDF</button></div><article class="studio-editor" contenteditable="true" data-doc>'+safeDoc+'</article>';
       const ed=w.querySelector('[data-doc]');ed.oninput=queueSave;
       w.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>{ed.focus();document.execCommand(b.dataset.cmd,false,null);queueSave()});
       w.querySelectorAll('[data-block]').forEach(b=>b.onclick=()=>{ed.focus();document.execCommand('formatBlock',false,b.dataset.block);queueSave()});
@@ -197,9 +198,9 @@
     const p=state.id&&get(state.id),data=json(p?.content,{slides:defaultSlides()}),base=Array.isArray(data)?data:(data.slides||defaultSlides());return readSlides(base);
   }
 
-  function preview(){const c=document.querySelector('[data-code]'),f=document.querySelector('[data-preview]');if(c&&f)f.srcdoc=c.value}
+  function preview(){const c=document.querySelector('[data-code]'),f=document.querySelector('[data-preview]');if(c&&f)f.srcdoc=window.MSASecurity?.previewHTML(c.value)||c.value}
   function currentContent(){
-    if(state.type==='document')return document.querySelector('[data-doc]')?.innerHTML||'';
+    if(state.type==='document')return sanitizeHTML(document.querySelector('[data-doc]')?.innerHTML||'');
     if(state.type==='html')return document.querySelector('[data-code]')?.value||'';
     if(state.type==='spreadsheet')return JSON.stringify({sheets:currentSheets(),activeSheet:state.sheet});
     if(state.type==='presentation')return JSON.stringify({slides:currentSlides()});
@@ -227,8 +228,8 @@
   function createProject(type,title,content){
     if(!TYPES[type])throw new Error('Unsupported project type: '+type);
     const id=window.MSACore?.uid('p')||('p_'+Date.now().toString(36));
-    put({id,type,title:title||('Untitled '+TYPES[type][1]),content:content??'',updated:Date.now()});
-    open(type,id);return id;
+    const project=window.MSASecurity?.sanitizeProject({id,type,title:title||('Untitled '+TYPES[type][1]),content:content??'',updated:Date.now()})||{id,type,title:title||('Untitled '+TYPES[type][1]),content:content??'',updated:Date.now()};
+    put(project);open(type,id);return id;
   }
   function renderRecents(){
     const r=document.querySelector('[data-recents]');if(!r)return;const a=all().slice(0,5);
@@ -240,10 +241,8 @@
     window.MSAOffice.download(name+'.pdf',window.MSAOffice.pdf(text,title),'application/pdf');
   }
   function sanitizeHTML(html){
-    const d=document.createElement('div');d.innerHTML=html;
-    d.querySelectorAll('script,style,iframe,object,embed,link,meta').forEach(x=>x.remove());
-    d.querySelectorAll('*').forEach(el=>[...el.attributes].forEach(a=>{if(/^on/i.test(a.name))el.removeAttribute(a.name);if((a.name==='href'||a.name==='src')&&/^javascript:/i.test(a.value))el.removeAttribute(a.name)}));
-    return d.innerHTML;
+    if(window.MSASecurity?.sanitizeRichHTML)return window.MSASecurity.sanitizeRichHTML(html);
+    const d=document.createElement('div');d.textContent=String(html||'');return d.innerHTML;
   }
   function parseCSV(text,delimiter=','){
     const rows=[];let row=[],cell='',quoted=false;
