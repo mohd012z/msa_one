@@ -40,7 +40,11 @@ jobs:
           grep -q 'data-calendar-me' www/index.html
           grep -q 'theme-v2.css' www/index.html
           grep -q 'planner.js' www/index.html
-          grep -q 'app-actions.js' www/index.html\n          grep -q 'storage-engine.js' www/index.html\n          grep -q 'office-engine.js' www/index.html\n          grep -q 'MSAOffice' www/office-engine.js\n          grep -q 'MSAStorage' www/storage-engine.js
+          grep -q 'app-actions.js' www/index.html
+          grep -q 'storage-engine.js' www/index.html
+          grep -q 'office-engine.js' www/index.html
+          grep -q 'MSAOffice' www/office-engine.js
+          grep -q 'MSAStorage' www/storage-engine.js
           grep -q -- '--msa-screen-width' www/theme-v2.css
           grep -q 'screen.width' www/settings-v2.js
           grep -q 'visualViewport' www/settings-v2.js
@@ -54,14 +58,14 @@ jobs:
       - name: Sync web app
         run: npx cap sync android
 
-      - name: Set Android Build 38 version
+      - name: Set Android Build 39 version
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('android/app/build.gradle')
           s=p.read_text()
           s=s.replace('versionCode 1','versionCode 39')
-          s=s.replace('versionName "1.0"','versionName "38.0"')
+          s=s.replace('versionName "1.0"','versionName "39.0"')
           p.write_text(s)
           PY
 
@@ -69,12 +73,15 @@ jobs:
         run: |
           grep -q 'com.msa.one.displayfit37' android/app/build.gradle
           grep -q 'versionCode 39' android/app/build.gradle
+          grep -q 'versionName "39.0"' android/app/build.gradle
           grep -q 'data-build-id="MSA-ONE-39"' android/app/src/main/assets/public/index.html
           grep -q 'data-calendar-home' android/app/src/main/assets/public/index.html
           grep -q 'data-calendar-me' android/app/src/main/assets/public/index.html
           test -f android/app/src/main/assets/public/theme-v2.css
           test -f android/app/src/main/assets/public/planner.js
-          test -f android/app/src/main/assets/public/app-actions.js\n          test -f android/app/src/main/assets/public/storage-engine.js\n          test -f android/app/src/main/assets/public/office-engine.js
+          test -f android/app/src/main/assets/public/app-actions.js
+          test -f android/app/src/main/assets/public/storage-engine.js
+          test -f android/app/src/main/assets/public/office-engine.js
 
       - name: Build debug APK
         working-directory: android
