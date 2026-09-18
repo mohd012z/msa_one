@@ -33,6 +33,7 @@
   function fileToDataURL(file){return new Promise((res,rej)=>{const r=new FileReader();r.onerror=()=>rej(r.error);r.onload=()=>res(r.result);r.readAsDataURL(file)})}
   function loadImage(src){return new Promise((res,rej)=>{const img=new Image();img.onload=()=>res(img);img.onerror=()=>rej(new Error('Image could not be read'));img.src=src})}
   async function resizeImage(input,{max=1280,quality=.78,type='image/jpeg'}={}){
+    if(typeof input!=='string'&&input?.size>25*1024*1024)throw new Error('Image is too large for safe on-device editing.');
     const src=typeof input==='string'?input:await fileToDataURL(input),img=await loadImage(src),scale=Math.min(1,max/Math.max(img.width,img.height));
     const c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*scale));c.height=Math.max(1,Math.round(img.height*scale));c.getContext('2d').drawImage(img,0,0,c.width,c.height);
     return c.toDataURL(type,quality);
