@@ -1,6 +1,6 @@
 (()=>{const KEY='msaOneProjectsV1',ICON={document:'📄',html:'🌐',spreadsheet:'📊',presentation:'📽️',pdf:'📕'};let query='';
 function all(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}}
-function write(a){localStorage.setItem(KEY,JSON.stringify(a));renderFiles()}
+function write(a){const raw=JSON.stringify(a);localStorage.setItem(KEY,raw);window.MSAStorage?.mirror(KEY,raw);renderFiles()}
 function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function openProject(id){let p=all().find(x=>x.id===id);if(p&&window.MSAStudio)MSAStudio.open(p.type,p.id)}
 function renameProject(id){let a=all(),p=a.find(x=>x.id===id);if(!p)return;let n=prompt('Rename project',p.title);if(n&&n.trim()){p.title=n.trim();p.updated=Date.now();write(a)}}
