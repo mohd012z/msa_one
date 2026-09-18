@@ -8,6 +8,11 @@
   function u16(v,o){return v[o]|(v[o+1]<<8)}
   function u32(v,o){return (v[o]|(v[o+1]<<8)|(v[o+2]<<16)|(v[o+3]<<24))>>>0}
   function text(v){return td.decode(v)}
+  async function breathe(progress,message){
+    if(progress&&message)progress(message);
+    if(globalThis.MSAPerformance?.yieldUI)return globalThis.MSAPerformance.yieldUI();
+    return new Promise(resolve=>setTimeout(resolve,0));
+  }
   function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
   function mimeFor(name=''){
     const x=name.toLowerCase();
@@ -42,7 +47,7 @@
     const stream=new Blob([bytes]).stream().pipeThrough(ds);
     return new Uint8Array(await new Response(stream).arrayBuffer());
   }
-  async function unzip(input){
+  async function unzip(input,progress){
     const v=input instanceof Uint8Array?input:new Uint8Array(input);
     if(v.length>MAX_ZIP_BYTES)throw new Error('Office file is too large for safe on-device import.');
     let eocd=-1;
@@ -70,6 +75,7 @@
       if(out.length>MAX_ENTRY_BYTES)throw new Error('An Office file part expanded beyond the safe import limit.');
       files[norm(name)]=out;
       p+=46+nameLen+extraLen+commentLen;
+      if((n+1)%12===0)await breathe(progress,'Reading Office package '+(n+1)+'/'+count+'…');
     }
     return files;
   }
@@ -148,13 +154,15 @@
     }
     return out+'</table>';
   }
-  async function docx(input){
-    const files=await unzip(input),part='word/document.xml',doc=xmlDoc(files[part]);
+  async function docx(input,progress){
+    const files=await unzip(input,progress),part='word/document.xml',doc=xmlDoc(files[part]);
     if(!doc)throw new Error('word/document.xml is missing.');
     const relMap=relationships(files,relPathFor(part)),body=descendants(doc,'body')[0];let html='';
-    for(const node of body?.children||[]){
+    let bi=0;const nodes=[...(body?.children||[])];
+    for(const node of nodes){
       if(node.localName==='p')html+=docParagraphHtml(node,files,part,relMap);
       else if(node.localName==='tbl')html+=docTableHtml(node,files,part,relMap);
+      bi++;if(bi%80===0)await breathe(progress,'Reading document '+bi+'/'+nodes.length+'…');
     }
     return {html:html||'<p></p>'};
   }
@@ -168,9 +176,10 @@
     const d=xmlDoc(files['xl/sharedStrings.xml']);if(!d)return[];
     return descendants(d,'si').map(si=>descendants(si,'t').map(t=>t.textContent||'').join(''));
   }
-  function worksheetRows(files,path,shared){
+  async function worksheetRows(files,path,shared,progress,sheetName='Sheet'){
     const d=xmlDoc(files[path]);if(!d)return[];
-    const rows=[];for(const row of descendants(d,'row')){
+    const source=descendants(d,'row'),rows=[];let index=0;
+    for(const row of source){
       const ri=Math.max(0,(+attr(row,'r')||rows.length+1)-1);while(rows.length<=ri)rows.push([]);
       for(const c of children(row,'c')){
         const ref=attr(c,'r'),ci=colIndex(ref),type=attr(c,'t'),f=descendants(c,'f')[0],v=descendants(c,'v')[0],inline=descendants(c,'is')[0];
@@ -183,17 +192,19 @@
         while(rows[ri].length<=ci)rows[ri].push('');
         rows[ri][ci]=value;
       }
+      index++;if(index%120===0)await breathe(progress,'Reading '+sheetName+' row '+index+'/'+source.length+'…');
     }
     return rows.length?rows:[['']];
   }
-  async function xlsx(input){
-    const files=await unzip(input),workbook='xl/workbook.xml',doc=xmlDoc(files[workbook]);
+  async function xlsx(input,progress){
+    const files=await unzip(input,progress),workbook='xl/workbook.xml',doc=xmlDoc(files[workbook]);
     if(!doc)throw new Error('xl/workbook.xml is missing.');
     const relMap=relationships(files,'xl/_rels/workbook.xml.rels'),shared=sharedStrings(files),sheets=[];
     for(const sh of descendants(doc,'sheet')){
       const name=attr(sh,'name')||('Sheet'+(sheets.length+1)),rid=relId(sh),rel=relMap[rid];
       if(!rel)continue;
-      sheets.push({name,rows:worksheetRows(files,resolve(workbook,rel.target),shared)});
+      sheets.push({name,rows:await worksheetRows(files,resolve(workbook,rel.target),shared,progress,name)});
+      await breathe(progress,'Loaded worksheet '+name+'…');
     }
     if(!sheets.length)throw new Error('No worksheets were found.');
     return {sheets};
@@ -203,26 +214,29 @@
     const texts=descendants(slide,'t').map(x=>x.textContent||'').filter(Boolean);
     return {title:texts[0]||'',body:texts.slice(1).join('\n')};
   }
-  async function pptx(input){
-    const files=await unzip(input),pres='ppt/presentation.xml',doc=xmlDoc(files[pres]);
+  async function pptx(input,progress){
+    const files=await unzip(input,progress),pres='ppt/presentation.xml',doc=xmlDoc(files[pres]);
     if(!doc)throw new Error('ppt/presentation.xml is missing.');
     const presRels=relationships(files,'ppt/_rels/presentation.xml.rels'),slides=[];
-    for(const id of descendants(doc,'sldId')){
+    const slideIds=descendants(doc,'sldId');let slideIndex=0;
+    for(const id of slideIds){
       const rel=presRels[relId(id)];if(!rel)continue;
       const part=resolve(pres,rel.target),sd=xmlDoc(files[part]);if(!sd)continue;
       const t=slideText(sd),rels=relationships(files,relPathFor(part));let image='';
       for(const blip of descendants(sd,'blip')){image=officeImage(files,part,rels,attr(blip,'embed'));if(image)break}
       slides.push({title:t.title||'Slide '+(slides.length+1),body:t.body,layout:image?'image-right':'title-body',image});
+      slideIndex++;if(slideIndex%8===0)await breathe(progress,'Reading slides '+slideIndex+'/'+slideIds.length+'…');
     }
     if(!slides.length)throw new Error('No slides were found.');
     return {slides};
   }
 
-  async function readFile(file){
-    const ext=(file.name.split('.').pop()||'').toLowerCase(),buffer=await file.arrayBuffer();
-    if(ext==='docx')return {type:'document',...(await docx(buffer))};
-    if(ext==='xlsx')return {type:'spreadsheet',...(await xlsx(buffer))};
-    if(ext==='pptx')return {type:'presentation',...(await pptx(buffer))};
+  async function readFile(file,progress){
+    const ext=(file.name.split('.').pop()||'').toLowerCase();if(progress)progress('Loading '+file.name+'…');
+    const buffer=await file.arrayBuffer();await breathe(progress,'Opening '+file.name+'…');
+    if(ext==='docx')return {type:'document',...(await docx(buffer,progress))};
+    if(ext==='xlsx')return {type:'spreadsheet',...(await xlsx(buffer,progress))};
+    if(ext==='pptx')return {type:'presentation',...(await pptx(buffer,progress))};
     throw new Error('Unsupported Office file: .'+ext);
   }
 
