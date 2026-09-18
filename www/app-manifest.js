@@ -1,8 +1,9 @@
 (()=> {
   const manifest={
     app:'MSA One',
-    version:'46.0.0',
-    buildId:'MSA-ONE-46',
+    appId:'com.msa.one.displayfit37',
+    version:'47.0.0',
+    buildId:'MSA-ONE-47',
     channel:'built-in',
     dataSchema:1,
     librarySchema:2,
@@ -12,7 +13,10 @@
       'library-update-history',
       'preserve-user-library',
       'built-in-capability-index',
-      'offline-template-library'
+      'offline-template-library',
+      'premium-prepared-inactive',
+      'force-update-policy-prepared',
+      'billing-bridge-template-prepared'
     ]
   };
   globalThis.MSAAppManifest=Object.freeze(manifest);
