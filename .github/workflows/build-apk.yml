@@ -33,9 +33,9 @@ jobs:
       - name: Test source contracts
         run: npm test
 
-      - name: Verify MSA One 40 source UI
+      - name: Verify MSA One 41 source UI
         run: |
-          grep -q 'data-build-id="MSA-ONE-40"' www/index.html
+          grep -q 'data-build-id="MSA-ONE-41"' www/index.html
           grep -q 'data-calendar-home' www/index.html
           grep -q 'data-calendar-me' www/index.html
           grep -q 'theme-v2.css' www/index.html
@@ -43,6 +43,8 @@ jobs:
           grep -q 'app-actions.js' www/index.html
           grep -q 'storage-engine.js' www/index.html
           grep -q 'office-engine.js' www/index.html
+          grep -q 'import-engine.js' www/index.html
+          grep -q 'MSAImport' www/import-engine.js
           grep -q 'formula-engine.js' www/index.html
           grep -q 'MSAOffice' www/office-engine.js
           grep -q 'evalFormula' www/create-studio.js
@@ -62,23 +64,23 @@ jobs:
       - name: Sync web app
         run: npx cap sync android
 
-      - name: Set Android Build 40 version
+      - name: Set Android Build 41 version
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('android/app/build.gradle')
           s=p.read_text()
-          s=s.replace('versionCode 1','versionCode 40')
-          s=s.replace('versionName "1.0"','versionName "40.0"')
+          s=s.replace('versionCode 1','versionCode 41')
+          s=s.replace('versionName "1.0"','versionName "41.0"')
           p.write_text(s)
           PY
 
       - name: Verify Android package and assets
         run: |
           grep -q 'com.msa.one.displayfit37' android/app/build.gradle
-          grep -q 'versionCode 40' android/app/build.gradle
-          grep -q 'versionName "40.0"' android/app/build.gradle
-          grep -q 'data-build-id="MSA-ONE-40"' android/app/src/main/assets/public/index.html
+          grep -q 'versionCode 41' android/app/build.gradle
+          grep -q 'versionName "41.0"' android/app/build.gradle
+          grep -q 'data-build-id="MSA-ONE-41"' android/app/src/main/assets/public/index.html
           grep -q 'data-calendar-home' android/app/src/main/assets/public/index.html
           grep -q 'data-calendar-me' android/app/src/main/assets/public/index.html
           test -f android/app/src/main/assets/public/theme-v2.css
@@ -86,6 +88,7 @@ jobs:
           test -f android/app/src/main/assets/public/app-actions.js
           test -f android/app/src/main/assets/public/storage-engine.js
           test -f android/app/src/main/assets/public/office-engine.js
+          test -f android/app/src/main/assets/public/import-engine.js
           test -f android/app/src/main/assets/public/formula-engine.js
 
       - name: Build debug APK
@@ -95,6 +98,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MSA-One-40-APK
+          name: MSA-One-41-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
