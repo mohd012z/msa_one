@@ -31,8 +31,8 @@
   function mount(){
     if(document.querySelector('.studio-overlay')){wireTiles();return}
     const x=document.createElement('section');x.className='studio-overlay';
-    x.innerHTML='<header class="studio-top"><button data-close>‹</button><div class="studio-title"><input data-title value="Untitled"><div class="studio-status">Ready · autosaves on this device</div></div><button class="studio-tool" data-import>Import</button><button class="studio-primary" data-export>Export</button></header><div class="studio-body"><div class="studio-mode">'+Object.entries(TYPES).map(([k,v])=>'<button class="studio-type" data-type="'+k+'">'+v[0]+'<br>'+v[1]+'</button>').join('')+'</div><div data-work></div><div class="studio-recents" data-recents></div></div>';
-    document.body.appendChild(x);x.querySelector('[data-close]').onclick=close;x.querySelector('[data-import]').onclick=importCurrent;x.querySelector('[data-export]').onclick=exportCurrent;x.querySelector('[data-title]').oninput=queueSave;
+    x.innerHTML='<header class="studio-top"><button class="studio-icon-btn" data-close aria-label="Close">‹</button><div class="studio-title"><input data-title value="Untitled"><div class="studio-status">Ready · autosaves on this device</div></div><button class="studio-tool" data-import>Import</button><button class="studio-primary" data-save>Save</button><button class="studio-tool" data-export>Export</button></header><div class="studio-body"><div class="studio-mode">'+Object.entries(TYPES).map(([k,v])=>'<button class="studio-type" data-type="'+k+'">'+v[0]+'<br>'+v[1]+'</button>').join('')+'</div><div data-work></div><div class="studio-recents" data-recents></div></div><footer class="studio-bottom"><button data-bottom-save>💾<span>Save</span></button><button data-bottom-import>↥<span>Import</span></button><button data-bottom-export>↧<span>Export</span></button><button data-bottom-files>▤<span>Files</span></button></footer>';
+    document.body.appendChild(x);x.querySelector('[data-close]').onclick=close;x.querySelector('[data-import]').onclick=importCurrent;x.querySelector('[data-save]').onclick=()=>saveDraft(true);x.querySelector('[data-export]').onclick=exportCurrent;x.querySelector('[data-bottom-save]').onclick=()=>saveDraft(true);x.querySelector('[data-bottom-import]').onclick=importCurrent;x.querySelector('[data-bottom-export]').onclick=exportCurrent;x.querySelector('[data-bottom-files]').onclick=()=>{close();window.show?.('files')};x.querySelector('[data-title]').oninput=queueSave;
     x.querySelectorAll('[data-type]').forEach(b=>b.onclick=()=>open(b.dataset.type));wireTiles();renderRecents();
   }
 
@@ -58,9 +58,15 @@
     }else if(state.type==='presentation'){
       const data=json(p?.content,{slides:defaultSlides()}),slides=Array.isArray(data)?data:(data.slides||defaultSlides());state.slide=Math.min(state.slide,Math.max(0,slides.length-1));renderPresentation(w,slides);
     }else if(state.type==='pdf'){
-      const text=p?.content||'MSA One PDF\n\nType or paste content here. Export creates a real PDF file locally.';
-      w.innerHTML='<div class="studio-tools"><span class="studio-status">Text PDF · offline export</span></div><textarea class="studio-pdf-text" data-pdf-text></textarea>';
-      const ta=w.querySelector('[data-pdf-text]');ta.value=text;ta.oninput=queueSave;
+      const content=p?.content||'MSA One PDF\n\nType or paste content here. Export creates a real PDF file locally.';
+      if(/^blob:/.test(content)){
+        w.innerHTML='<div class="studio-tools"><span class="studio-status">PDF viewer · imported file</span><button class="studio-tool" data-pdf-new>New editable PDF</button></div><iframe class="studio-pdf-viewer" data-pdf-viewer title="PDF document"></iframe>';
+        w.querySelector('[data-pdf-viewer]').src=content;
+        w.querySelector('[data-pdf-new]').onclick=()=>{put({id:state.id,type:'pdf',title:x.querySelector('[data-title]').value,content:'',updated:Date.now()});render()};
+      }else{
+        w.innerHTML='<div class="studio-tools"><span class="studio-status">Editable text PDF · offline export</span></div><textarea class="studio-pdf-text" data-pdf-text></textarea>';
+        const ta=w.querySelector('[data-pdf-text]');ta.value=content;ta.oninput=queueSave;
+      }
     }
     renderRecents();
   }
@@ -206,10 +212,10 @@
     if(state.type==='presentation')return JSON.stringify({slides:currentSlides()});
     if(state.type==='pdf')return document.querySelector('[data-pdf-text]')?.value||'';return'';
   }
-  function saveDraft(){
+  function saveDraft(manual=false){
     if(!TYPES[state.type])return;const title=document.querySelector('[data-title]')?.value.trim()||'Untitled '+TYPES[state.type][1];if(!state.id)state.id='p_'+Date.now().toString(36);
     try{put({id:state.id,type:state.type,title,content:currentContent(),updated:Date.now()})}catch(e){friendlyError('This draft is too large for local storage. Remove a large image, export the file, or back up the workspace first.');return}
-    const s=document.querySelector('.studio-status');if(s)s.textContent='Saved · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});renderRecents();
+    const s=document.querySelector('.studio-status');if(s)s.textContent='Saved locally · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});if(manual)friendlySuccess('Saved in MSA One › Files on this device.');renderRecents();
   }
   function queueSave(){
     clearTimeout(state.timer);
@@ -219,10 +225,10 @@
       else saveDraft();
     },480);
   }
-  function open(type='document',id=null){mount();state.type=TYPES[type]?type:'document';state.id=id;state.slide=0;state.sheet=0;state.rowStart=0;state.colStart=0;document.querySelector('.studio-overlay').classList.add('on');render();requestAnimationFrame(()=>{window.MSAHelper?.refresh?.();window.MSAPerformance?.mount?.()})}
+  function open(type='document',id=null){mount();state.type=TYPES[type]?type:'document';state.id=id;state.slide=0;state.sheet=0;state.rowStart=0;state.colStart=0;document.body.classList.add('studio-open');const overlay=document.querySelector('.studio-overlay');overlay.classList.add('on','studio-opening');setTimeout(()=>overlay.classList.remove('studio-opening'),260);render();requestAnimationFrame(()=>{window.MSAHelper?.refresh?.();window.MSAPerformance?.mount?.()})}
   function close(){
     clearTimeout(state.timer);if(state.idleSave!=null){window.MSAPerformance?.cancelIdle?.(state.idleSave);state.idleSave=null}
-    saveDraft();document.querySelector('.studio-overlay')?.classList.remove('on');requestAnimationFrame(()=>window.MSAHelper?.refresh?.());
+    saveDraft();document.body.classList.remove('studio-open');document.querySelector('.studio-overlay')?.classList.remove('on');requestAnimationFrame(()=>window.MSAHelper?.refresh?.());
   }
   function openProject(id){const p=get(id);if(p)open(p.type,p.id)}
   function createProject(type,title,content){
@@ -285,18 +291,19 @@
     else if(state.type==='document')input.accept='.docx,.txt,.html,.htm,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/html';
     else if(state.type==='html')input.accept='.html,.htm,.txt,text/html,text/plain';
     else if(state.type==='presentation')input.accept='.pptx,image/*,.json,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/json';
-    else input.accept='.txt,text/plain';
+    else input.accept='.pdf,.txt,application/pdf,text/plain';
     input.onchange=async()=>{
       const file=input.files?.[0];if(!file)return;
       try{
         const ext=(file.name.split('.').pop()||'').toLowerCase(),base=file.name.replace(/\.[^.]+$/,'');
-        if(['docx','xlsx','pptx'].includes(ext)){
+        if(['docx','xlsx','pptx','pdf'].includes(ext)){
           if(!window.MSAImport)throw new Error('Office import engine is not loaded.');
           const imported=await runBusy('Opening '+file.name,progress=>window.MSAImport.readFile(file,progress)),id='p_'+Date.now().toString(36);
           let content='';
           if(imported.type==='document')content=imported.html;
           else if(imported.type==='spreadsheet')content=JSON.stringify({sheets:imported.sheets,activeSheet:0});
           else if(imported.type==='presentation')content=JSON.stringify({slides:imported.slides});
+          else if(imported.type==='pdf')content=imported.blobUrl;
           put({id,type:imported.type,title:base,content,updated:Date.now()});
           open(imported.type,id);return;
         }
