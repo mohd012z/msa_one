@@ -18,19 +18,12 @@ const template=fs.readFileSync(path.join(root,'premium-prep','android','PremiumB
 fs.writeFileSync(path.join(pkgDir,'PremiumBillingPlugin.java'),template);
 
 const mainActivity=path.join(pkgDir,'MainActivity.java');
-fs.writeFileSync(mainActivity,`package com.msa.one.displayfit37;
-
-import android.os.Bundle;
-import com.getcapacitor.BridgeActivity;
-
-public class MainActivity extends BridgeActivity {
-    @Override
-    public void onCreate(Bundle savedInstanceState) {
-        registerPlugin(PremiumBillingPlugin.class);
-        super.onCreate(savedInstanceState);
-    }
+let main=fs.existsSync(mainActivity)?fs.readFileSync(mainActivity,'utf8'):'';
+if(!main.includes('setAllowFileAccess(false)'))throw new Error('Android security hardening must be applied before Premium activation.');
+if(!main.includes('registerPlugin(PremiumBillingPlugin.class)')){
+  main=main.replace('public void onCreate(Bundle savedInstanceState) {','public void onCreate(Bundle savedInstanceState) {\n        registerPlugin(PremiumBillingPlugin.class);');
+  fs.writeFileSync(mainActivity,main);
 }
-`);
 
 const gradle=path.join(android,'app','build.gradle');
 let g=fs.readFileSync(gradle,'utf8');
