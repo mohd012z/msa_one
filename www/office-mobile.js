@@ -49,11 +49,22 @@
   document.body.appendChild(menu);
  }
  function showMore(){
-  if(sheet){sheet.remove();sheet=null;return}
+  if(sheet){hideMore();return}
   const s=studio(),name=s?.querySelector('[data-title]')?.value||'Untitled',kind=type();
   sheet=document.createElement('div');sheet.className='office-more-sheet';sheet.innerHTML='<div class="office-sheet-grab"></div><div class="office-sheet-title"><h2>More Options</h2><button data-x>×</button></div><div class="office-action-card"><button class="office-action"><i>'+({document:'📄',spreadsheet:'📊',pdf:'📕'}[kind]||'📄')+'</i><b>'+escapeHtml(name)+'<small> · '+kind.toUpperCase()+'</small></b><span>›</span></button></div><h3>File Actions</h3><div class="office-action-card"><button class="office-action" data-save><i>▣</i><b>Save<small>Autosave local workspace</small></b><span>›</span></button><button class="office-action" data-copy><i>⧉</i><b>Save a Copy</b><span>›</span></button><button class="office-action" data-export><i>↥</i><b>Export</b><span>›</span></button><button class="office-action" data-print><i>▤</i><b>Print</b><span>›</span></button><button class="office-action" data-rename><i>✎</i><b>Rename</b><span>›</span></button></div><div class="office-action-card"><button class="office-action" data-zoom><i>⌕</i><b>Reset Zoom<small>Pinch anywhere on the page to zoom</small></b><span>100%</span></button><button class="office-action" data-read><i>◉</i><b>Reading View</b><span>›</span></button></div>';
-  document.body.appendChild(sheet);sheet.querySelector('[data-x]').onclick=showMore;sheet.querySelector('[data-save]').onclick=()=>s?.querySelector('[data-save]')?.click();sheet.querySelector('[data-copy]').onclick=()=>s?.querySelector('[data-export]')?.click();sheet.querySelector('[data-export]').onclick=()=>s?.querySelector('[data-export]')?.click();sheet.querySelector('[data-print]').onclick=()=>window.print();sheet.querySelector('[data-rename]').onclick=()=>s?.querySelector('[data-title]')?.focus();sheet.querySelector('[data-zoom]').onclick=()=>setZoom(1);sheet.querySelector('[data-read]').onclick=()=>window.MSAPerformance?.toggleReading?.();
+  document.body.appendChild(sheet);bindSheetDrag(sheet);sheet.querySelector('[data-x]').onclick=hideMore;sheet.querySelector('[data-save]').onclick=()=>s?.querySelector('[data-save]')?.click();sheet.querySelector('[data-copy]').onclick=()=>s?.querySelector('[data-export]')?.click();sheet.querySelector('[data-export]').onclick=()=>s?.querySelector('[data-export]')?.click();sheet.querySelector('[data-print]').onclick=()=>window.print();sheet.querySelector('[data-rename]').onclick=()=>s?.querySelector('[data-title]')?.focus();sheet.querySelector('[data-zoom]').onclick=()=>setZoom(1);sheet.querySelector('[data-read]').onclick=()=>window.MSAPerformance?.toggleReading?.();
  }
+ function hideMore(){
+  if(!sheet)return;const current=sheet;sheet=null;current.classList.add('dismissing');setTimeout(()=>current.remove(),230);
+ }
+ function bindSheetDrag(el){
+  const handle=el.querySelector('.office-sheet-grab'),title=el.querySelector('.office-sheet-title');let active=false,startY=0,lastY=0;
+  const start=e=>{active=true;startY=(e.touches?.[0]?.clientY??e.clientY);lastY=startY;el.classList.add('dragging')};
+  const move=e=>{if(!active)return;const y=(e.touches?.[0]?.clientY??e.clientY),dy=Math.max(0,y-startY);lastY=y;el.style.transform='translateY('+dy+'px)'};
+  const end=()=>{if(!active)return;active=false;el.classList.remove('dragging');const dy=Math.max(0,lastY-startY);if(dy>90){hideMore();return}el.style.transform='';};
+  [handle,title].filter(Boolean).forEach(target=>{target.addEventListener('touchstart',start,{passive:true});target.addEventListener('touchmove',move,{passive:true});target.addEventListener('touchend',end,{passive:true});target.addEventListener('pointerdown',start);target.addEventListener('pointermove',move);target.addEventListener('pointerup',end);target.addEventListener('pointercancel',end)});
+ }
+ 
  function escapeHtml(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
  function close(){root&&(root.style.display='none');menu?.remove();sheet?.remove();menu=sheet=null;setZoom(1)}
  const obs=new MutationObserver(()=>requestAnimationFrame(()=>{studio()?refresh():close()}));
