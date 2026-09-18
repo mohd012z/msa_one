@@ -7,7 +7,7 @@
   function uid(prefix='id'){return prefix+'_'+Date.now().toString(36)+'_'+Math.random().toString(36).slice(2,7)}
   function clamp(n,min,max){n=Number(n);return Math.min(max,Math.max(min,n))}
   function debounce(fn,ms=250){let t;return(...a)=>{clearTimeout(t);t=setTimeout(()=>fn(...a),ms)}}
-  function emit(name,detail){for(const fn of listeners.get(name)||[])try{fn(detail)}catch{};try{document?.dispatchEvent(new CustomEvent('msa:'+name,{detail}))}catch{}}
+  function emit(name,detail){for(const fn of listeners.get(name)||[])try{fn(detail)}catch{};try{if(typeof document!=='undefined')document.dispatchEvent(new CustomEvent('msa:'+name,{detail}))}catch{}}
   function on(name,fn){if(!listeners.has(name))listeners.set(name,new Set());listeners.get(name).add(fn);return()=>listeners.get(name)?.delete(fn)}
   function download(name,data,type='application/octet-stream'){
     const blob=data instanceof Blob?data:new Blob([data],{type}),u=URL.createObjectURL(blob),a=document.createElement('a');
