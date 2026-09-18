@@ -2,9 +2,69 @@
 
 MSA One is an all-in-one mobile office workspace for documents, spreadsheets, presentations, PDF, Smart HTML, planning, storage, reusable libraries, contextual help and adaptive performance.
 
-## Current build — MSA One 45
+## Current build — MSA One 46
 
-MSA One 45 keeps Android application ID `com.msa.one.displayfit37`, so it updates the existing installation instead of creating a separate app.
+MSA One 46 keeps Android application ID `com.msa.one.displayfit37`, so it updates the existing installation instead of creating a separate app.
+
+## App → Library Auto-Sync
+
+Build 46 makes the Built-in Library version-aware.
+
+When MSA One itself is updated, the installed app provides a new `MSAAppManifest`. On first launch after the update, `library-updater.js` compares the previous Library catalog with the capabilities and templates in the new build.
+
+The Library then automatically:
+
+- re-indexes built-in modules
+- re-indexes built-in templates
+- records added and retired module/template IDs
+- records update history
+- shows a **NEW** Library status until the update is acknowledged
+- preserves personal templates
+- preserves favorites
+- preserves recent-template history
+- mirrors Library state through the normal storage/backup layer
+
+The Library update panel shows the installed app version/build, last sync time, schema version, module/template counts and update history.
+
+### Safe update model
+
+The Library does **not** download or execute new software code independently.
+
+Software/code changes arrive through the normal MSA One app/APK update. After installation, the Library indexes what is actually packaged in that build.
+
+This avoids silently running remote code and keeps the capability list aligned with the tested application package.
+
+A future remote catalog can be added for non-executable content such as templates/help metadata, but executable modules should remain tied to a signed/tested application build.
+
+### Personal Library layer
+
+User-owned Library data is stored separately in `msaUserLibraryV1`.
+
+That layer can contain:
+
+- favorites
+- personal templates
+- recently used templates
+
+Built-in items can change with a software update without overwriting this personal layer.
+
+Library migration/update state is stored in `msaLibraryStateV2`.
+
+Both keys are included in IndexedDB mirroring and workspace backup/restore.
+
+### Version manifest
+
+`www/app-manifest.js` is now the source-visible build/library manifest.
+
+Build 46 CI verifies that:
+
+- package version is 46.0.0
+- Capacitor app name is MSA One 46
+- UI build ID is MSA-ONE-46
+- manifest version/build match the package/UI
+- Library updater is syntax checked
+- manifest/updater files are packaged into Android
+- Build 45 → Build 46 Library migration preserves user-owned data
 
 ## Smooth Performance System
 
@@ -187,9 +247,9 @@ GitHub Actions builds the Android debug APK with Capacitor.
 1. Open **Actions → Build MSA One APK**.
 2. Run the workflow manually or push a relevant source change to `main`.
 3. Open the successful run.
-4. Download **MSA-One-45-APK**.
+4. Download **MSA-One-46-APK**.
 
-The workflow runs syntax/tests, verifies performance/helper/library assets, syncs the same `www` source into Capacitor, sets Android `versionCode 45` / `versionName 45.0`, builds the APK and uploads it.
+The workflow runs syntax/tests, verifies performance/helper/library assets, syncs the same `www` source into Capacitor, sets Android `versionCode 46` / `versionName 46.0`, builds the APK and uploads it.
 
 ## Development
 
