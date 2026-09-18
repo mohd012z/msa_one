@@ -8,11 +8,11 @@ globalThis.localStorage={
   clear:()=>store.clear()
 };
 
-const build52Modules=[
+const build53Modules=[
   'core','document','spreadsheet','presentation','pdf','html','files','storage',
   'planner','media','voice','ui','helper','performance','premium','updates','security'
 ];
-const build52Templates=[
+const build53Templates=[
   'doc-report','doc-letter','doc-minutes','doc-procedure',
   'sheet-budget','sheet-inventory','sheet-kpi','sheet-task',
   'ppt-update','ppt-training','ppt-proposal',
@@ -21,13 +21,13 @@ const build52Templates=[
 
 localStorage.setItem('msaLibraryStateV2',JSON.stringify({
   schema:2,
-  lastBuild:'MSA-ONE-52',
-  lastVersion:'52.0.0',
+  lastBuild:'MSA-ONE-53',
+  lastVersion:'53.0.0',
   lastSync:'2026-09-18T00:00:00.000Z',
-  catalog:{modules:build52Modules,templates:build52Templates},
+  catalog:{modules:build53Modules,templates:build53Templates},
   lastUpdate:null,
   history:[],
-  ackBuild:'MSA-ONE-52'
+  ackBuild:'MSA-ONE-53'
 }));
 localStorage.setItem('msaUserLibraryV1',JSON.stringify({
   schema:1,
@@ -52,7 +52,7 @@ const synced=U.sync({quiet:true});
 assert.equal(synced.version,'54.0.0');
 assert.equal(synced.buildId,'MSA-ONE-54');
 assert.equal(synced.pendingUpdate,true,'upgrade must be marked new until acknowledged');
-assert.equal(synced.lastUpdate.fromBuild,'MSA-ONE-52');
+assert.equal(synced.lastUpdate.fromBuild,'MSA-ONE-53');
 assert.equal(synced.lastUpdate.toBuild,'MSA-ONE-54');
 assert.deepEqual(synced.lastUpdate.addedModules,[]);
 assert.deepEqual(synced.lastUpdate.removedModules,[]);
@@ -72,6 +72,6 @@ U.removeUserTemplate(added.id);
 
 const ack=U.acknowledge();
 assert.equal(ack.pendingUpdate,false,'acknowledging update must clear NEW state');
-assert.ok(ack.history.some(x=>x.fromBuild==='MSA-ONE-52'&&x.toBuild==='MSA-ONE-54'),'53→54 upgrade must remain in update history');
+assert.ok(ack.history.some(x=>x.fromBuild==='MSA-ONE-53'&&x.toBuild==='MSA-ONE-54'),'53→54 upgrade must remain in update history');
 
 console.log('Build 53 to 54 Safe UI migration contract passed');
