@@ -15,11 +15,13 @@ assert.equal(cap.appId,'com.msa.one.displayfit37','Android app ID must remain st
 assert.ok(html.includes('data-build-id="MSA-ONE-40"'),'source UI build ID must match build');
 assert.ok(html.includes('storage-engine.js'),'source must load durable storage');
 assert.ok(html.includes('office-engine.js'),'source must load offline Office engine');
+assert.ok(html.includes('formula-engine.js'),'source must load formula engine');
 assert.ok(workflow.includes('versionCode 40'),'Android versionCode must match build');
 assert.ok(workflow.includes('versionName "40.0"'),'Android versionName must match build');
 assert.ok(workflow.includes('MSA-One-40-APK'),'artifact name must match build');
 assert.ok(workflow.includes('evalFormula'),'workflow must verify formula support');
 assert.ok(workflow.includes('dataUrlAsset'),'workflow must verify slide image support');
+assert.ok(pkg.scripts['check:syntax'],'package must syntax-check browser JavaScript');
 assert.ok(!workflow.includes('Package Calendar and adaptive display UI'),'workflow must not mutate source UI before packaging');
 assert.ok(!workflow.includes('\\n          grep'),'workflow must not contain escaped newline commands');
 
