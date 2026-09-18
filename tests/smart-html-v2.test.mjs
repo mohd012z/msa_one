@@ -1,0 +1,10 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const p='www/smart-html-v2.js';assert.ok(fs.existsSync(p),'missing Smart HTML v2 '+p);const s=fs.readFileSync(p,'utf8');
+for(const k of ['MSASmartHTML','createProject','importHTML','exportHTML','saveProject','restoreProject','sanitizeHTML','buildPreview','previewMode','sourceMode'])assert.ok(s.includes(k),'missing Smart HTML v2 '+k);
+for(const k of ['sandbox','srcdoc','allow-scripts','allow-same-origin','external','script','iframe'])assert.ok(s.includes(k),'missing Smart HTML security boundary '+k);
+for(const k of ['MSAProjectStore','MSARagaConverter','MSAAgentRouter','handoff','MSADocumentIR'])assert.ok(s.includes(k),'missing Smart HTML integration '+k);
+for(const k of ['mobile','desktop','portrait','landscape','zoom'])assert.ok(s.includes(k),'missing Smart HTML preview control '+k);
+for(const k of ['AVAILABLE','BLOCKED','SANITIZED','UNSUPPORTED'])assert.ok(s.includes(k),'missing Smart HTML capability state '+k);
+assert.ok(!s.includes("eval("),'Smart HTML must not use eval');
+assert.ok(!s.includes("new Function("),'Smart HTML must not use dynamic Function');
+console.log('Smart HTML v2 contract passed');
