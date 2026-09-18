@@ -157,7 +157,7 @@ public class MSAFileBridgePlugin extends Plugin {
             try {
                 Uri uri = Uri.parse(uriText);
                 JSObject meta = metadata(uri);
-                long knownSize = meta.getLong("size", -1L);
+                long knownSize = meta.optLong("size", -1L);
                 if (knownSize > MAX_READ_BYTES) throw new IllegalStateException("FILE_TOO_LARGE");
 
                 ContentResolver resolver = getContext().getContentResolver();
