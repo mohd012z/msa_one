@@ -1,20 +1,121 @@
 # MSA One
 
-MSA One is an all-in-one mobile office workspace for documents, spreadsheets, presentations, PDF, Smart HTML, planning, storage, reusable libraries and contextual help.
+MSA One is an all-in-one mobile office workspace for documents, spreadsheets, presentations, PDF, Smart HTML, planning, storage, reusable libraries, contextual help and adaptive performance.
 
-## Current build — MSA One 44
+## Current build — MSA One 45
 
-MSA One 44 keeps Android application ID `com.msa.one.displayfit37`, so it updates the existing installation instead of creating a separate app.
+MSA One 45 keeps Android application ID `com.msa.one.displayfit37`, so it updates the existing installation instead of creating a separate app.
 
-## Friendly Helper System
+## Smooth Performance System
 
-Build 44 adds a context-aware helper that stays with the user across the main MSA One workflows.
+Build 45 adds a dedicated performance layer in `www/performance-engine.js` and `www/performance.css`.
 
-A small **?** button is always available. It opens a mobile bottom sheet on phones and a compact help panel on larger displays.
+### Adaptive performance modes
 
-The helper automatically changes its content based on the current screen or editor.
+The app supports:
 
-Supported help contexts:
+- **Auto** — chooses a practical profile from available CPU/memory hints
+- **Smooth** — keeps richer effects and larger spreadsheet render windows
+- **Battery** — reduces blur, shadows and render-window size
+
+MSA One samples `requestAnimationFrame()` timing to estimate whether the current display is behaving closer to 60, 90 or 120 Hz. It does not force a refresh rate; animations stay synchronized to the refresh rate the WebView/browser actually provides.
+
+### High-refresh-friendly motion
+
+- draggable Lens updates are frame-synced with `requestAnimationFrame`
+- no fixed `setInterval` animation loop is used
+- CSS transitions remain refresh-rate independent
+- lower-performance profiles reduce expensive blur/shadow work
+- reduced-motion preferences remain supported
+
+### Faster startup
+
+- the previous fixed 1.6-second splash delay has been removed
+- splash dismissal now happens immediately after the first rendered frames
+- storage bootstrap batches IndexedDB reads/writes instead of repeatedly opening the database for each key
+- superseded GitHub Actions APK builds are cancelled automatically
+
+### Responsive display / resolution
+
+The performance layer tracks `VisualViewport` where available and maintains:
+
+- `--msa-vw`
+- `--msa-vh`
+- current viewport width/height
+- portrait/landscape state
+- device pixel ratio
+
+Pages and Create Studio use the current visual viewport height, improving behavior around rotation and the mobile keyboard.
+
+### Large spreadsheet performance
+
+Large worksheets now use virtual row and column windows instead of creating every cell input at once.
+
+Render-window size adapts to the performance profile.
+
+The workbook data remains complete; only the currently visible row/column window is painted.
+
+The spreadsheet includes row and column paging controls and still preserves formulas, sheets, XLSX export and CSV export.
+
+### Idle autosave
+
+Create Studio autosave is debounced and then scheduled during idle time when supported. Closing the editor still performs an immediate save.
+
+A shared `MSAProjects` memory cache also avoids repeatedly parsing the full project array from localStorage during normal editing and Files rendering.
+
+### Responsive import
+
+Large import work is divided into smaller UI-friendly chunks:
+
+- CSV parsing periodically yields to the browser
+- OOXML ZIP reading yields between package entries
+- DOCX parsing yields between document blocks
+- XLSX parsing yields between worksheet row groups
+- PPTX parsing yields between slide groups
+
+Import status is shown through the performance busy indicator.
+
+Office ZIP safety limits remain active for compressed size, expanded size, entry count and invalid ZIP bounds.
+
+### Export feedback
+
+Document, Spreadsheet, Presentation, PDF and Smart HTML export now use the common busy/status layer so the interface can render feedback before file generation starts.
+
+## Reading View
+
+Build 45 adds a dedicated **Reading View**.
+
+Controls include:
+
+- text size
+- icon size
+- reading line spacing
+- distraction-free view
+- one-tap exit
+
+The reading toolbar uses clear `A−`, `A＋`, icon-size controls and a visible **Done** button.
+
+Reading View makes supported editor fields read-only temporarily, hides unnecessary navigation/toolbars and restores the editing state when closed.
+
+The Me page now contains **Smoothness & Reading** controls plus device/performance information.
+
+## Built-in Library
+
+The Built-in Function Library now also registers **Performance & Reading**.
+
+Examples:
+
+- `MSALibrary.api('performance').reading(true)`
+- `MSALibrary.api('performance').mode('smooth')`
+- `MSALibrary.api('performance').font(1.15)`
+- `MSALibrary.api('performance').icons(1.1)`
+- `MSALibrary.api('performance').device()`
+
+Existing Library modules remain available for Core, Document, Spreadsheet, Presentation, PDF, Smart HTML, Files, Storage, Planner, Media, Voice, UI and Friendly Helper.
+
+## Friendly Helper retained
+
+Build 44 contextual help remains available across:
 
 - Home
 - Files
@@ -25,135 +126,58 @@ Supported help contexts:
 - PDF
 - Smart HTML
 - AI workspace
-- Me / workspace settings
+- Me
 - Built-in Library
 - Planner
 
-### Guide
-
-Each context contains short task-based steps instead of a long manual.
-
-For example, Spreadsheet guidance covers:
-
-1. tap a cell,
-2. type a value or formula,
-3. use worksheet tabs,
-4. preview a chart,
-5. export XLSX.
-
-Document guidance points to headings, tables, images and DOCX export.
-
-Presentation guidance points to slide creation, layouts, images and PPTX export.
-
-### Show Me
-
-Every guide step can use **Show me**.
-
-MSA One scrolls to the relevant control, highlights it and temporarily dims the rest of the screen. The highlight disappears automatically or when tapped.
-
-### Examples
-
-The helper contains practical examples for the active workspace, including spreadsheet formulas such as:
-
-- `=C2*D2`
-- `=SUM(E2:E20)`
-- `=AVERAGE(C2:C12)`
-- `=MIN(C2:C20)`
-- `=MAX(C2:C20)`
-
-Examples can be copied directly when clipboard access is available.
-
-### Troubleshoot
-
-Each main function has contextual recovery information.
-
-Examples:
-
-- DOCX layout looks different
-- workbook formula errors
-- unsupported PowerPoint animation
-- large image/storage problems
-- Office import failure
-- backup/restore problems
-- unavailable voice recognition
-- difference between local routing and connected generative AI
-
-### First-use behavior
-
-The Helper does not run a long forced tutorial.
-
-- A welcome hint is shown once.
-- Each workspace can show one first-use nudge.
-- Completed workspaces stop nudging.
-- Manual help remains available through the **?** button.
-
-Helper state is stored in `msaHelperV1`, mirrored to IndexedDB and included in workspace backup/restore.
-
-## Friendly feedback and recovery
-
-Build 44 also replaces several abrupt failure paths with clearer feedback.
-
-- Office import errors can open **Troubleshoot**.
-- Oversized drafts explain how to recover.
-- Missing Office export services show a helper error instead of failing silently.
-- Backup restore uses friendly success/error feedback.
-- Project deletion includes the project name and offers **Undo** after deletion.
-- Create Studio shows an additional helper status strip such as **Autosaved locally · Need help with Spreadsheet?**
-
-The helper UI supports reduced-motion settings and responsive phone/desktop layouts.
-
-## Built-in Function Library
-
-The Built-in Library from Build 43 remains available and now includes **Friendly Helper** as another registered module.
-
-The common API gateway can call helper functions as well:
-
-- `MSALibrary.api('helper').open()`
-- `MSALibrary.api('helper').troubleshoot()`
-- `MSALibrary.api('helper').current()`
-
-Existing module APIs remain available for Document, Spreadsheet, Presentation, PDF, Smart HTML, Files, Storage, Planner, Media, Voice and UI.
+The Helper no longer uses a global subtree MutationObserver. Navigation and editor events refresh it explicitly, reducing unnecessary DOM observation work.
 
 ## Core functionality retained
 
 - DOCX import/export with supported formatting, tables and practical image round-trip
-- Multi-sheet XLSX import/export with formulas and shared strings
+- multi-sheet XLSX import/export with formulas/shared strings
 - PPTX import/export with slide text, layouts and practical image round-trip
 - PDF text creation/export
-- Smart HTML editor and sandbox preview
+- Smart HTML editing and sandbox preview
 - CSV/TSV import and CSV export
 - Files-level **Open Office File**
 - IndexedDB mirroring and JSON workspace backup/restore
 - Calendar / Daily Planner
-- Built-in reusable templates
-- Responsive mobile/desktop display fitting
+- built-in reusable templates
+- responsive mobile/desktop display fitting
+- Friendly Helper + Show Me + troubleshooting
 
 ## Quality checks
 
 `npm test` now covers:
 
-- Friendly Helper context registry and API
-- first-use/helper persistence contracts
+- Build 45 package/version consistency
+- performance engine APIs
+- Reading View CSS/contracts
+- frame-synced and idle-scheduling primitives
+- virtual spreadsheet rows/columns
+- chunked CSV and Office import
+- shared project cache
+- batched storage bootstrap
 - Core/Media SDK
-- Built-in Library and API gateway
-- Create Studio friendly recovery paths
-- Files Undo recovery
-- storage of helper preferences
+- Built-in Library + Performance API
+- Friendly Helper
+- Files/Planner recovery
 - spreadsheet formulas
 - Office import/export round-trip
 - Office media handling
 - Calendar
-- Build 44 consistency
 
 ## Current limitations
 
-- Complex Word floating layouts, comments, tracked changes and advanced styles remain partial
-- Excel macros, pivot tables, advanced formatting and native chart objects remain partial
-- PowerPoint animations, SmartArt, audio/video and complex masters remain partial
-- Very large media may be resized or skipped to protect local storage
-- Some older WebViews without raw-deflate `DecompressionStream` support may not open normally compressed third-party Office files
-- Real generative AI answers still require a connected AI backend
-- Cloud synchronization is not connected
+- Web apps cannot force the Android display to 90/120 Hz; actual refresh rate is controlled by the device/WebView. MSA One is designed to avoid artificially capping animation and to follow `requestAnimationFrame`.
+- very large Office exports are still generated on the main JavaScript thread; progress appears before generation, but truly huge exports may still produce a short pause
+- project persistence still keeps a localStorage-compatible project representation, so very large media-heavy projects can hit browser/WebView storage limits
+- complex Word floating layouts/comments/tracked changes remain partial
+- Excel macros, pivot tables, advanced styles and native chart objects remain partial
+- PowerPoint animation, SmartArt, audio/video and complex masters remain partial
+- real generative AI responses still require a connected AI backend
+- cloud synchronization is not connected
 - Play Store release signing/AAB requires release credentials
 
 ## Android build
@@ -163,13 +187,13 @@ GitHub Actions builds the Android debug APK with Capacitor.
 1. Open **Actions → Build MSA One APK**.
 2. Run the workflow manually or push a relevant source change to `main`.
 3. Open the successful run.
-4. Download **MSA-One-44-APK**.
+4. Download **MSA-One-45-APK**.
 
-The workflow runs syntax checks and tests, verifies the helper/library assets, syncs the same `www` source into Capacitor, sets Android `versionCode 44` / `versionName 44.0`, builds the APK and uploads it.
+The workflow runs syntax/tests, verifies performance/helper/library assets, syncs the same `www` source into Capacitor, sets Android `versionCode 45` / `versionName 45.0`, builds the APK and uploads it.
 
 ## Development
 
 - Node.js 22+
 - Java 21
 - Capacitor 7.4.3 pinned
-- Run `npm test` before building
+- run `npm test` before building
