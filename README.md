@@ -1,140 +1,160 @@
 # MSA One
 
-MSA One is an all-in-one mobile office workspace for local documents, spreadsheets, presentations, PDF text documents, Smart HTML, planning, storage and reusable built-in libraries.
+MSA One is an all-in-one mobile office workspace for documents, spreadsheets, presentations, PDF, Smart HTML, planning, storage, reusable libraries and contextual help.
 
-## Current build — MSA One 43
+## Current build — MSA One 44
 
-MSA One 43 keeps the Android application ID `com.msa.one.displayfit37` so it updates the existing MSA One installation instead of appearing as a separate app.
+MSA One 44 keeps Android application ID `com.msa.one.displayfit37`, so it updates the existing installation instead of creating a separate app.
+
+## Friendly Helper System
+
+Build 44 adds a context-aware helper that stays with the user across the main MSA One workflows.
+
+A small **?** button is always available. It opens a mobile bottom sheet on phones and a compact help panel on larger displays.
+
+The helper automatically changes its content based on the current screen or editor.
+
+Supported help contexts:
+
+- Home
+- Files
+- Create
+- Document
+- Spreadsheet
+- Presentation
+- PDF
+- Smart HTML
+- AI workspace
+- Me / workspace settings
+- Built-in Library
+- Planner
+
+### Guide
+
+Each context contains short task-based steps instead of a long manual.
+
+For example, Spreadsheet guidance covers:
+
+1. tap a cell,
+2. type a value or formula,
+3. use worksheet tabs,
+4. preview a chart,
+5. export XLSX.
+
+Document guidance points to headings, tables, images and DOCX export.
+
+Presentation guidance points to slide creation, layouts, images and PPTX export.
+
+### Show Me
+
+Every guide step can use **Show me**.
+
+MSA One scrolls to the relevant control, highlights it and temporarily dims the rest of the screen. The highlight disappears automatically or when tapped.
+
+### Examples
+
+The helper contains practical examples for the active workspace, including spreadsheet formulas such as:
+
+- `=C2*D2`
+- `=SUM(E2:E20)`
+- `=AVERAGE(C2:C12)`
+- `=MIN(C2:C20)`
+- `=MAX(C2:C20)`
+
+Examples can be copied directly when clipboard access is available.
+
+### Troubleshoot
+
+Each main function has contextual recovery information.
+
+Examples:
+
+- DOCX layout looks different
+- workbook formula errors
+- unsupported PowerPoint animation
+- large image/storage problems
+- Office import failure
+- backup/restore problems
+- unavailable voice recognition
+- difference between local routing and connected generative AI
+
+### First-use behavior
+
+The Helper does not run a long forced tutorial.
+
+- A welcome hint is shown once.
+- Each workspace can show one first-use nudge.
+- Completed workspaces stop nudging.
+- Manual help remains available through the **?** button.
+
+Helper state is stored in `msaHelperV1`, mirrored to IndexedDB and included in workspace backup/restore.
+
+## Friendly feedback and recovery
+
+Build 44 also replaces several abrupt failure paths with clearer feedback.
+
+- Office import errors can open **Troubleshoot**.
+- Oversized drafts explain how to recover.
+- Missing Office export services show a helper error instead of failing silently.
+- Backup restore uses friendly success/error feedback.
+- Project deletion includes the project name and offers **Undo** after deletion.
+- Create Studio shows an additional helper status strip such as **Autosaved locally · Need help with Spreadsheet?**
+
+The helper UI supports reduced-motion settings and responsive phone/desktop layouts.
 
 ## Built-in Function Library
 
-Build 43 adds a permanent offline Library packaged inside the APK. It is not a web/CDN catalog: the modules, helpers, templates and capability checks are stored with the application.
+The Built-in Library from Build 43 remains available and now includes **Friendly Helper** as another registered module.
 
-The Library currently registers these main-function modules:
+The common API gateway can call helper functions as well:
 
-- **Core SDK** — escaping, safe names, IDs, JSON parsing, clamp/debounce, downloads, file picker and event helpers
-- **Document** — rich editor, tables, images, DOCX/PDF workflows
-- **Spreadsheet** — multi-sheet grid, formulas, chart preview, XLSX/CSV workflows
-- **Presentation** — slides, layouts, images and PPTX workflows
-- **PDF** — local PDF text workspace and export
-- **Smart HTML** — HTML source, sandbox preview and export
-- **Files** — local draft management and direct Office-file opening
-- **Storage & Backup** — localStorage, IndexedDB mirror, JSON backup and restore
-- **Planner** — Daily Program, Plan, Diary and Note calendar workflows
-- **Media** — image reading, resizing/compression and Office media conversion
-- **Voice & AI Routing** — device speech input and local task routing
-- **UI & Display** — display fit, orientation handling and Button Studio
+- `MSALibrary.api('helper').open()`
+- `MSALibrary.api('helper').troubleshoot()`
+- `MSALibrary.api('helper').current()`
 
-The Library appears from Home and Me and reports which packaged modules are ready on the current device.
+Existing module APIs remain available for Document, Spreadsheet, Presentation, PDF, Smart HTML, Files, Storage, Planner, Media, Voice and UI.
 
-### Unified Library API
+## Core functionality retained
 
-Build 43 adds a common API gateway:
-
-`MSALibrary.call(module, action, ...args)`
-
-Examples of registered groups include:
-
-- `MSALibrary.api('document')`
-- `MSALibrary.api('spreadsheet')`
-- `MSALibrary.api('presentation')`
-- `MSALibrary.api('pdf')`
-- `MSALibrary.api('html')`
-- `MSALibrary.api('files')`
-- `MSALibrary.api('storage')`
-- `MSALibrary.api('planner')`
-- `MSALibrary.api('media')`
-- `MSALibrary.api('voice')`
-- `MSALibrary.api('ui')`
-
-This gives future MSA One code one stable entry point instead of directly coupling every screen to many global objects.
-
-## Built-in Template Library
-
-Build 43 includes reusable offline starter templates for the major creation functions.
-
-### Document templates
-- Professional Report
-- Formal Letter
-- Meeting Minutes
-- Procedure / SOP
-
-### Spreadsheet templates
-- Budget Tracker
-- Inventory Register
-- KPI Dashboard Data
-- Task Tracker
-
-Spreadsheet templates can include multiple sheets and formulas.
-
-### Presentation templates
-- Project Update
-- Training Deck
-- Proposal Deck
-
-### PDF templates
-- PDF Notes
-- PDF Checklist
-
-### Smart HTML templates
-- Knowledge Guide
-- Mini Dashboard
-- Offline Form
-
-Selecting **Use** creates a real editable project through the new `MSAStudio.createProject()` library API.
-
-The existing Dashboard button is also connected to the built-in Mini Dashboard template instead of remaining a non-functional tile.
-
-## Shared Core and Media SDK
-
-`www/core-library.js` provides two reusable built-in objects:
-
-- `MSACore`
-- `MSAMedia`
-
-Create Studio, Office export and Files now use these shared helpers with local fallbacks. This reduces duplicate implementations for escaping, project naming, JSON handling and image resizing.
-
-## Existing Office capabilities
-
-- DOCX import/export with supported rich text, tables and practical image round-trip
+- DOCX import/export with supported formatting, tables and practical image round-trip
 - Multi-sheet XLSX import/export with formulas and shared strings
 - PPTX import/export with slide text, layouts and practical image round-trip
 - PDF text creation/export
-- Smart HTML editing and export
+- Smart HTML editor and sandbox preview
 - CSV/TSV import and CSV export
 - Files-level **Open Office File**
-- IndexedDB mirroring plus JSON workspace backup/restore
+- IndexedDB mirroring and JSON workspace backup/restore
 - Calendar / Daily Planner
+- Built-in reusable templates
 - Responsive mobile/desktop display fitting
 
 ## Quality checks
 
-`npm test` now checks browser JavaScript syntax and runs executable/contract tests for:
+`npm test` now covers:
 
-- Core SDK
-- Media SDK
-- Built-in Library registry
-- Library API gateway
-- built-in templates
+- Friendly Helper context registry and API
+- first-use/helper persistence contracts
+- Core/Media SDK
+- Built-in Library and API gateway
+- Create Studio friendly recovery paths
+- Files Undo recovery
+- storage of helper preferences
 - spreadsheet formulas
-- Office ZIP/XLSX round-trip
+- Office import/export round-trip
 - Office media handling
-- Create Studio
-- Files workspace
-- storage/backup
 - Calendar
-- Build 43 package consistency
+- Build 44 consistency
 
 ## Current limitations
 
 - Complex Word floating layouts, comments, tracked changes and advanced styles remain partial
-- Excel macros, pivot tables, advanced formatting and native embedded chart objects remain partial
-- PowerPoint animation, SmartArt, audio/video and complex masters remain partial
-- Very large imported media may be resized or skipped to protect local storage
+- Excel macros, pivot tables, advanced formatting and native chart objects remain partial
+- PowerPoint animations, SmartArt, audio/video and complex masters remain partial
+- Very large media may be resized or skipped to protect local storage
 - Some older WebViews without raw-deflate `DecompressionStream` support may not open normally compressed third-party Office files
-- Real generative AI responses still require a backend/model connection
-- Cloud synchronization is not yet connected
-- Play Store release signing/AAB still requires release credentials
+- Real generative AI answers still require a connected AI backend
+- Cloud synchronization is not connected
+- Play Store release signing/AAB requires release credentials
 
 ## Android build
 
@@ -143,13 +163,13 @@ GitHub Actions builds the Android debug APK with Capacitor.
 1. Open **Actions → Build MSA One APK**.
 2. Run the workflow manually or push a relevant source change to `main`.
 3. Open the successful run.
-4. Download **MSA-One-43-APK**.
+4. Download **MSA-One-44-APK**.
 
-The workflow runs syntax/tests, verifies the built-in libraries and Office engines, syncs the same `www` source into Capacitor, sets Android `versionCode 43` / `versionName 43.0`, builds the APK and uploads it.
+The workflow runs syntax checks and tests, verifies the helper/library assets, syncs the same `www` source into Capacitor, sets Android `versionCode 44` / `versionName 44.0`, builds the APK and uploads it.
 
 ## Development
 
 - Node.js 22+
-- Java 21 for Android builds
+- Java 21
 - Capacitor 7.4.3 pinned
 - Run `npm test` before building
