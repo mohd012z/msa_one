@@ -5,5 +5,5 @@ for(const api of ['MSAStudio','open','close','saveDraft','exportCurrent'])assert
 assert.ok(js.includes('contenteditable'),'Document editor must be editable');
 assert.ok(js.includes('sandbox'),'Smart HTML preview must be sandboxed');
 assert.ok(js.includes('localStorage'),'Drafts must persist locally');
-assert.ok(css.includes('safe-area-inset-bottom'),'Studio must respect mobile safe area');
+assert.ok(css.includes('safe-area-inset-bottom'),'Studio must respect mobile safe area');\nfor(const feature of ['readSheet','renderSheet','renderPresentation','currentSlides','data-pdf-text'])assert.ok(js.includes(feature),'missing working editor '+feature);\nfor(const ext of ['.docx','.xlsx','.pptx','.pdf','.csv'])assert.ok(js.includes(ext),'missing export '+ext);\nassert.ok(js.includes('MSAOffice'),'Create Studio must use the offline Office engine');\nassert.ok(js.includes('MSAStorage'),'Create Studio must mirror drafts to durable storage');
 console.log('create studio contract passed');
