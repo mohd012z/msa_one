@@ -170,7 +170,6 @@
     mounted=true;welcome();
     document.addEventListener('click',e=>{if(e.target.closest('.studio-type,.nav button,[data-planner-open],[data-library-home],[data-library-me]'))setTimeout(refresh,60)});
     window.addEventListener('resize',refresh,{passive:true});
-    new MutationObserver(()=>ensureStatus()).observe(document.body,{attributes:true,subtree:true,attributeFilter:['class']});
   }
 
   globalThis.MSAHelper={contexts:HELP,state,current,open,close,complete,showMe,notify,error,success,nudgeCurrent,refresh,mount};
