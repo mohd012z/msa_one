@@ -15,7 +15,7 @@
   function device(){
     const nav=typeof navigator!=='undefined'?navigator:{},cores=Number(nav.hardwareConcurrency||0),memory=Number(nav.deviceMemory||0),dpr=Number(globalThis.devicePixelRatio||1);
     const vv=typeof window!=='undefined'?window.visualViewport:null;
-    return {cores,memory,dpr,width:Math.round(vv?.width||innerWidth||0),height:Math.round(vv?.height||innerHeight||0),refreshHz};
+    return {cores,memory,dpr,width:Math.round(vv?.width||globalThis.innerWidth||0),height:Math.round(vv?.height||globalThis.innerHeight||0),refreshHz};
   }
   function autoProfile(){
     const d=device();
@@ -29,6 +29,7 @@
     return autoProfile();
   }
   function apply(p=load()){
+    if(typeof document==='undefined')return;
     const root=document.documentElement,body=document.body;if(!root||!body)return;
     const f=Math.max(.85,Math.min(1.45,Number(p.fontScale)||1));
     const i=Math.max(.85,Math.min(1.35,Number(p.iconScale)||1));
