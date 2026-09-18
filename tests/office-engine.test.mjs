@@ -12,6 +12,7 @@ assert.ok(js.includes('crc32'),'OOXML ZIP writer must calculate CRC32');
 for(const rich of ['htmlToWord','wordRun','wordTable','<w:b/>','<w:i/>','<w:u w:val="single"/>']) assert.ok(js.includes(rich),'DOCX rich formatting missing '+rich);
 assert.ok(js.includes('<f>'),'XLSX formulas must be written as formula cells');
 assert.ok(js.includes('fullCalcOnLoad'),'XLSX must request formula recalculation');
+for(const multi of ['xlsxSheetXml','cleanSheetName','sheet1.xml','worksheets/sheet']) assert.ok(js.includes(multi),'multi-sheet XLSX support missing '+multi);
 for(const media of ['dataUrlAsset','ppt/media/','relationships/image','image/png','image/jpeg']) assert.ok(js.includes(media),'PPTX image support missing '+media);
 for(const layout of ['image-right','image-full']) assert.ok(js.includes(layout),'PPTX layout missing '+layout);
 
