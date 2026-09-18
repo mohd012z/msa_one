@@ -14,12 +14,12 @@ for(const id of ['home','files','create','document','spreadsheet','presentation'
   assert.ok(Array.isArray(H.contexts[id].examples),'helper context needs examples '+id);
   assert.ok(Array.isArray(H.contexts[id].trouble),'helper context needs troubleshooting '+id);
 }
-for(const api of ['open','close','complete','showMe','notify','error','success','refresh','mount']){
+for(const api of ['open','close','complete','showMe','notify','error','success','nudgeCurrent','refresh','mount']){
   assert.equal(typeof H[api],'function','missing helper API '+api);
 }
 
 const source=fs.readFileSync('www/helper-engine.js','utf8');
-for(const feature of ['data-helper-fab','data-helper-sheet','data-show-index','helper-highlight','welcomeSeen','msaHelperV1','Autosaved locally','Troubleshoot']){
+for(const feature of ['data-helper-fab','data-helper-sheet','data-show-index','helper-highlight','welcomeSeen','msaHelperV1','Local draft · autosave enabled','Troubleshoot','mounted=false']){
   assert.ok(source.includes(feature),'missing helper feature '+feature);
 }
 
