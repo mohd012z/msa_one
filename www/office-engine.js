@@ -47,11 +47,25 @@
     d.querySelectorAll('p,div,h1,h2,h3,h4,h5,h6,li').forEach(x=>x.append('\n'));
     return (d.textContent||'').replace(/\n{3,}/g,'\n\n').trim();
   }
-  function download(name,data,type){
-    const blob=data instanceof Blob?data:new Blob([data],{type});
+  function browserDownload(name,blob){
     const u=URL.createObjectURL(blob),a=document.createElement('a');
     a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();
-    setTimeout(()=>URL.revokeObjectURL(u),1000);
+    setTimeout(()=>URL.revokeObjectURL(u),1200);
+  }
+  function download(name,data,type){
+    const blob=data instanceof Blob?data:new Blob([data],{type});
+    if(globalThis.MSANativeFiles?.isNative?.()){
+      globalThis.MSANativeFiles.saveBlob(name,blob,type||blob.type).then(result=>{
+        if(result?.saved)globalThis.MSAHelper?.success?.('Saved to '+(result.location||'Downloads/MSA One')+' · '+name);
+        else browserDownload(name,blob);
+      }).catch(error=>{
+        console.warn('Native save fallback',error);
+        browserDownload(name,blob);
+        globalThis.MSAHelper?.notify?.('Native save unavailable · browser download used','info');
+      });
+      return;
+    }
+    browserDownload(name,blob);
   }
 
   function wordRun(text,opt={}){
