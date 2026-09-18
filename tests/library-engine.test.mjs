@@ -25,6 +25,7 @@ for(const mod of ['core','document','spreadsheet','presentation','pdf','html','f
   assert.ok(L.api(mod),'missing API group '+mod);
 }
 assert.equal(typeof L.call,'function','library gateway must expose call()');
+assert.equal(typeof L.allTemplates,'function','library must expose merged template catalog');
 assert.equal(typeof L.api('spreadsheet').formula,'function');
 assert.equal(typeof L.api('storage').backup,'function');
 assert.equal(typeof L.api('files').openOffice,'function');
@@ -35,6 +36,7 @@ assert.equal(typeof L.api('performance').mode,'function');
 const health=L.selfCheck();
 assert.equal(health.offline,true);
 assert.equal(health.total,L.modules.length);
-assert.equal(health.templates,L.templates.length);
+assert.equal(health.builtInTemplates,L.templates.length);
+assert.equal(health.templates,L.allTemplates().length);
 
 console.log('built-in function library contract passed');
