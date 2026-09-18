@@ -9,4 +9,7 @@ assert.ok(js.includes('Invalid backup structure'),'restore must validate backup 
 assert.ok(js.includes("data.app&&data.app!=='MSA One'"),'restore must reject another app backup');
 assert.ok(js.includes('input.oncancel'),'restore picker must cleanly handle cancel');
 assert.ok(!js.includes('setTimeout(()=>input.remove(),1000)'),'restore picker must not be removed on a fixed timer');
+assert.ok(js.includes('const locals=new Map()'),'storage bootstrap must batch local values');
+assert.ok(js.includes("d.transaction(STORE,'readwrite')"),'storage bootstrap must batch IndexedDB writes');
+assert.ok(js.includes('MSAProjects?.invalidate'),'storage bootstrap must invalidate project cache after restore');
 console.log('IndexedDB and backup storage contract passed');
