@@ -5,7 +5,7 @@ const js=fs.readFileSync('www/create-studio.js','utf8');
 const css=fs.readFileSync('www/create-studio.css','utf8');
 
 for(const type of ['document','spreadsheet','presentation','pdf','html']) assert.ok(js.includes(type),'missing Create type '+type);
-for(const api of ['MSAStudio','open','close','saveDraft','importCurrent','exportCurrent']) assert.ok(js.includes(api),'missing studio API '+api);
+for(const api of ['MSAStudio','open','close','saveDraft','importCurrent','exportCurrent','createProject']) assert.ok(js.includes(api),'missing studio API '+api);
 assert.ok(js.includes('contenteditable'),'Document editor must be editable');
 assert.ok(js.includes('sandbox'),'Smart HTML preview must be sandboxed');
 assert.ok(js.includes('localStorage'),'Drafts must persist locally');
@@ -18,6 +18,8 @@ for(const ext of ['.docx','.xlsx','.pptx','.pdf','.csv']) assert.ok(js.includes(
 assert.ok(js.includes('MSAOffice'),'Create Studio must use the offline Office engine');
 assert.ok(js.includes('MSAImport'),'Create Studio must use the Office import engine');
 assert.ok(js.includes('MSAStorage'),'Create Studio must mirror drafts to durable storage');
+assert.ok(js.includes('MSACore'),'Create Studio must consume shared Core SDK');
+assert.ok(js.includes('MSAMedia'),'Create Studio must consume shared Media SDK');
 assert.ok(css.includes('.studio-editor img'),'document image preview must be styled');
 assert.ok(css.includes('.formula-bar'),'formula UI must be styled');
 assert.ok(css.includes('.sheet-tabs'),'multi-sheet tabs must be styled');
