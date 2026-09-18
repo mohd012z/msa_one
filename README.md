@@ -2,9 +2,76 @@
 
 MSA One is an all-in-one mobile office workspace for documents, spreadsheets, presentations, PDF, Smart HTML, planning, storage, reusable libraries, contextual help and adaptive performance.
 
-## Current build — MSA One 47
+## Current build — MSA One 48
 
-MSA One 47 keeps Android application ID `com.msa.one.displayfit37`, so it updates the existing installation instead of creating a separate app.
+MSA One 48 keeps Android application ID `com.msa.one.displayfit37`, so it updates the existing installation instead of creating a separate app.
+
+## Security Hardened — Build 48
+
+Build 48 adds a central web-content and Android security layer without activating Premium or force-update enforcement.
+
+### Web security
+
+- Content Security Policy is present in the packaged app.
+- Remote/plugin object loading is blocked.
+- Base-tag rewriting and form submission are blocked.
+- Smart HTML preview uses its own isolated CSP with scripts, network connections, forms, frames and objects disabled.
+- Stored rich-document HTML is sanitized on load/save.
+- Restored document projects are sanitized before storage.
+- Personal document templates are sanitized before Library storage.
+- JavaScript/event-handler URLs are removed from rich content.
+- Remote image loading is blocked in rich documents; local data/blob images remain supported.
+- External store/backend URLs must use safe HTTPS.
+- Backup size and structure are validated before restore.
+
+The current CSP still permits inline app script/style because legacy inline handlers/styles remain in the main HTML. A future hardening step should move inline code to external modules, remove `unsafe-inline`, then enforce Trusted Types.
+
+### Android security
+
+The generated Android project now runs `scripts/apply-android-security.mjs` after Capacitor sync.
+
+It applies:
+
+- `android:usesCleartextTraffic="false"`
+- network security configuration with cleartext disabled
+- `android:allowBackup="false"`
+- WebView `setAllowFileAccess(false)`
+- WebView `setAllowFileAccessFromFileURLs(false)`
+- WebView `setAllowUniversalAccessFromFileURLs(false)`
+- `MIXED_CONTENT_NEVER_ALLOW`
+- geolocation disabled
+- Safe Browsing enabled where supported
+
+The normal APK workflow verifies all of those controls before Gradle compilation.
+
+Future Premium activation refuses to proceed unless the hardened MainActivity is already present.
+
+### Security Center
+
+The Built-in Library now exposes a **Security Center** module through `MSALibrary.api('security')`.
+
+It can provide security diagnostics, safe URL checks and rich-document sanitization.
+
+### Security regression coverage
+
+Build 48 tests malicious restored-document HTML, event handlers, JavaScript URLs, personal-template sanitization, invalid/oversized backup handling, Smart HTML preview isolation, CSP presence, Android WebView hardening, cleartext blocking and Premium-off safety.
+
+## Next security priorities
+
+The next recommended work, in order:
+
+1. Commit a `package-lock.json` and change CI from `npm install` to `npm ci`.
+2. Trace and update the transitive dependency that currently emits the deprecated `tar@6.2.1` warning.
+3. Stage-test Capacitor 7.6.8 before any major-version upgrade; then evaluate the current Capacitor 8.x line separately.
+4. Move inline JavaScript/event handlers/styles out of `index.html`, remove CSP `unsafe-inline`, then enable Trusted Types.
+5. Add optional AES-GCM encrypted workspace backups with a user passphrase or device-keystore-backed key.
+6. Store future authentication/refresh tokens only via Android Keystore-backed native storage, never localStorage.
+7. Add authenticated backend sessions, authorization checks, rate limiting, replay protection and audit logging before Premium/cloud features activate.
+8. Add Play Integrity validation for high-value server actions such as Premium entitlement and account-sensitive operations.
+9. Add dependency vulnerability/signature scanning and secret scanning in CI.
+10. Build a signed release/AAB pipeline using GitHub Environments/Secrets and protected release approvals.
+11. Add privacy controls: data retention, delete/export account data, telemetry opt-in and redaction of sensitive document content from logs.
+12. Add security-focused runtime tests on real Android WebView versions, including malicious DOCX/HTML/backup files and offline/rotation/import scenarios.
 
 ## Premium Ready — intentionally NOT active
 
@@ -196,9 +263,9 @@ GitHub Actions builds the Android debug APK with Capacitor.
 1. Open **Actions → Build MSA One APK**.
 2. Run the workflow manually or push a relevant source change to `main`.
 3. Open the successful run.
-4. Download **MSA-One-47-APK**.
+4. Download **MSA-One-48-APK**.
 
-The normal workflow keeps Premium inactive and sets Android `versionCode 47` / `versionName 47.0`.
+The normal workflow keeps Premium inactive and sets Android `versionCode 48` / `versionName 48.0`.
 
 ## Development
 
