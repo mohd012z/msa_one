@@ -11,7 +11,7 @@ assert.ok(js.includes('sandbox'),'Smart HTML preview must be sandboxed');
 assert.ok(js.includes('localStorage'),'Drafts must persist locally');
 assert.ok(css.includes('safe-area-inset-bottom'),'Studio must respect mobile safe area');
 
-for(const feature of ['normalizeSheets','replaceSheets','currentSheets','readSheet','renderSheet','renderPresentation','currentSlides','data-pdf-text','evalFormula','toggleChart','pickSlideImage','resizeImage','pickDocumentImage','parseCSV','sanitizeHTML','importCurrent']) assert.ok(js.includes(feature),'missing working editor feature '+feature);
+for(const feature of ['friendlyError','friendlySuccess','normalizeSheets','replaceSheets','currentSheets','readSheet','renderSheet','renderPresentation','currentSlides','data-pdf-text','evalFormula','toggleChart','pickSlideImage','resizeImage','pickDocumentImage','parseCSV','sanitizeHTML','importCurrent']) assert.ok(js.includes(feature),'missing working editor feature '+feature);
 for(const formula of ['SUM','AVERAGE','MIN','MAX']) assert.ok(js.includes(formula),'missing local formula '+formula);
 for(const control of ['data-table','data-doc-image','data-block="H1"','data-chart','data-slide-layout','data-slide-image','data-import']) assert.ok(js.includes(control),'missing rich editor control '+control);
 for(const ext of ['.docx','.xlsx','.pptx','.pdf','.csv']) assert.ok(js.includes(ext),'missing export '+ext);
