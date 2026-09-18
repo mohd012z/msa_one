@@ -8,13 +8,14 @@ function renameProject(id){let a=all(),p=a.find(x=>x.id===id);if(!p)return;let n
 function duplicateProject(id){let a=all(),p=a.find(x=>x.id===id);if(!p)return;let c={...p,id:'p_'+Date.now().toString(36),title:p.title+' Copy',updated:Date.now()};a.unshift(c);write(a)}
 function deleteProject(id){let a=all(),p=a.find(x=>x.id===id);if(!p)return;if(!confirm('Delete “'+p.title+'”?'))return;write(a.filter(x=>x.id!==id));if(window.MSAHelper?.success)window.MSAHelper.success('“'+p.title+'” deleted.',[{label:'Undo',run:()=>{let next=all();next.unshift(p);write(next);window.MSAHelper?.success('Project restored.')}}])}
 function importOfficeFile(){
- const input=document.createElement('input');input.type='file';input.hidden=true;input.accept='.docx,.xlsx,.pptx,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation';
+ const input=document.createElement('input');input.type='file';input.hidden=true;input.accept='.docx,.xlsx,.pptx,.pdf,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation';
  input.onchange=async()=>{const file=input.files?.[0];if(!file)return;try{
    if(!window.MSAImport)throw new Error('Office import engine is not loaded.');
    const imported=await window.MSAImport.readFile(file),id='p_'+Date.now().toString(36),base=file.name.replace(/\.[^.]+$/,'');let content='';
    if(imported.type==='document')content=imported.html;
    else if(imported.type==='spreadsheet')content=JSON.stringify({sheets:imported.sheets,activeSheet:0});
    else if(imported.type==='presentation')content=JSON.stringify({slides:imported.slides});
+   else if(imported.type==='pdf')content=imported.blobUrl;
    const a=all();a.unshift({id,type:imported.type,title:base,content,updated:Date.now()});write(a.slice(0,50));openProject(id);
  }catch(e){if(window.MSAHelper?.error)window.MSAHelper.error('Office file could not be opened: '+e.message,[{label:'Troubleshoot',run:()=>window.MSAHelper.open('trouble')}]);else alert('Office file could not be opened: '+e.message)}finally{input.remove()}};
  document.body.appendChild(input);input.click();
