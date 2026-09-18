@@ -55,10 +55,9 @@
     input.onchange=async()=>{
       const f=input.files?.[0];if(!f){input.remove();return}
       try{
-        const data=JSON.parse(await f.text());
-        if(!data||typeof data!=='object'||!data.values||typeof data.values!=='object')throw new Error('Invalid backup structure');
-        if(data.app&&data.app!=='MSA One')throw new Error('This backup belongs to another app');
-        if(data.schema&&Number(data.schema)>1)throw new Error('This backup uses a newer format');
+        if(f.size>24*1024*1024)throw new Error('Backup file is too large');
+        const raw=await f.text();
+        const data=window.MSASecurity?.parseBackupText?window.MSASecurity.parseBackupText(raw,KEYS):JSON.parse(raw);
         const entries=Object.entries(data.values).filter(([k])=>KEYS.includes(k));
         if(!entries.length)throw new Error('No compatible MSA One data was found');
         for(const [k,v] of entries){localStorage.setItem(k,String(v));await set(k,String(v))}
