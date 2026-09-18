@@ -1,0 +1,15 @@
+node_modules/
+android/
+dist/
+build/
+.gradle/
+*.apk
+*.aab
+*.keystore
+*.jks
+.env
+.env.*
+!.env.example
+.DS_Store
+Thumbs.db
+npm-debug.log*
