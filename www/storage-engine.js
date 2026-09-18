@@ -38,8 +38,25 @@
   }
   function importBackup(){
     const input=document.createElement('input');input.type='file';input.accept='application/json,.json';input.hidden=true;
-    input.onchange=async()=>{const f=input.files?.[0];if(!f)return;try{const data=JSON.parse(await f.text());if(!data.values||typeof data.values!=='object')throw new Error('Invalid backup');for(const [k,v] of Object.entries(data.values)){if(KEYS.includes(k)){localStorage.setItem(k,String(v));await set(k,String(v))}}if(window.MSAHelper?.success)window.MSAHelper.success('Backup restored. MSA One will reload.');setTimeout(()=>location.reload(),650)}catch(e){if(window.MSAHelper?.error)window.MSAHelper.error('Backup could not be restored: '+e.message,[{label:'Help',run:()=>window.MSAHelper.open('trouble')}]);else alert('Backup could not be restored: '+e.message)}};
-    document.body.appendChild(input);input.click();setTimeout(()=>input.remove(),1000);
+    input.onchange=async()=>{
+      const f=input.files?.[0];if(!f){input.remove();return}
+      try{
+        const data=JSON.parse(await f.text());
+        if(!data||typeof data!=='object'||!data.values||typeof data.values!=='object')throw new Error('Invalid backup structure');
+        if(data.app&&data.app!=='MSA One')throw new Error('This backup belongs to another app');
+        if(data.schema&&Number(data.schema)>1)throw new Error('This backup uses a newer format');
+        const entries=Object.entries(data.values).filter(([k])=>KEYS.includes(k));
+        if(!entries.length)throw new Error('No compatible MSA One data was found');
+        for(const [k,v] of entries){localStorage.setItem(k,String(v));await set(k,String(v))}
+        if(window.MSAHelper?.success)window.MSAHelper.success('Backup restored. MSA One will reload.');
+        setTimeout(()=>location.reload(),650);
+      }catch(e){
+        if(window.MSAHelper?.error)window.MSAHelper.error('Backup could not be restored: '+e.message,[{label:'Help',run:()=>window.MSAHelper.open('trouble')}]);
+        else alert('Backup could not be restored: '+e.message);
+      }finally{input.remove()}
+    };
+    input.oncancel=()=>input.remove();
+    document.body.appendChild(input);input.click();
   }
   window.MSAStorage={set,get,mirror,bootstrap,snapshot,downloadBackup,importBackup};
   document.addEventListener('DOMContentLoaded',bootstrap);
