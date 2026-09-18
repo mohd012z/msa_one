@@ -57,7 +57,17 @@
     const rp=(opt.bold?'<w:b/>':'')+(opt.italic?'<w:i/>':'')+(opt.underline?'<w:u w:val="single"/>':'')+(opt.size?'<w:sz w:val="'+opt.size+'"/><w:szCs w:val="'+opt.size+'"/>':'');
     return '<w:r>'+(rp?'<w:rPr>'+rp+'</w:rPr>':'')+'<w:t xml:space="preserve">'+xml(text||' ')+'</w:t></w:r>';
   }
-  function inlineRuns(node,opt={}){
+  function wordImageRun(asset,rid,id){
+    const cx=5200000,cy=3200000;
+    return '<w:r><w:drawing><wp:inline distT="0" distB="0" distL="0" distR="0"><wp:extent cx="'+cx+'" cy="'+cy+'"/><wp:docPr id="'+id+'" name="MSA One Image '+id+'"/><a:graphic><a:graphicData uri="http://schemas.openxmlformats.org/drawingml/2006/picture"><pic:pic><pic:nvPicPr><pic:cNvPr id="0" name="image'+id+'.'+asset.ext+'"/><pic:cNvPicPr/></pic:nvPicPr><pic:blipFill><a:blip r:embed="'+rid+'"/><a:stretch><a:fillRect/></a:stretch></pic:blipFill><pic:spPr><a:xfrm><a:off x="0" y="0"/><a:ext cx="'+cx+'" cy="'+cy+'"/></a:xfrm><a:prstGeom prst="rect"><a:avLst/></a:prstGeom></pic:spPr></pic:pic></a:graphicData></a:graphic></wp:inline></w:drawing></w:r>';
+  }
+  function addWordImage(src,media){
+    const asset=dataUrlAsset(src);if(!asset)return'';
+    const id=media.length+1,rid='rId'+id,name='image'+id+'.'+asset.ext;
+    media.push({id,rid,name,asset});
+    return wordImageRun(asset,rid,id);
+  }
+  function inlineRuns(node,opt={},media=[]){
     let out='';
     for(const child of node.childNodes){
       if(child.nodeType===3){out+=wordRun(child.nodeValue,opt);continue}
@@ -67,43 +77,53 @@
       if(tag==='i'||tag==='em')next.italic=true;
       if(tag==='u')next.underline=true;
       if(tag==='br'){out+='<w:r><w:br/></w:r>';continue}
-      out+=inlineRuns(child,next);
+      if(tag==='img'){out+=addWordImage(child.getAttribute('src')||'',media);continue}
+      out+=inlineRuns(child,next,media);
     }
     return out;
   }
-  function wordParagraph(node,opt={}){
+  function wordParagraph(node,opt={},media=[]){
     const tag=(node.tagName||'').toLowerCase();
     const heading=tag==='h1'?36:tag==='h2'?30:tag==='h3'?26:0;
     const pPr=(heading?'<w:pPr><w:spacing w:before="180" w:after="100"/></w:pPr>':'');
-    const runs=inlineRuns(node,{...opt,bold:opt.bold||!!heading,size:heading||opt.size});
+    const runs=inlineRuns(node,{...opt,bold:opt.bold||!!heading,size:heading||opt.size},media);
     return '<w:p>'+pPr+(runs||wordRun(' ',opt))+'</w:p>';
   }
-  function wordTable(table){
-    const rows=[...table.rows].map(row=>'<w:tr>'+[...row.cells].map(cell=>'<w:tc><w:tcPr><w:tcW w:w="2400" w:type="dxa"/></w:tcPr>'+wordParagraph(cell,{bold:cell.tagName.toLowerCase()==='th'})+'</w:tc>').join('')+'</w:tr>').join('');
+  function wordTable(table,media=[]){
+    const rows=[...table.rows].map(row=>'<w:tr>'+[...row.cells].map(cell=>'<w:tc><w:tcPr><w:tcW w:w="2400" w:type="dxa"/></w:tcPr>'+wordParagraph(cell,{bold:cell.tagName.toLowerCase()==='th'},media)+'</w:tc>').join('')+'</w:tr>').join('');
     return '<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblBorders><w:top w:val="single" w:sz="4" w:color="B7C9D6"/><w:left w:val="single" w:sz="4" w:color="B7C9D6"/><w:bottom w:val="single" w:sz="4" w:color="B7C9D6"/><w:right w:val="single" w:sz="4" w:color="B7C9D6"/><w:insideH w:val="single" w:sz="4" w:color="D7E1E8"/><w:insideV w:val="single" w:sz="4" w:color="D7E1E8"/></w:tblBorders></w:tblPr>'+rows+'</w:tbl>';
   }
   function htmlToWord(html){
     const d=document.createElement('div');d.innerHTML=html;
-    let out='';
+    const media=[];let out='';
     for(const node of d.childNodes){
       if(node.nodeType===3){if(node.nodeValue.trim())out+='<w:p>'+wordRun(node.nodeValue)+'</w:p>';continue}
       if(node.nodeType!==1)continue;
       const tag=node.tagName.toLowerCase();
-      if(tag==='table')out+=wordTable(node);
+      if(tag==='img'){
+        const img=addWordImage(node.getAttribute('src')||'',media);
+        if(img)out+='<w:p>'+img+'</w:p>';
+      }else if(tag==='table')out+=wordTable(node,media);
       else if(tag==='ul'||tag==='ol'){
-        [...node.children].forEach((li,i)=>{const mark=tag==='ol'?(i+1)+'. ':'• ';out+='<w:p>'+wordRun(mark,{bold:true})+inlineRuns(li)+'</w:p>'});
-      }else out+=wordParagraph(node);
+        [...node.children].forEach((li,i)=>{const mark=tag==='ol'?(i+1)+'. ':'• ';out+='<w:p>'+wordRun(mark,{bold:true})+inlineRuns(li,{},media)+'</w:p>'});
+      }else out+=wordParagraph(node,{},media);
     }
-    return out||'<w:p>'+wordRun(' ')+'</w:p>';
+    return {body:out||'<w:p>'+wordRun(' ')+'</w:p>',media};
   }
   function docx(title,html){
-    const body=htmlToWord(html);
+    const parsed=htmlToWord(html),body=parsed.body,media=parsed.media;
+    const mediaDefaults='<Default Extension="png" ContentType="image/png"/><Default Extension="jpg" ContentType="image/jpeg"/><Default Extension="jpeg" ContentType="image/jpeg"/>';
     const files=[
-      {name:'[Content_Types].xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>'},
+      {name:'[Content_Types].xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/>'+mediaDefaults+'<Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>'},
       {name:'_rels/.rels',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>'},
       {name:'docProps/core.xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>'+xml(title)+'</dc:title><dc:creator>MSA One</dc:creator></cp:coreProperties>'},
-      {name:'word/document.xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+body+'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/></w:sectPr></w:body></w:document>'}
+      {name:'word/document.xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships" xmlns:wp="http://schemas.openxmlformats.org/drawingml/2006/wordprocessingDrawing" xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" xmlns:pic="http://schemas.openxmlformats.org/drawingml/2006/picture"><w:body>'+body+'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/></w:sectPr></w:body></w:document>'}
     ];
+    if(media.length){
+      const rels=media.map(m=>'<Relationship Id="'+m.rid+'" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/image" Target="media/'+m.name+'"/>').join('');
+      files.push({name:'word/_rels/document.xml.rels',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'+rels+'</Relationships>'});
+      media.forEach(m=>files.push({name:'word/media/'+m.name,data:m.asset.data}));
+    }
     return zip(files);
   }
 
