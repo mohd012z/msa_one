@@ -199,16 +199,28 @@
   }
   function importCurrent(){
     const input=document.createElement('input');input.type='file';input.hidden=true;
-    if(state.type==='spreadsheet')input.accept='.csv,.tsv,text/csv,text/tab-separated-values';
-    else if(state.type==='document')input.accept='.txt,.html,.htm,text/plain,text/html';
+    if(state.type==='spreadsheet')input.accept='.xlsx,.csv,.tsv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/tab-separated-values';
+    else if(state.type==='document')input.accept='.docx,.txt,.html,.htm,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/html';
     else if(state.type==='html')input.accept='.html,.htm,.txt,text/html,text/plain';
-    else if(state.type==='presentation')input.accept='image/*,.json,application/json';
+    else if(state.type==='presentation')input.accept='.pptx,image/*,.json,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/json';
     else input.accept='.txt,text/plain';
     input.onchange=async()=>{
       const file=input.files?.[0];if(!file)return;
       try{
+        const ext=(file.name.split('.').pop()||'').toLowerCase(),base=file.name.replace(/\.[^.]+$/,'');
+        if(['docx','xlsx','pptx'].includes(ext)){
+          if(!window.MSAImport)throw new Error('Office import engine is not loaded.');
+          const imported=await window.MSAImport.readFile(file),id='p_'+Date.now().toString(36);
+          let content='';
+          if(imported.type==='document')content=imported.html;
+          else if(imported.type==='spreadsheet')content=JSON.stringify({sheets:imported.sheets,activeSheet:0});
+          else if(imported.type==='presentation')content=JSON.stringify({slides:imported.slides});
+          put({id,type:imported.type,title:base,content,updated:Date.now()});
+          open(imported.type,id);return;
+        }
+        const title=document.querySelector('[data-title]');if(title)title.value=base;
         if(state.type==='spreadsheet'){
-          const text=await file.text(),delimiter=file.name.toLowerCase().endsWith('.tsv')?'\t':',',rows=parseCSV(text,delimiter);replaceSheet(rows);
+          const text=await file.text(),delimiter=ext==='tsv'?'\t':',',rows=parseCSV(text,delimiter);replaceSheets([{name:'Sheet1',rows}],0);
         }else if(state.type==='document'){
           const text=await file.text(),html=/\.html?$/i.test(file.name)?sanitizeHTML(text):'<p>'+esc(text).replace(/\r?\n/g,'</p><p>')+'</p>';
           const ed=document.querySelector('[data-doc]');if(ed){ed.innerHTML=html;queueSave()}
@@ -223,7 +235,6 @@
           if(!Array.isArray(slides)||!slides.length)throw new Error('Presentation JSON must contain a slides array');
           replaceSlides(slides.map(x=>({title:String(x.title||''),body:String(x.body||''),layout:['title-body','image-right','image-full'].includes(x.layout)?x.layout:'title-body',image:/^data:image\//.test(x.image||'')?x.image:''})));
         }
-        const title=document.querySelector('[data-title]');if(title&&!state.id)title.value=file.name.replace(/\.[^.]+$/,'');
       }catch(e){alert('Import failed: '+e.message)}finally{input.remove()}
     };
     document.body.appendChild(input);input.click();
