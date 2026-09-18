@@ -1,0 +1,10 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const p='www/mobile-accessibility-security.js';assert.ok(fs.existsSync(p),'missing Mobile Accessibility Security '+p);const s=fs.readFileSync(p,'utf8');
+for(const k of ['MSAMobileAccessibilitySecurity','applyMobileSafety','auditAccessibility','auditSecurity','safeInput','safeImport','storageCheck','touchTargetCheck','focusCheck'])assert.ok(s.includes(k),'missing mobile/accessibility/security '+k);
+for(const k of ['aria-label','aria-live','focus-visible','44','viewport','portrait','landscape','safe-area-inset'])assert.ok(s.includes(k),'missing accessibility/mobile contract '+k);
+for(const k of ['MAX_IMPORT_SIZE','ALLOWED_IMPORT_TYPES','BLOCKED','javascript:','eval(','new Function(','innerHTML'])assert.ok(s.includes(k),'missing security audit contract '+k);
+for(const k of ['localStorage','IndexedDB','crypto','secret','token','password','backup'])assert.ok(s.includes(k),'missing storage/security audit '+k);
+for(const k of ['APPROVED','CHANGES_REQUIRED','warnings','findings'])assert.ok(s.includes(k),'missing Sahab-style verdict '+k);
+assert.ok(s.includes('MSAFilesWorkspace'),'must integrate Files Workspace');
+assert.ok(s.includes('MSASmartHTML'),'must integrate Smart HTML');
+console.log('Mobile Accessibility Security contract passed');
