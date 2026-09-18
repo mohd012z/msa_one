@@ -14,7 +14,7 @@ assert.ok(css.includes('safe-area-inset-bottom'),'Studio must respect mobile saf
 
 for(const feature of ['friendlyError','friendlySuccess','normalizeSheets','replaceSheets','currentSheets','readSheet','renderSheet','renderPresentation','currentSlides','data-pdf-text','evalFormula','toggleChart','pickSlideImage','resizeImage','pickDocumentImage','parseCSV','parseCSVAsync','runBusy','sheetPageSize','sheetColPageSize','sanitizeHTML','importCurrent']) assert.ok(js.includes(feature),'missing working editor feature '+feature);
 for(const formula of ['SUM','AVERAGE','MIN','MAX']) assert.ok(formulaJs.includes(formula),'missing local formula '+formula);
-for(const control of ['data-table','data-doc-image','data-block="H1"','data-chart','data-slide-layout','data-slide-image','data-import','data-row-next','data-col-next']) assert.ok(js.includes(control),'missing rich editor control '+control);
+for(const control of ['data-save','data-bottom-save','studio-bottom','studio-pdf-viewer','data-table','data-doc-image','data-block="H1"','data-chart','data-slide-layout','data-slide-image','data-import','data-row-next','data-col-next']) assert.ok(js.includes(control),'missing rich editor control '+control);
 for(const ext of ['.docx','.xlsx','.pptx','.pdf','.csv']) assert.ok(js.includes(ext),'missing export '+ext);
 assert.ok(js.includes('MSAOffice'),'Create Studio must use the offline Office engine');
 assert.ok(js.includes('MSAImport'),'Create Studio must use the Office import engine');
@@ -32,6 +32,10 @@ assert.ok(css.includes('.formula-bar'),'formula UI must be styled');
 assert.ok(css.includes('.sheet-tabs'),'multi-sheet tabs must be styled');
 assert.ok(css.includes('.sheet-pager'),'virtual spreadsheet pager must be styled');
 assert.ok(css.includes('.sheet-chart'),'chart preview must be styled');
+assert.ok(css.includes('.studio-bottom'),'native editor must keep a persistent bottom action bar');
+assert.ok(css.includes('min-height:44px'),'editor controls must meet standard touch sizing');
+assert.ok(css.includes('.studio-pdf-viewer'),'imported PDFs must have a full viewer');
+assert.ok(css.includes('@keyframes studioOpen'),'editor must animate open');
 assert.ok(css.includes('.slide-image-preview'),'slide image preview must be styled');
 
 console.log('rich create studio media contract passed');
