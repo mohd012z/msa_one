@@ -33,3 +33,28 @@
 
 .studio-overlay.office-mobile .studio-body{padding-top:116px}
 @media(max-width:620px){.studio-overlay.office-mobile .studio-top [data-import],.studio-overlay.office-mobile .studio-top [data-save],.studio-overlay.office-mobile .studio-top [data-export]{display:none}.studio-overlay.office-mobile .studio-title .studio-status{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:68vw}}
+
+/* Build 54 · drag-down More Options + reliable safe area */
+.studio-overlay.office-mobile .studio-top{
+  padding-top:calc(8px + max(env(safe-area-inset-top),var(--native-safe-top,0px)));
+}
+.office-ribbon{
+  top:calc(64px + max(env(safe-area-inset-top),var(--native-safe-top,0px)));
+}
+.studio-overlay.office-mobile .studio-body{
+  padding-top:calc(116px + max(env(safe-area-inset-top),var(--native-safe-top,0px)));
+}
+.office-tab-menu{
+  top:calc(78px + max(env(safe-area-inset-top),var(--native-safe-top,0px)));
+}
+.office-more-sheet{
+  max-height:70dvh;
+  transform:translateY(0);
+  transition:transform .22s cubic-bezier(.2,.8,.2,1),opacity .18s ease;
+  will-change:transform;
+  touch-action:pan-y;
+}
+.office-more-sheet.dragging{transition:none}
+.office-more-sheet.dismissing{transform:translateY(110%);opacity:.35}
+.office-sheet-grab{height:6px;width:54px;cursor:grab}
+.office-sheet-title{position:sticky;top:0;z-index:2;background:#242628;padding:2px 0 8px}
