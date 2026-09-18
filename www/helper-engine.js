@@ -154,7 +154,14 @@
     s.welcomeSeen=true;save(s);
     setTimeout(()=>notify('New here? Tap ? anytime for help with the screen you are using.','info',[{label:'Show help',run:()=>open()}]),2200);
   }
-  function refresh(){ensure();ensureStatus()}
+  function nudgeCurrent(){
+    const id=context();if(id==='home'||id==='me')return;
+    const s=state();s.nudged=s.nudged||{};
+    if(s.enabled===false||s.completed?.[id]||s.nudged[id])return;
+    s.nudged[id]=true;save(s);
+    const c=HELP[id];setTimeout(()=>notify('First time in '+c.title.replace(' Helper','')+'? I can show you the important controls.','info',[{label:'Show help',run:()=>open()}]),350);
+  }
+  function refresh(){ensure();ensureStatus();nudgeCurrent()}
   function mount(){
     ensure();welcome();
     document.addEventListener('click',e=>{if(e.target.closest('.studio-type,.nav button,[data-planner-open],[data-library-home],[data-library-me]'))setTimeout(refresh,60)});
@@ -162,7 +169,7 @@
     new MutationObserver(()=>ensureStatus()).observe(document.body,{attributes:true,subtree:true,attributeFilter:['class']});
   }
 
-  globalThis.MSAHelper={contexts:HELP,state,current,open,close,complete,showMe,notify,error,success,refresh,mount};
+  globalThis.MSAHelper={contexts:HELP,state,current,open,close,complete,showMe,notify,error,success,nudgeCurrent,refresh,mount};
   if(typeof document!=='undefined'){
     document.addEventListener('DOMContentLoaded',mount);
     setTimeout(mount,800);
