@@ -7,16 +7,7 @@
     product:{
       id:'msa_one_premium',
       displayName:'MSA One Premium',
-      capabilities:[
-        'advanced-ai',
-        'presenter',
-        'premium-templates',
-        'automation',
-        'premium-ui-studio',
-        'premium-lens',
-        'cloud-sync',
-        'large-file-tools'
-      ]
+      capabilities:['advanced-ai','presenter','premium-templates','automation','premium-ui-studio','premium-lens','cloud-sync','large-file-tools']
     },
     billing:{
       enabled:false,
