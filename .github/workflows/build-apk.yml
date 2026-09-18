@@ -11,6 +11,7 @@ on:
       - 'capacitor.config.json'
       - '.github/workflows/build-apk.yml'
       - 'premium-prep/**'
+      - 'security-prep/**'
       - 'scripts/**'
 
 concurrency:
@@ -39,9 +40,9 @@ jobs:
       - name: Test source contracts
         run: npm test
 
-      - name: Verify MSA One 47 source UI
+      - name: Verify MSA One 48 source UI
         run: |
-          grep -q 'data-build-id="MSA-ONE-47"' www/index.html
+          grep -q 'data-build-id="MSA-ONE-48"' www/index.html
           grep -q 'data-calendar-home' www/index.html
           grep -q 'data-calendar-me' www/index.html
           grep -q 'theme-v2.css' www/index.html
@@ -53,6 +54,13 @@ jobs:
           grep -q 'entitlement-engine.js' www/index.html
           grep -q 'version-policy.js' www/index.html
           grep -q 'premium-ui.js' www/index.html
+          grep -q 'security-engine.js' www/index.html
+          grep -q 'MSASecurity' www/security-engine.js
+          grep -q 'Content-Security-Policy' www/index.html
+          grep -q "object-src 'none'" www/index.html
+          grep -q "base-uri 'none'" www/index.html
+          test -f scripts/apply-android-security.mjs
+          test -f security-prep/android/network_security_config.xml
           grep -q 'MSAPremiumConfig' www/premium-config.js
           grep -q 'MSAEntitlement' www/entitlement-engine.js
           grep -q 'MSAUpdatePolicy' www/version-policy.js
@@ -67,8 +75,8 @@ jobs:
           test -f scripts/activate-premium-android.mjs
           grep -q 'library-updater.js' www/index.html
           grep -q 'MSAAppManifest' www/app-manifest.js
-          grep -q "version:'47.0.0'" www/app-manifest.js
-          grep -q "buildId:'MSA-ONE-47'" www/app-manifest.js
+          grep -q "version:'48.0.0'" www/app-manifest.js
+          grep -q "buildId:'MSA-ONE-48'" www/app-manifest.js
           grep -q 'MSALibraryUpdate' www/library-updater.js
           grep -q 'core-library.js' www/index.html
           grep -q 'library-engine.js' www/index.html
@@ -107,23 +115,26 @@ jobs:
       - name: Sync web app
         run: npx cap sync android
 
-      - name: Set Android Build 47 version
+      - name: Apply Android security hardening
+        run: node scripts/apply-android-security.mjs
+
+      - name: Set Android Build 48 version
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('android/app/build.gradle')
           s=p.read_text()
-          s=s.replace('versionCode 1','versionCode 47')
-          s=s.replace('versionName "1.0"','versionName "47.0"')
+          s=s.replace('versionCode 1','versionCode 48')
+          s=s.replace('versionName "1.0"','versionName "48.0"')
           p.write_text(s)
           PY
 
       - name: Verify Android package and assets
         run: |
           grep -q 'com.msa.one.displayfit37' android/app/build.gradle
-          grep -q 'versionCode 47' android/app/build.gradle
-          grep -q 'versionName "47.0"' android/app/build.gradle
-          grep -q 'data-build-id="MSA-ONE-47"' android/app/src/main/assets/public/index.html
+          grep -q 'versionCode 48' android/app/build.gradle
+          grep -q 'versionName "48.0"' android/app/build.gradle
+          grep -q 'data-build-id="MSA-ONE-48"' android/app/src/main/assets/public/index.html
           grep -q 'data-calendar-home' android/app/src/main/assets/public/index.html
           grep -q 'data-calendar-me' android/app/src/main/assets/public/index.html
           test -f android/app/src/main/assets/public/theme-v2.css
@@ -135,6 +146,7 @@ jobs:
           test -f android/app/src/main/assets/public/entitlement-engine.js
           test -f android/app/src/main/assets/public/version-policy.js
           test -f android/app/src/main/assets/public/premium-ui.js
+          test -f android/app/src/main/assets/public/security-engine.js
           test -f android/app/src/main/assets/public/library-updater.js
           test -f android/app/src/main/assets/public/core-library.js
           test -f android/app/src/main/assets/public/library-engine.js
@@ -157,6 +169,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MSA-One-47-APK
+          name: MSA-One-48-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
