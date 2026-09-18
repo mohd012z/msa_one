@@ -1,0 +1,16 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const files=fs.readFileSync('www/files-workspace.js','utf8');
+const studio=fs.readFileSync('www/create-studio.js','utf8');
+const settings=fs.readFileSync('www/settings-v2.js','utf8');
+const premium=fs.readFileSync('www/premium-config.js','utf8');
+const actions=fs.readFileSync('www/app-actions.js','utf8');
+assert.ok(files.includes('.docx,.xlsx,.pptx,.pdf'),'Files picker must accept all primary Office/PDF formats');
+for(const t of ["imported.type==='document'","imported.type==='spreadsheet'","imported.type==='presentation'","imported.type==='pdf'"])assert.ok(files.includes(t),'Files import missing '+t);
+assert.ok(studio.includes('data-save'),'top Save button missing');
+assert.ok(studio.includes('data-bottom-save'),'bottom Save button missing');
+assert.ok(studio.includes("friendlySuccess('Saved in MSA One › Files on this device.')"),'manual Save location feedback missing');
+assert.ok(settings.includes('window.MSASettingsV2'),'Settings diagnostics API missing');
+assert.ok(settings.includes("notify?.('Setting applied'"),'Settings apply feedback missing');
+assert.equal((premium.match(/const config=/g)||[]).length,1,'Premium config must have one authoritative config block');
+for(const a of ['advanced-ai','presenter','templates','automation','ui-studio','premium-lens'])assert.ok(actions.includes("case '"+a+"'"),'Premium action missing '+a);
+console.log('native Office, settings, save and Premium wiring contract passed');
