@@ -1,6 +1,6 @@
 {
   "name": "msa-one",
-  "version": "44.0.0",
+  "version": "45.0.0",
   "private": true,
   "engines": {
     "node": ">=22"
@@ -9,7 +9,7 @@
     "test": "npm run check:syntax && node --test tests/*.test.mjs",
     "android:add": "npx cap add android",
     "android:sync": "npx cap sync android",
-    "check:syntax": "node --check www/office-engine.js && node --check www/import-engine.js && node --check www/formula-engine.js && node --check www/create-studio.js && node --check www/storage-engine.js && node --check www/app-actions.js && node --check www/planner.js && node --check www/settings-v2.js && node --check www/files-workspace.js && node --check www/core-library.js && node --check www/library-engine.js && node --check www/helper-engine.js"
+    "check:syntax": "node --check www/office-engine.js && node --check www/import-engine.js && node --check www/formula-engine.js && node --check www/create-studio.js && node --check www/storage-engine.js && node --check www/app-actions.js && node --check www/planner.js && node --check www/settings-v2.js && node --check www/files-workspace.js && node --check www/core-library.js && node --check www/library-engine.js && node --check www/helper-engine.js && node --check www/performance-engine.js"
   },
   "dependencies": {
     "@capacitor/android": "7.4.3",
