@@ -1,89 +1,88 @@
 name: Build MSA One APK
+
 on:
   workflow_dispatch:
   push:
     branches: [ main ]
-    paths: ['www/**','tests/**','package.json','capacitor.config.json','.github/workflows/build-apk.yml']
+    paths:
+      - 'www/**'
+      - 'tests/**'
+      - 'package.json'
+      - 'capacitor.config.json'
+      - '.github/workflows/build-apk.yml'
+
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
       - name: Setup Node
         uses: actions/setup-node@v4
-        with: {node-version: '22'}
+        with:
+          node-version: '22'
+
       - name: Setup Java
         uses: actions/setup-java@v5
-        with: {distribution: temurin, java-version: '21'}
-      - name: Package Calendar and adaptive display UI
+        with:
+          distribution: temurin
+          java-version: '21'
+
+      - name: Test source contracts
+        run: npm test
+
+      - name: Verify MSA One 38 source UI
         run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('www/index.html'); s=p.read_text()
-          s=s.replace('width=device-width,initial-scale=1,viewport-fit=cover','width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover')
-          css='\n'.join(Path(x).read_text() for x in ['www/theme-v2.css','www/create-studio.css','www/files-workspace.css','www/planner.css'])
-          s=s.replace('</head>',f'<style>{css}</style></head>')
-          home='<div class="build-id" data-build-id="MSA-ONE-37">MSA One 37 · AUTO DISPLAY FIT</div><button class="planner-home" data-planner-open data-calendar-home onclick="window.MSAPlanner&&MSAPlanner.open()"><span>📅</span><div><b>Calendar & Daily Planner</b><small>Diary · programs · plans · notes</small></div><strong>›</strong></button>'
-          marker='</p></section><div class="cap">QUICK START</div>'
-          if marker not in s: raise SystemExit('Home injection marker missing')
-          s=s.replace(marker,'</p></section>'+home+'<div class="cap">QUICK START</div>',1)
-          me='<button class="planner-home" data-calendar-me onclick="window.MSAPlanner&&MSAPlanner.open()"><span>📅</span><div><b>Calendar & Daily Planner</b><small>Diary · daily program · plans · notes</small></div><strong>›</strong></button><div class="build-id" data-build-id="MSA-ONE-37">MSA One 37 · AUTO DISPLAY FIT</div>'
-          m='<div class="cap">MY WORKSPACE</div>'; start=s.find('id="me"'); pos=s.find(m,start)
-          if start < 0 or pos < 0: raise SystemExit('Me injection marker missing')
-          pos+=len(m); s=s[:pos]+me+s[pos:]
-          for x in ['www/planner.js','www/settings-v2.js','www/create-studio.js','www/files-workspace.js']:
-              s=s.replace('</body>','<script>'+Path(x).read_text()+'</script></body>')
-          p.write_text(s)
-          PY
-      - name: Test source modules
-        run: |
-          for test in tests/*.test.mjs; do
-            case "$test" in
-              tests/calendar-visibility.test.mjs) continue ;;
-            esac
-            echo "Running $test"
-            node "$test"
-          done
-      - name: Verify packaged Calendar and adaptive display
-        run: |
+          grep -q 'data-build-id="MSA-ONE-38"' www/index.html
           grep -q 'data-calendar-home' www/index.html
           grep -q 'data-calendar-me' www/index.html
-          grep -q 'Calendar & Daily Planner' www/index.html
-          grep -q 'MSA-ONE-37' www/index.html
-          grep -q -- '--msa-screen-width' www/index.html
-          grep -q 'screen.width' www/index.html
-          grep -q 'visualViewport' www/index.html
-          grep -q 'devicePixelRatio' www/index.html
-          grep -q 'data-display-info' www/index.html
+          grep -q 'theme-v2.css' www/index.html
+          grep -q 'planner.js' www/index.html
+          grep -q 'app-actions.js' www/index.html
+          grep -q -- '--msa-screen-width' www/theme-v2.css
+          grep -q 'screen.width' www/settings-v2.js
+          grep -q 'visualViewport' www/settings-v2.js
+
       - name: Install dependencies
-        run: npm install
+        run: npm install --ignore-scripts --no-audit --no-fund
+
       - name: Create Android project
         run: npx cap add android
+
       - name: Sync web app
         run: npx cap sync android
-      - name: Set Android Build 37 version
+
+      - name: Set Android Build 38 version
         run: |
           python3 - <<'PY'
           from pathlib import Path
-          p=Path('android/app/build.gradle'); s=p.read_text().replace('versionCode 1','versionCode 37').replace('versionName "1.0"','versionName "37.0"'); p.write_text(s)
+          p=Path('android/app/build.gradle')
+          s=p.read_text()
+          s=s.replace('versionCode 1','versionCode 38')
+          s=s.replace('versionName "1.0"','versionName "38.0"')
+          p.write_text(s)
           PY
-      - name: Verify Android package and adaptive assets
+
+      - name: Verify Android package and assets
         run: |
           grep -q 'com.msa.one.displayfit37' android/app/build.gradle
-          grep -q 'versionCode 37' android/app/build.gradle
+          grep -q 'versionCode 38' android/app/build.gradle
+          grep -q 'data-build-id="MSA-ONE-38"' android/app/src/main/assets/public/index.html
           grep -q 'data-calendar-home' android/app/src/main/assets/public/index.html
           grep -q 'data-calendar-me' android/app/src/main/assets/public/index.html
-          grep -q 'MSA-ONE-37' android/app/src/main/assets/public/index.html
-          grep -q 'screen.width' android/app/src/main/assets/public/index.html
-          grep -q 'visualViewport' android/app/src/main/assets/public/index.html
-          grep -q -- '--msa-screen-width' android/app/src/main/assets/public/index.html
+          test -f android/app/src/main/assets/public/theme-v2.css
+          test -f android/app/src/main/assets/public/planner.js
+          test -f android/app/src/main/assets/public/app-actions.js
+
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug
+
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MSA-One-37-AUTO-DISPLAY-FIT-APK
+          name: MSA-One-38-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
