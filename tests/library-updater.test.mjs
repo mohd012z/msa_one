@@ -8,11 +8,11 @@ globalThis.localStorage={
   clear:()=>store.clear()
 };
 
-const build48Modules=[
+const build50Modules=[
   'core','document','spreadsheet','presentation','pdf','html','files','storage',
   'planner','media','voice','ui','helper','performance','premium','updates','security'
 ];
-const build48Templates=[
+const build50Templates=[
   'doc-report','doc-letter','doc-minutes','doc-procedure',
   'sheet-budget','sheet-inventory','sheet-kpi','sheet-task',
   'ppt-update','ppt-training','ppt-proposal',
@@ -21,13 +21,13 @@ const build48Templates=[
 
 localStorage.setItem('msaLibraryStateV2',JSON.stringify({
   schema:2,
-  lastBuild:'MSA-ONE-48',
-  lastVersion:'48.0.0',
+  lastBuild:'MSA-ONE-50',
+  lastVersion:'50.0.0',
   lastSync:'2026-09-18T00:00:00.000Z',
-  catalog:{modules:build48Modules,templates:build48Templates},
+  catalog:{modules:build50Modules,templates:build50Templates},
   lastUpdate:null,
   history:[],
-  ackBuild:'MSA-ONE-48'
+  ackBuild:'MSA-ONE-50'
 }));
 localStorage.setItem('msaUserLibraryV1',JSON.stringify({
   schema:1,
@@ -52,7 +52,7 @@ const synced=U.sync({quiet:true});
 assert.equal(synced.version,'51.0.0');
 assert.equal(synced.buildId,'MSA-ONE-51');
 assert.equal(synced.pendingUpdate,true,'upgrade must be marked new until acknowledged');
-assert.equal(synced.lastUpdate.fromBuild,'MSA-ONE-48');
+assert.equal(synced.lastUpdate.fromBuild,'MSA-ONE-50');
 assert.equal(synced.lastUpdate.toBuild,'MSA-ONE-51');
 assert.deepEqual(synced.lastUpdate.addedModules,[]);
 assert.deepEqual(synced.lastUpdate.removedModules,[]);
@@ -72,6 +72,6 @@ U.removeUserTemplate(added.id);
 
 const ack=U.acknowledge();
 assert.equal(ack.pendingUpdate,false,'acknowledging update must clear NEW state');
-assert.ok(ack.history.some(x=>x.fromBuild==='MSA-ONE-48'&&x.toBuild==='MSA-ONE-51'),'50→51 upgrade must remain in update history');
+assert.ok(ack.history.some(x=>x.fromBuild==='MSA-ONE-50'&&x.toBuild==='MSA-ONE-51'),'50→51 upgrade must remain in update history');
 
 console.log('Build 50 to 51 native file bridge migration contract passed');
