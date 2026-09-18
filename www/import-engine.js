@@ -1,5 +1,9 @@
 (()=> {
   const td=new TextDecoder();
+  const MAX_ZIP_BYTES=80*1024*1024;
+  const MAX_ENTRY_BYTES=24*1024*1024;
+  const MAX_TOTAL_UNCOMPRESSED=96*1024*1024;
+  const MAX_ENTRIES=4096;
 
   function u16(v,o){return v[o]|(v[o+1]<<8)}
   function u32(v,o){return (v[o]|(v[o+1]<<8)|(v[o+2]<<16)|(v[o+3]<<24))>>>0}
@@ -40,21 +44,30 @@
   }
   async function unzip(input){
     const v=input instanceof Uint8Array?input:new Uint8Array(input);
+    if(v.length>MAX_ZIP_BYTES)throw new Error('Office file is too large for safe on-device import.');
     let eocd=-1;
     for(let i=Math.max(0,v.length-65557);i<=v.length-22;i++)if(u32(v,i)===0x06054b50)eocd=i;
     if(eocd<0)throw new Error('ZIP central directory was not found.');
     const count=u16(v,eocd+10),centralOffset=u32(v,eocd+16),files={};
-    let p=centralOffset;
+    if(count>MAX_ENTRIES)throw new Error('Office file contains too many internal parts.');
+    if(centralOffset>=v.length)throw new Error('Invalid ZIP central directory offset.');
+    let p=centralOffset,total=0;
     for(let n=0;n<count;n++){
-      if(u32(v,p)!==0x02014b50)throw new Error('Invalid ZIP central directory.');
-      const method=u16(v,p+10),compSize=u32(v,p+20),nameLen=u16(v,p+28),extraLen=u16(v,p+30),commentLen=u16(v,p+32),localOffset=u32(v,p+42);
+      if(p+46>v.length||u32(v,p)!==0x02014b50)throw new Error('Invalid ZIP central directory.');
+      const method=u16(v,p+10),compSize=u32(v,p+20),rawSize=u32(v,p+24),nameLen=u16(v,p+28),extraLen=u16(v,p+30),commentLen=u16(v,p+32),localOffset=u32(v,p+42);
+      if(rawSize>MAX_ENTRY_BYTES)throw new Error('An Office file part is too large for safe import.');
+      total+=rawSize;if(total>MAX_TOTAL_UNCOMPRESSED)throw new Error('Office file expands beyond the safe on-device limit.');
+      if(p+46+nameLen+extraLen+commentLen>v.length)throw new Error('Invalid ZIP entry bounds.');
       const name=td.decode(v.subarray(p+46,p+46+nameLen));
-      if(u32(v,localOffset)!==0x04034b50)throw new Error('Invalid ZIP local header for '+name);
-      const ln=u16(v,localOffset+26),le=u16(v,localOffset+28),dataStart=localOffset+30+ln+le,compressed=v.subarray(dataStart,dataStart+compSize);
+      if(localOffset+30>v.length||u32(v,localOffset)!==0x04034b50)throw new Error('Invalid ZIP local header for '+name);
+      const ln=u16(v,localOffset+26),le=u16(v,localOffset+28),dataStart=localOffset+30+ln+le;
+      if(dataStart+compSize>v.length)throw new Error('Invalid ZIP data bounds for '+name);
+      const compressed=v.subarray(dataStart,dataStart+compSize);
       let out;
       if(method===0)out=new Uint8Array(compressed);
       else if(method===8)out=await inflateRaw(compressed);
       else throw new Error('Unsupported ZIP compression method '+method+' in '+name);
+      if(out.length>MAX_ENTRY_BYTES)throw new Error('An Office file part expanded beyond the safe import limit.');
       files[norm(name)]=out;
       p+=46+nameLen+extraLen+commentLen;
     }
