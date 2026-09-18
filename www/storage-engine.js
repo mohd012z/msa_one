@@ -17,14 +17,27 @@
   }
   async function mirror(key,value){return set(key,value)}
   async function bootstrap(){
-    for(const key of KEYS){
-      const local=localStorage.getItem(key);
-      if(local!=null) await set(key,local);
-      else{
-        const saved=await get(key);
-        if(saved!=null) localStorage.setItem(key,saved);
+    try{
+      const locals=new Map(),missing=[];
+      for(const key of KEYS){const local=localStorage.getItem(key);if(local!=null)locals.set(key,local);else missing.push(key)}
+      const d=await db();
+      if(locals.size){
+        await new Promise((res,rej)=>{
+          const t=d.transaction(STORE,'readwrite'),store=t.objectStore(STORE);
+          for(const [k,v] of locals)store.put(v,k);
+          t.oncomplete=res;t.onerror=()=>rej(t.error);
+        });
       }
-    }
+      if(missing.length){
+        const values=await new Promise((res,rej)=>{
+          const t=d.transaction(STORE,'readonly'),store=t.objectStore(STORE),out={};let left=missing.length;
+          if(!left)return res(out);
+          for(const k of missing){const r=store.get(k);r.onsuccess=()=>{out[k]=r.result;if(--left===0)res(out)};r.onerror=()=>rej(r.error)}
+        });
+        for(const k of missing)if(values[k]!=null)localStorage.setItem(k,values[k]);
+      }
+      d.close();
+    }catch{}
     globalThis.MSAProjects?.invalidate?.();
   }
   function snapshot(){
