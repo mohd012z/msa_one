@@ -2,197 +2,164 @@
 
 MSA One is an all-in-one mobile office workspace for documents, spreadsheets, presentations, PDF, Smart HTML, planning, storage, reusable libraries, contextual help and adaptive performance.
 
-## Current build — MSA One 46
+## Current build — MSA One 47
 
-MSA One 46 keeps Android application ID `com.msa.one.displayfit37`, so it updates the existing installation instead of creating a separate app.
+MSA One 47 keeps Android application ID `com.msa.one.displayfit37`, so it updates the existing installation instead of creating a separate app.
+
+## Premium Ready — intentionally NOT active
+
+Build 47 prepares the complete Premium architecture without activating purchases or locking users into an update.
+
+The live configuration in `www/premium-config.js` is deliberately:
+
+- `prepared: true`
+- `active: false`
+- `billing.enabled: false`
+- `updatePolicy.enabled: false`
+- `updatePolicy.enforce: false`
+
+The normal GitHub Actions APK build fails if those safety assumptions are violated.
+
+### Prepared Premium layers
+
+- `www/premium-config.js` — one explicit activation configuration
+- `www/entitlement-engine.js` — capability-based Free/Premium gating
+- `www/premium-ui.js` — Premium status, diagnostics, Restore/Manage hooks and click guarding
+- `www/premium.css` — prepared Premium and required-update UI
+- `www/version-policy.js` — minimum-version / forced-update / exact-version evaluator
+- `premium-prep/android/PremiumBillingPlugin.java` — dormant Capacitor/Google Play Billing native bridge template
+- `scripts/activate-premium-android.mjs` — explicit native activation script
+- `premium-prep/backend/google-play.mjs` — server-side Google Play verification/acknowledgement helpers
+- `premium-prep/backend/schema.sql` — prepared purchase/entitlement schema
+- `premium-prep/update-policy.example.json` — remote version-policy example
+
+Google Play Billing preparation targets **Billing Library 9.1.0**.
+
+### What the inactive build does
+
+The Premium page displays **Prepared · Not Active**.
+
+Premium feature tiles are intercepted by `MSAPremiumUI`; while Premium is disabled they cannot start a purchase or accidentally execute a paid-only action.
+
+The entitlement engine always keeps Premium capabilities locked while `MSAPremiumConfig.active === false`, even if somebody restores or injects an old local entitlement cache.
+
+Free capabilities remain available.
+
+### Future activation sequence
+
+Do not activate by changing only one JavaScript flag.
+
+A production activation should be performed deliberately:
+
+1. Create the Google Play subscription product `msa_one_premium` and its monthly/yearly base plans.
+2. Deploy authenticated Premium backend endpoints.
+3. Configure server-side Google Play Developer API credentials.
+4. Configure `billing.verifyUrl`, `billing.entitlementUrl`, and the subscription-management URL.
+5. Change the Premium config to active.
+6. Generate Android with Capacitor.
+7. Run `PREMIUM_ACTIVATE=1 node scripts/activate-premium-android.mjs`.
+8. Build/test through a Google Play internal testing track.
+9. Verify purchase, restore, cancellation, grace-period, on-hold, pending and expiry behavior before production release.
+
+The activation script is not called by the normal Build 47 workflow.
+
+The normal workflow also verifies that:
+- `com.android.billingclient:billing` is absent from generated Android
+- `PremiumBillingPlugin.java` is absent from generated Android
+
+Therefore Build 47 contains the preparation code but does **not** include an active billing client in the APK.
+
+## Prepared force-update / version policy
+
+`www/version-policy.js` is also present but disabled.
+
+It supports future policies such as:
+
+- latest version available
+- minimum supported version
+- force update when an installed version is older than latest
+- optional exact-version enforcement
+- update message
+- Play Store/update URL
+
+Example remote policy:
+
+```json
+{
+  "appId": "com.msa.one.displayfit37",
+  "latestVersion": "47.0.0",
+  "minSupportedVersion": "46.0.0",
+  "forceUpdate": false,
+  "requireExactVersion": false,
+  "message": "A newer MSA One version is available.",
+  "storeUrl": "https://play.google.com/store/apps/details?id=com.msa.one.displayfit37"
+}
+```
+
+### Recommended enforcement rule
+
+Use **minimum supported version** for mandatory updates instead of forcing every version mismatch.
+
+For example:
+
+- installed 47.0.0 / latest 47.1.0 / minimum 46.0.0 → allow app, show optional update
+- installed 46.5.0 / minimum 47.0.0 → block and require update
+- installed 46.5.0 / latest 47.0.0 / `forceUpdate:true` → block and require update
+
+This lets you force a critical/security update without unnecessarily locking users out for every minor release.
+
+The prepared policy defaults to **fail-open** on network/policy errors so a broken policy endpoint cannot brick the app. Change that only after the update service is production-tested.
+
+## Server-side entitlement rule
+
+The native app never grants Premium by itself.
+
+Future flow:
+
+Google Play purchase → purchase token → secure backend → Google Play Developer API verification → entitlement response → MSA One capability unlock.
+
+Do not grant Premium when the Google purchase is still PENDING.
+
+The backend helper maps ACTIVE and grace-period subscription states to Premium access, while on-hold/expired states do not receive Premium.
 
 ## App → Library Auto-Sync
 
-Build 46 makes the Built-in Library version-aware.
+The Built-in Library remains version-aware.
 
-When MSA One itself is updated, the installed app provides a new `MSAAppManifest`. On first launch after the update, `library-updater.js` compares the previous Library catalog with the capabilities and templates in the new build.
+Build 47 adds two new prepared Library modules:
 
-The Library then automatically:
+- **Premium System**
+- **Version & Update Policy**
 
-- re-indexes built-in modules
-- re-indexes built-in templates
-- records added and retired module/template IDs
-- records update history
-- shows a **NEW** Library status until the update is acknowledged
-- preserves personal templates
-- preserves favorites
-- preserves recent-template history
-- mirrors Library state through the normal storage/backup layer
+When Build 46 is upgraded to Build 47, Library auto-sync records those two modules as new while preserving:
 
-The Library update panel shows the installed app version/build, last sync time, schema version, module/template counts and update history.
-
-### Safe update model
-
-The Library does **not** download or execute new software code independently.
-
-Software/code changes arrive through the normal MSA One app/APK update. After installation, the Library indexes what is actually packaged in that build.
-
-This avoids silently running remote code and keeps the capability list aligned with the tested application package.
-
-A future remote catalog can be added for non-executable content such as templates/help metadata, but executable modules should remain tied to a signed/tested application build.
-
-### Personal Library layer
-
-User-owned Library data is stored separately in `msaUserLibraryV1`.
-
-That layer can contain:
-
-- favorites
 - personal templates
-- recently used templates
+- favorites
+- recent-template history
 
-Built-in items can change with a software update without overwriting this personal layer.
+The migration is covered by an executable Build 46→47 test.
 
-Library migration/update state is stored in `msaLibraryStateV2`.
-
-Both keys are included in IndexedDB mirroring and workspace backup/restore.
-
-### Version manifest
-
-`www/app-manifest.js` is now the source-visible build/library manifest.
-
-Build 46 CI verifies that:
-
-- package version is 46.0.0
-- Capacitor app name is MSA One 46
-- UI build ID is MSA-ONE-46
-- manifest version/build match the package/UI
-- Library updater is syntax checked
-- manifest/updater files are packaged into Android
-- Build 45 → Build 46 Library migration preserves user-owned data
+The Library still does not download executable JavaScript itself. Executable capabilities arrive through a tested/signed application build; the Library indexes what is actually installed.
 
 ## Smooth Performance System
 
-Build 45 adds a dedicated performance layer in `www/performance-engine.js` and `www/performance.css`.
+Build 45 performance improvements remain active:
 
-### Adaptive performance modes
+- Auto / Smooth / Battery profiles
+- frame-synced `requestAnimationFrame` motion
+- visual-viewport responsive sizing
+- row and column virtualization for large spreadsheets
+- idle autosave
+- chunked CSV/DOCX/XLSX/PPTX import
+- shared in-memory project cache
+- batched IndexedDB bootstrap
+- Reading View with text/icon scaling
 
-The app supports:
+## Friendly Helper
 
-- **Auto** — chooses a practical profile from available CPU/memory hints
-- **Smooth** — keeps richer effects and larger spreadsheet render windows
-- **Battery** — reduces blur, shadows and render-window size
+Contextual help remains available across Home, Files, Create, Document, Spreadsheet, Presentation, PDF, Smart HTML, AI, Me, Library and Planner.
 
-MSA One samples `requestAnimationFrame()` timing to estimate whether the current display is behaving closer to 60, 90 or 120 Hz. It does not force a refresh rate; animations stay synchronized to the refresh rate the WebView/browser actually provides.
-
-### High-refresh-friendly motion
-
-- draggable Lens updates are frame-synced with `requestAnimationFrame`
-- no fixed `setInterval` animation loop is used
-- CSS transitions remain refresh-rate independent
-- lower-performance profiles reduce expensive blur/shadow work
-- reduced-motion preferences remain supported
-
-### Faster startup
-
-- the previous fixed 1.6-second splash delay has been removed
-- splash dismissal now happens immediately after the first rendered frames
-- storage bootstrap batches IndexedDB reads/writes instead of repeatedly opening the database for each key
-- superseded GitHub Actions APK builds are cancelled automatically
-
-### Responsive display / resolution
-
-The performance layer tracks `VisualViewport` where available and maintains:
-
-- `--msa-vw`
-- `--msa-vh`
-- current viewport width/height
-- portrait/landscape state
-- device pixel ratio
-
-Pages and Create Studio use the current visual viewport height, improving behavior around rotation and the mobile keyboard.
-
-### Large spreadsheet performance
-
-Large worksheets now use virtual row and column windows instead of creating every cell input at once.
-
-Render-window size adapts to the performance profile.
-
-The workbook data remains complete; only the currently visible row/column window is painted.
-
-The spreadsheet includes row and column paging controls and still preserves formulas, sheets, XLSX export and CSV export.
-
-### Idle autosave
-
-Create Studio autosave is debounced and then scheduled during idle time when supported. Closing the editor still performs an immediate save.
-
-A shared `MSAProjects` memory cache also avoids repeatedly parsing the full project array from localStorage during normal editing and Files rendering.
-
-### Responsive import
-
-Large import work is divided into smaller UI-friendly chunks:
-
-- CSV parsing periodically yields to the browser
-- OOXML ZIP reading yields between package entries
-- DOCX parsing yields between document blocks
-- XLSX parsing yields between worksheet row groups
-- PPTX parsing yields between slide groups
-
-Import status is shown through the performance busy indicator.
-
-Office ZIP safety limits remain active for compressed size, expanded size, entry count and invalid ZIP bounds.
-
-### Export feedback
-
-Document, Spreadsheet, Presentation, PDF and Smart HTML export now use the common busy/status layer so the interface can render feedback before file generation starts.
-
-## Reading View
-
-Build 45 adds a dedicated **Reading View**.
-
-Controls include:
-
-- text size
-- icon size
-- reading line spacing
-- distraction-free view
-- one-tap exit
-
-The reading toolbar uses clear `A−`, `A＋`, icon-size controls and a visible **Done** button.
-
-Reading View makes supported editor fields read-only temporarily, hides unnecessary navigation/toolbars and restores the editing state when closed.
-
-The Me page now contains **Smoothness & Reading** controls plus device/performance information.
-
-## Built-in Library
-
-The Built-in Function Library now also registers **Performance & Reading**.
-
-Examples:
-
-- `MSALibrary.api('performance').reading(true)`
-- `MSALibrary.api('performance').mode('smooth')`
-- `MSALibrary.api('performance').font(1.15)`
-- `MSALibrary.api('performance').icons(1.1)`
-- `MSALibrary.api('performance').device()`
-
-Existing Library modules remain available for Core, Document, Spreadsheet, Presentation, PDF, Smart HTML, Files, Storage, Planner, Media, Voice, UI and Friendly Helper.
-
-## Friendly Helper retained
-
-Build 44 contextual help remains available across:
-
-- Home
-- Files
-- Create
-- Document
-- Spreadsheet
-- Presentation
-- PDF
-- Smart HTML
-- AI workspace
-- Me
-- Built-in Library
-- Planner
-
-The Helper no longer uses a global subtree MutationObserver. Navigation and editor events refresh it explicitly, reducing unnecessary DOM observation work.
-
-## Core functionality retained
+## Core Office capability
 
 - DOCX import/export with supported formatting, tables and practical image round-trip
 - multi-sheet XLSX import/export with formulas/shared strings
@@ -200,45 +167,27 @@ The Helper no longer uses a global subtree MutationObserver. Navigation and edit
 - PDF text creation/export
 - Smart HTML editing and sandbox preview
 - CSV/TSV import and CSV export
-- Files-level **Open Office File**
-- IndexedDB mirroring and JSON workspace backup/restore
+- Files-level Open Office File
+- IndexedDB mirroring and workspace backup/restore
 - Calendar / Daily Planner
-- built-in reusable templates
-- responsive mobile/desktop display fitting
-- Friendly Helper + Show Me + troubleshooting
+- built-in templates and Library auto-sync
 
 ## Quality checks
 
-`npm test` now covers:
+`npm test` covers:
 
-- Build 45 package/version consistency
-- performance engine APIs
-- Reading View CSS/contracts
-- frame-synced and idle-scheduling primitives
-- virtual spreadsheet rows/columns
-- chunked CSV and Office import
-- shared project cache
-- batched storage bootstrap
-- Core/Media SDK
-- Built-in Library + Performance API
-- Friendly Helper
-- Files/Planner recovery
-- spreadsheet formulas
+- Build 47 package/manifest consistency
+- Premium prepared-but-inactive behavior
+- force-update version decisions while enforcement is disabled
+- Google Play backend entitlement mapping
+- Build 46→47 Library migration
+- Performance/Reading contracts
 - Office import/export round-trip
-- Office media handling
+- large spreadsheet virtualization
+- storage/backup
+- Helper
+- Planner
 - Calendar
-
-## Current limitations
-
-- Web apps cannot force the Android display to 90/120 Hz; actual refresh rate is controlled by the device/WebView. MSA One is designed to avoid artificially capping animation and to follow `requestAnimationFrame`.
-- very large Office exports are still generated on the main JavaScript thread; progress appears before generation, but truly huge exports may still produce a short pause
-- project persistence still keeps a localStorage-compatible project representation, so very large media-heavy projects can hit browser/WebView storage limits
-- complex Word floating layouts/comments/tracked changes remain partial
-- Excel macros, pivot tables, advanced styles and native chart objects remain partial
-- PowerPoint animation, SmartArt, audio/video and complex masters remain partial
-- real generative AI responses still require a connected AI backend
-- cloud synchronization is not connected
-- Play Store release signing/AAB requires release credentials
 
 ## Android build
 
@@ -247,13 +196,14 @@ GitHub Actions builds the Android debug APK with Capacitor.
 1. Open **Actions → Build MSA One APK**.
 2. Run the workflow manually or push a relevant source change to `main`.
 3. Open the successful run.
-4. Download **MSA-One-46-APK**.
+4. Download **MSA-One-47-APK**.
 
-The workflow runs syntax/tests, verifies performance/helper/library assets, syncs the same `www` source into Capacitor, sets Android `versionCode 46` / `versionName 46.0`, builds the APK and uploads it.
+The normal workflow keeps Premium inactive and sets Android `versionCode 47` / `versionName 47.0`.
 
 ## Development
 
 - Node.js 22+
 - Java 21
 - Capacitor 7.4.3 pinned
+- Google Play Billing preparation target: 9.1.0
 - run `npm test` before building
