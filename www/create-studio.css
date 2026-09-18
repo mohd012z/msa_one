@@ -7,3 +7,5 @@
 .slide-editor select{width:100%;border:1px solid #72dbe82b;border-radius:12px;background:#0b1d2d;color:#eaffff;padding:10px}.slide-image-preview{width:100%;max-height:34vh;object-fit:contain;border-radius:14px;border:1px solid #72dbe82b;background:#06101b}.slide-image-empty{min-height:130px;display:grid;place-items:center;border:1px dashed #72dbe844;border-radius:14px;color:#8ba7b8;background:#071521}
 
 .sheet-tabs{display:flex;gap:7px;overflow:auto;margin:0 0 9px;padding-bottom:2px;scrollbar-width:none}.sheet-tabs::-webkit-scrollbar{display:none}.sheet-tabs .on{background:linear-gradient(135deg,#45d5ff,#4be1bf)!important;color:#07191d!important}
+
+.studio-editor img{display:block;max-width:100%;height:auto;margin:12px auto;border-radius:14px;border:1px solid #72dbe82b;background:#06101b;box-shadow:0 8px 26px #0005}
