@@ -1,6 +1,8 @@
 {
   "appId": "com.msa.one.displayfit37",
-  "appName": "MSA One 37",
+  "appName": "MSA One 38",
   "webDir": "www",
-  "server": {"androidScheme": "https"}
+  "server": {
+    "androidScheme": "https"
+  }
 }
