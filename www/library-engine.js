@@ -11,7 +11,8 @@
     {id:'planner',icon:'📅',name:'Planner',desc:'Daily Program, Plan, Diary and Note calendar entries',requires:['MSAPlanner']},
     {id:'media',icon:'🖼️',name:'Media',desc:'Image resize/compression and Office media embedding',requires:['MSAStudio','MSAOffice']},
     {id:'voice',icon:'🎙️',name:'Voice & AI Routing',desc:'Device speech input and local task routing',requires:['MSAActions']},
-    {id:'ui',icon:'🎨',name:'UI & Display',desc:'Responsive display fit, Button Studio and visual effects',requires:['MSAActions']}
+    {id:'ui',icon:'🎨',name:'UI & Display',desc:'Responsive display fit, Button Studio and visual effects',requires:['MSAActions']},
+    {id:'helper',icon:'?',name:'Friendly Helper',desc:'Context help, Show Me guidance, examples and troubleshooting',requires:['MSAHelper']}
   ];
 
   const TEMPLATES=[
@@ -79,7 +80,8 @@
       asset:(url)=>globalThis.MSAMedia?.dataUrlAsset(url)
     },
     voice:{start:()=>globalThis.MSAActions?.voice()},
-    ui:{studio:()=>globalThis.MSAActions?.uiStudio()}
+    ui:{studio:()=>globalThis.MSAActions?.uiStudio()},
+    helper:{open:(tab='guide')=>globalThis.MSAHelper?.open(tab),troubleshoot:()=>globalThis.MSAHelper?.open('trouble'),current:()=>globalThis.MSAHelper?.current()}
   };
   function api(module){return API[module]||null}
   function call(module,action,...args){
@@ -122,6 +124,7 @@
       case'media':return globalThis.MSAStudio?.open('document');
       case'voice':return globalThis.show?.('ai');
       case'ui':return globalThis.show?.('me');
+      case'helper':return globalThis.MSAHelper?.open();
     }
   }
   function filter(q=''){
