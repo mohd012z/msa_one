@@ -16,9 +16,10 @@ assert.equal(cap.appName,'MSA One 49','Capacitor app name must match build');
 assert.equal(cap.appId,'com.msa.one.displayfit37','Android app ID must remain stable for in-place upgrades');
 assert.ok(manifest.includes("version:'49.0.0'"),'app manifest version must match package');
 assert.ok(manifest.includes("buildId:'MSA-ONE-49'"),'app manifest build ID must match UI');
-assert.ok(premium.includes('active:false'),'Premium must remain inactive in Build 48');
-assert.ok(premium.includes('enabled:false'),'Billing/update policy must remain disabled in Build 48');
-assert.ok(premium.includes('enforce:false'),'force update must remain disabled in Build 48');
+assert.ok(premium.includes('active:false'),'Premium must remain inactive in Build 49');
+assert.ok(premium.includes("billing:{\n      enabled:false"),'Billing must remain disabled in Build 49');
+assert.ok(premium.includes("updatePolicy:{\n      enabled:true"),'remote update policy must be active in Build 49');
+assert.ok(premium.includes('enforce:true'),'force update must be active in Build 49');
 assert.ok(premium.includes("libraryVersion:'9.1.0'"),'prepared billing version must be 9.1.0');
 
 assert.ok(html.includes('data-build-id="MSA-ONE-49"'),'source UI build ID must match build');
