@@ -1,0 +1,7 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const p='www/document-production-engine-v2.js';assert.ok(fs.existsSync(p),'missing Document Production Engine v2 '+p);const s=fs.readFileSync(p,'utf8');
+for(const k of ['MSADocumentProductionEngine','createDocument','openDocument','insertHeading','insertParagraph','insertTable','insertImage','updateBlock','removeBlock','moveBlock','undo','redo','autosave','recover','applyTemplate','exportHTML','exportIR','getStatus'])assert.ok(s.includes(k),'missing document engine '+k);
+for(const k of ['MSADocumentIR','MSAKagaLibrary','MSAProjectStore','MSARagaConverter','MSARuntimeIntegration'])assert.ok(s.includes(k),'missing document integration '+k);
+for(const k of ['heading','paragraph','table','image','history','future','AVAILABLE','DEGRADED','UNAVAILABLE','localStorage'])assert.ok(s.includes(k),'missing document state/capability '+k);
+assert.ok(!s.includes('document.execCommand'),'deprecated execCommand must not return');assert.ok(!s.includes('eval('),'document engine must not use eval');assert.ok(!s.includes('new Function'),'document engine must not use new Function');
+console.log('Document Production Engine v2 contract passed');
