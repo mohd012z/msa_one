@@ -8,5 +8,7 @@ for(const x of ['msaOneProjectsV1','renderFiles','openProject','renameProject','
 assert.ok(js.includes('MSAStudio.open'),'saved drafts must reopen in Create Studio');
 for(const x of ['importOfficeFile','MSAImport.readFile','.docx,.xlsx,.pptx','data-open-office']) assert.ok(js.includes(x),'missing Files Office opener capability '+x);
 assert.ok(css.includes('.files-hero-actions'),'Files Office opener must be styled');
+assert.ok(js.includes('Project restored'),'Delete flow must provide Undo recovery');
+assert.ok(js.includes('MSAHelper?.error'),'Office import failures must use Friendly Helper when available');
 
 console.log('files workspace Office opener contract passed');
