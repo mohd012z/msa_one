@@ -17,7 +17,9 @@
     return new Promise(resolve=>{
       const input=document.createElement('input');input.type='file';input.hidden=true;input.accept=accept;input.multiple=multiple;
       if(capture)input.setAttribute('capture',capture);
-      input.onchange=()=>{const files=[...(input.files||[])];input.remove();resolve(multiple?files:(files[0]||null))};
+      let done=false;const finish=(files=[])=>{if(done)return;done=true;input.remove();resolve(multiple?files:(files[0]||null))};
+      input.onchange=()=>finish([...(input.files||[])]);
+      input.oncancel=()=>finish([]);
       document.body.appendChild(input);input.click();
     });
   }
