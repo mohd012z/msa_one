@@ -15,7 +15,8 @@
     {id:'helper',icon:'?',name:'Friendly Helper',desc:'Context help, Show Me guidance, examples and troubleshooting',requires:['MSAHelper']},
     {id:'performance',icon:'⚡',name:'Performance & Reading',desc:'Adaptive frame pacing, display fit, font/icon scale and Reading View',requires:['MSAPerformance']},
     {id:'premium',icon:'✦',name:'Premium System',desc:'Prepared entitlement and Google Play billing gate · inactive',requires:['MSAEntitlement','MSAPremiumUI']},
-    {id:'updates',icon:'↻',name:'Version & Update Policy',desc:'Prepared minimum-version and force-update policy · inactive',requires:['MSAUpdatePolicy']}
+    {id:'updates',icon:'↻',name:'Version & Update Policy',desc:'Prepared minimum-version and force-update policy · inactive',requires:['MSAUpdatePolicy']},
+    {id:'security',icon:'🛡️',name:'Security Center',desc:'Content sanitization, backup validation, safe URLs and runtime security audit',requires:['MSASecurity']}
   ];
 
   const TEMPLATES=[
@@ -87,7 +88,8 @@
     helper:{open:(tab='guide')=>globalThis.MSAHelper?.open(tab),troubleshoot:()=>globalThis.MSAHelper?.open('trouble'),current:()=>globalThis.MSAHelper?.current()},
     performance:{reading:(on)=>globalThis.MSAPerformance?.toggleReading(on),mode:(m)=>globalThis.MSAPerformance?.setMode(m),font:(v)=>globalThis.MSAPerformance?.setFontScale(v),icons:(v)=>globalThis.MSAPerformance?.setIconScale(v),device:()=>globalThis.MSAPerformance?.device()},
     premium:{status:()=>globalThis.MSAEntitlement?.status(),can:(cap)=>globalThis.MSAEntitlement?.can(cap),diagnostics:()=>globalThis.MSAEntitlement?.diagnostics(),open:()=>globalThis.show?.('premium')},
-    updates:{check:(opt)=>globalThis.MSAUpdatePolicy?.check(opt),evaluate:(p,v)=>globalThis.MSAUpdatePolicy?.evaluate(p,v),diagnostics:()=>globalThis.MSAUpdatePolicy?.diagnostics()}
+    updates:{check:(opt)=>globalThis.MSAUpdatePolicy?.check(opt),evaluate:(p,v)=>globalThis.MSAUpdatePolicy?.evaluate(p,v),diagnostics:()=>globalThis.MSAUpdatePolicy?.diagnostics()},
+    security:{audit:()=>globalThis.MSASecurity?.audit(),sanitize:(html)=>globalThis.MSASecurity?.sanitizeRichHTML(html),safeURL:(url)=>globalThis.MSASecurity?.isHTTPS(url)}
   };
   function api(module){return API[module]||null}
   function call(module,action,...args){
@@ -138,6 +140,7 @@
       case'performance':return globalThis.show?.('me');
       case'premium':return globalThis.show?.('premium');
       case'updates':return globalThis.show?.('premium');
+      case'security':globalThis.show?.('me');return globalThis.MSAHelper?.notify?.('Security Center is active · content, backup and URL validation enabled.','success');
     }
   }
   function filter(q=''){
