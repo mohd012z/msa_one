@@ -1,0 +1,44 @@
+(()=> {
+  const config={
+    schema:1,
+    prepared:true,
+    active:false,
+    plan:'premium',
+    product:{
+      id:'msa_one_premium',
+      displayName:'MSA One Premium',
+      capabilities:[
+        'advanced-ai',
+        'presenter',
+        'premium-templates',
+        'automation',
+        'premium-ui-studio',
+        'premium-lens',
+        'cloud-sync',
+        'large-file-tools'
+      ]
+    },
+    billing:{
+      enabled:false,
+      provider:'google-play',
+      libraryVersion:'9.1.0',
+      bridge:'MSABilling',
+      basePlans:['monthly','yearly'],
+      verifyUrl:'',
+      entitlementUrl:'',
+      manageUrl:''
+    },
+    updatePolicy:{
+      enabled:false,
+      enforce:false,
+      checkOnLaunch:false,
+      policyUrl:'',
+      storeUrl:'',
+      timeoutMs:5000,
+      failMode:'open',
+      requireHttps:true,
+      exactVersion:false
+    }
+  };
+  globalThis.MSAPremiumConfig=Object.freeze(config);
+})();
