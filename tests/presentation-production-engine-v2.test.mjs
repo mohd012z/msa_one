@@ -1,0 +1,7 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const p='www/presentation-production-engine-v2.js';assert.ok(fs.existsSync(p),'missing Presentation Production Engine v2 '+p);const s=fs.readFileSync(p,'utf8');
+for(const k of ['MSAPresentationProductionEngine','createPresentation','addSlide','removeSlide','duplicateSlide','moveSlide','setLayout','setTheme','addText','addImage','updateElement','removeElement','setSpeakerNotes','undo','redo','autosave','recover','applyTemplate','exportHTML','exportIR','getStatus'])assert.ok(s.includes(k),'missing presentation engine '+k);
+for(const k of ['MSAProjectStore','MSAKagaLibrary','MSARagaConverter','MSARuntimeIntegration','MSADocumentIR'])assert.ok(s.includes(k),'missing presentation integration '+k);
+for(const k of ['title','content','two-column','blank','text','image','speakerNotes','theme','history','future','AVAILABLE','DEGRADED','UNAVAILABLE','localStorage'])assert.ok(s.includes(k),'missing presentation state '+k);
+assert.ok(!s.includes('eval('),'presentation engine must not use eval');assert.ok(!s.includes('new Function'),'presentation engine must not use new Function');
+console.log('Presentation Production Engine v2 contract passed');
