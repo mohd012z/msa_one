@@ -1,0 +1,32 @@
+/* Build 52 · mobile Office-style full-page workspace */
+:root{--office-zoom:1}
+.office-mobile-shell{position:fixed;inset:0;z-index:79;pointer-events:none}
+.office-mobile-sheet,.office-more-sheet{pointer-events:auto}
+.studio-overlay.office-mobile .studio-mode{display:none}
+.studio-overlay.office-mobile .studio-top{background:#151719f5;border-bottom-color:#ffffff12}
+.studio-overlay.office-mobile .studio-body{padding:0 0 calc(68px + env(safe-area-inset-bottom));background:#111315}
+.studio-overlay.office-mobile [data-work]{min-height:100%;transform-origin:top left}
+.office-ribbon{position:sticky;top:0;z-index:6;background:#1c1e20f5;border-bottom:1px solid #ffffff12;backdrop-filter:blur(18px)}
+.office-ribbon-head{height:58px;display:flex;align-items:center;gap:8px;padding:7px 10px}
+.office-home-btn,.office-icon-btn{height:44px;border:0;border-radius:16px;background:#ffffff0d;color:#f4f4f4;font-weight:850;padding:0 15px}
+.office-home-btn{background:var(--office-accent,#62c58a);color:#07140c;min-width:104px}
+.office-icon-btn{min-width:44px;padding:0 11px;font-size:18px}.office-icon-btn:active,.office-home-btn:active{transform:scale(.94)}
+.office-ribbon-tools{display:flex;gap:7px;overflow-x:auto;padding:7px 10px 9px;scrollbar-width:none}.office-ribbon-tools::-webkit-scrollbar{display:none}
+.office-ribbon-tools button{flex:0 0 auto;min-width:48px;height:44px;border:0;border-radius:12px;background:#ffffff08;color:#f2f2f2;font-weight:800;padding:0 11px}
+.office-ribbon-tools button b{font-size:19px}.office-ribbon-tools button span{font-size:10px;display:block;color:#c7c9cc}
+.office-tab-menu{position:fixed;z-index:95;top:max(78px,calc(env(safe-area-inset-top) + 58px));left:12px;width:210px;padding:8px;background:#303234f7;border:1px solid #ffffff16;border-radius:22px;box-shadow:0 24px 70px #000a}
+.office-tab-menu button{width:100%;height:48px;border:0;border-radius:14px;background:transparent;color:#f3f3f3;text-align:left;padding:0 18px;font-size:16px;font-weight:750}.office-tab-menu button.on{background:var(--office-accent,#62c58a);color:#07140c}
+.office-more-sheet{position:fixed;z-index:100;inset:auto 0 0;background:#242628;border-radius:30px 30px 0 0;box-shadow:0 -20px 70px #0009;max-height:82dvh;overflow:auto;padding:14px 16px calc(22px + env(safe-area-inset-bottom));color:#f5f5f5}
+.office-sheet-grab{width:42px;height:5px;border-radius:999px;background:#8c8d90;margin:0 auto 12px}.office-sheet-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.office-sheet-title h2{margin:0;font-size:20px}.office-sheet-title button{width:44px;height:44px;border-radius:50%;border:1px solid #ffffff18;background:#4a4c4f;color:white;font-size:22px}
+.office-action-card{background:#343638;border-radius:22px;margin:10px 0;overflow:hidden}.office-action{width:100%;min-height:58px;border:0;border-bottom:1px solid #ffffff12;background:transparent;color:white;display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;text-align:left;padding:10px 16px}.office-action:last-child{border-bottom:0}.office-action i{font-style:normal;font-size:20px}.office-action small{color:#b9bbbf}
+.office-zoom-hud{position:fixed;z-index:92;right:12px;bottom:calc(72px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:4px;padding:5px;border-radius:16px;background:#202326e8;border:1px solid #ffffff16;backdrop-filter:blur(14px)}
+.office-zoom-hud button{width:42px;height:42px;border:0;border-radius:12px;background:#ffffff0c;color:white;font-size:19px}.office-zoom-hud output{min-width:48px;text-align:center;color:#d9dbde;font-size:11px;font-weight:850}
+.office-fullpage .studio-editor{margin:18px auto;min-height:calc(100dvh - 205px);width:min(92vw,794px);border-radius:2px;background:#fff;color:#111;padding:clamp(24px,6vw,72px);box-shadow:0 8px 28px #0006}
+.office-fullpage .sheet-wrap{border-radius:0;max-height:none;height:calc(100dvh - 210px);background:#fff}.office-fullpage .sheet-grid input{background:#fff;color:#111}.office-fullpage .sheet-grid th,.office-fullpage .sheet-grid tbody th{background:#eceff1;color:#333}.office-fullpage .formula-bar{margin:0;border-radius:0;background:#f4f5f6;color:#222;border-color:#d8dadd}
+.office-fullpage .studio-pdf-viewer{height:calc(100dvh - 178px);min-height:0;border-radius:0}
+.office-fullpage .studio-pdf-text{display:block;margin:18px auto;width:min(92vw,794px);min-height:calc(100dvh - 220px);border-radius:2px;background:#fff;color:#111;padding:clamp(24px,6vw,72px)}
+.office-fullpage .studio-tools{display:none}
+.office-fullpage .sheet-tabs,.office-fullpage .sheet-pager{margin:0;border-radius:0}
+.office-zoom-target{zoom:var(--office-zoom)}
+@supports not (zoom:1){.office-zoom-target{transform:scale(var(--office-zoom));transform-origin:top left;width:calc(100% / var(--office-zoom))}}
+@media(min-width:760px){.office-more-sheet{left:50%;right:auto;width:min(620px,92vw);transform:translateX(-50%)}.office-tab-menu{left:calc(50% - 440px)}}
