@@ -1,5 +1,6 @@
 (()=> {
   const KEY='msaHelperV1';
+  let mounted=false;
   const HELP={
     home:{icon:'⌂',title:'Home',intro:'Choose what you want to accomplish. You do not need to know the file format first.',steps:[
       {text:'Create something new',target:'#home .tile'},
@@ -64,11 +65,11 @@
       {text:'Open a module to launch its main function',target:'.library-module button'},
       {text:'Choose Use on a template to create a project',target:'.library-template'}
     ],examples:['report','budget','training','dashboard','checklist'],trouble:['READY means the required local module is loaded.','CHECK means one of that module’s dependencies is not currently available.']},
-    planner:{icon:'📅',title:'Planner Helper',intro:'Use Daily Program for scheduled activities, Plan for future work, Diary for records and Note for quick information.',steps:[],examples:['Daily Program = scheduled activity','Plan = future action','Diary = record what happened','Note = quick reference'],trouble:['Planner entries are stored locally and included in workspace backups.']}
+    planner:{icon:'📅',title:'Planner Helper',intro:'Use Daily Program for scheduled activities, Plan for future work, Diary for records and Note for quick information.',steps:[{text:'Choose a day from the calendar',target:'#planner [data-grid]'},{text:'Add a new planner entry',target:'#planner [data-add]'},{text:'Choose Daily Program, Plan, Diary or Note',target:'#planner [data-kind]'},{text:'Save the entry when complete',target:'#planner [data-save]'}],examples:['Daily Program = scheduled activity','Plan = future action','Diary = record what happened','Note = quick reference'],trouble:['Planner entries are stored locally and included in workspace backups.']}
   };
 
   function load(){try{return JSON.parse(localStorage.getItem(KEY)||'{}')}catch{return{}}}
-  function save(v){localStorage.setItem(KEY,JSON.stringify(v));globalThis.MSAStorage?.mirror(KEY,JSON.stringify(v))}
+  function save(v){const raw=JSON.stringify(v);try{localStorage.setItem(KEY,raw)}catch{}globalThis.MSAStorage?.mirror(KEY,raw)}
   function state(){return {enabled:true,welcomeSeen:false,completed:{},dismissed:{},...load()}}
   function patch(x){const s={...state(),...x};save(s);return s}
   function context(){
@@ -164,7 +165,9 @@
   }
   function refresh(){ensure();ensureStatus();nudgeCurrent()}
   function mount(){
-    ensure();welcome();
+    ensure();
+    if(mounted){refresh();return}
+    mounted=true;welcome();
     document.addEventListener('click',e=>{if(e.target.closest('.studio-type,.nav button,[data-planner-open],[data-library-home],[data-library-me]'))setTimeout(refresh,60)});
     window.addEventListener('resize',refresh,{passive:true});
     new MutationObserver(()=>ensureStatus()).observe(document.body,{attributes:true,subtree:true,attributeFilter:['class']});
