@@ -40,7 +40,14 @@ fs.copyFileSync(path.join(root,'security-prep','android','network_security_confi
 
 const manifest=path.join(android,'app','src','main','AndroidManifest.xml');
 let m=fs.readFileSync(manifest,'utf8');
-m=m.replace(/<application\s+/,'<application android:usesCleartextTraffic="false" android:networkSecurityConfig="@xml/network_security_config" android:allowBackup="false" ');
+function setApplicationAttribute(xml,name,value){
+  const re=new RegExp('android:'+name+'="[^"]*"');
+  if(re.test(xml))return xml.replace(re,'android:'+name+'="'+value+'"');
+  return xml.replace(/<application\b/,'<application android:'+name+'="'+value+'"');
+}
+m=setApplicationAttribute(m,'usesCleartextTraffic','false');
+m=setApplicationAttribute(m,'networkSecurityConfig','@xml/network_security_config');
+m=setApplicationAttribute(m,'allowBackup','false');
 fs.writeFileSync(manifest,m);
 
 console.log('Applied Android WebView/network security hardening.');
