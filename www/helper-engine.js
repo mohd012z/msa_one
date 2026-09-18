@@ -104,7 +104,7 @@
     if(!bar){
       bar=el('button','helper-status');bar.type='button';bar.onclick=()=>open();top.insertAdjacentElement('afterend',bar);
     }
-    const c=current();bar.innerHTML='<span>✓ Autosaved locally</span><b>Need help with '+c.title.replace(' Helper','')+'?</b><strong>?</strong>';
+    const c=current();bar.innerHTML='<span>Local draft · autosave enabled</span><b>Need help with '+c.title.replace(' Helper','')+'?</b><strong>?</strong>';
   }
   function renderTab(tab='guide'){
     const c=current(),box=document.querySelector('[data-helper-content]');if(!box)return;
@@ -115,7 +115,7 @@
       box.querySelectorAll('[data-show-index]').forEach(b=>b.onclick=()=>showMe(steps[+b.dataset.showIndex]?.target,steps[+b.dataset.showIndex]?.text));
     }else if(tab==='examples'){
       box.innerHTML='<div class="helper-example-list">'+(c.examples||[]).map(x=>'<button data-copy-example="'+escapeHTML(x)+'"><span>✦</span><b>'+escapeHTML(x)+'</b><small>Tap to copy</small></button>').join('')+'</div>';
-      box.querySelectorAll('[data-copy-example]').forEach(b=>b.onclick=async()=>{const t=b.dataset.copyExample;try{await navigator.clipboard?.writeText(t);notify('Copied: '+t,'success')}catch{notify(t,'info')}});
+      box.querySelectorAll('[data-copy-example]').forEach(b=>b.onclick=async()=>{const t=b.dataset.copyExample;try{if(!navigator.clipboard?.writeText)throw new Error('Clipboard unavailable');await navigator.clipboard.writeText(t);notify('Copied: '+t,'success')}catch{notify('Example: '+t,'info')}});
     }else{
       box.innerHTML='<div class="helper-trouble">'+(c.trouble||[]).map((x,i)=>'<article><span>'+(i+1)+'</span><p>'+escapeHTML(x)+'</p></article>').join('')+'</div>';
     }
@@ -133,7 +133,8 @@
   function showMe(selector,text){
     clearHighlight();close();
     const target=selector&&document.querySelector(selector);
-    if(!target){notify('That control is not visible on this screen yet.','info');return}
+    const visible=target&&target.getClientRects().length>0&&getComputedStyle(target).visibility!=='hidden';
+    if(!visible){notify('That control is not visible on this screen yet. Open the related workspace first.','info');return}
     target.classList.add('helper-highlight');target.scrollIntoView({behavior:'smooth',block:'center'});
     const p=el('button','helper-pointer');p.setAttribute('data-helper-pointer','');p.textContent=text||'Use this control';p.onclick=clearHighlight;document.body.appendChild(p);
     setTimeout(clearHighlight,6500);
