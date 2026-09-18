@@ -14,5 +14,7 @@ for(const capability of ['MSAActions','SpeechRecognition',"type='file'",'MSAStud
   assert.ok(js.includes(capability),'app action controller missing '+capability);
 }
 assert.ok(js.includes("accept='image/*'")||js.includes("openPicker('image/*'"),'image picker must accept images');
+assert.ok(js.includes('oncancel'),'attachment picker must handle cancel');
+assert.ok(js.includes('Voice input could not start'),'voice start failures must have recovery feedback');
 
 console.log('app action wiring contract passed');
