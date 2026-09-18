@@ -71,6 +71,7 @@
     for(const a of el.attributes||[])if(a.localName===local)return a.value;
     return'';
   }
+  function relId(el){for(const a of el?.attributes||[])if(a.prefix==='r'||String(a.namespaceURI||'').includes('/relationships'))return a.value;return attr(el,'id')}
   function children(el,name){return [...(el?.children||[])].filter(x=>x.localName===name)}
   function descendants(el,name){return [...(el?.getElementsByTagName('*')||[])].filter(x=>x.localName===name)}
   function relationships(files,path){
@@ -177,7 +178,7 @@
     if(!doc)throw new Error('xl/workbook.xml is missing.');
     const relMap=relationships(files,'xl/_rels/workbook.xml.rels'),shared=sharedStrings(files),sheets=[];
     for(const sh of descendants(doc,'sheet')){
-      const name=attr(sh,'name')||('Sheet'+(sheets.length+1)),rid=attr(sh,'id'),rel=relMap[rid];
+      const name=attr(sh,'name')||('Sheet'+(sheets.length+1)),rid=relId(sh),rel=relMap[rid];
       if(!rel)continue;
       sheets.push({name,rows:worksheetRows(files,resolve(workbook,rel.target),shared)});
     }
@@ -194,7 +195,7 @@
     if(!doc)throw new Error('ppt/presentation.xml is missing.');
     const presRels=relationships(files,'ppt/_rels/presentation.xml.rels'),slides=[];
     for(const id of descendants(doc,'sldId')){
-      const rel=presRels[attr(id,'id')];if(!rel)continue;
+      const rel=presRels[relId(id)];if(!rel)continue;
       const part=resolve(pres,rel.target),sd=xmlDoc(files[part]);if(!sd)continue;
       const t=slideText(sd),rels=relationships(files,relPathFor(part));let image='';
       for(const blip of descendants(sd,'blip')){image=officeImage(files,part,rels,attr(blip,'embed'));if(image)break}
