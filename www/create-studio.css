@@ -9,3 +9,5 @@
 .sheet-tabs{display:flex;gap:7px;overflow:auto;margin:0 0 9px;padding-bottom:2px;scrollbar-width:none}.sheet-tabs::-webkit-scrollbar{display:none}.sheet-tabs .on{background:linear-gradient(135deg,#45d5ff,#4be1bf)!important;color:#07191d!important}
 
 .studio-editor img{display:block;max-width:100%;height:auto;margin:12px auto;border-radius:14px;border:1px solid #72dbe82b;background:#06101b;box-shadow:0 8px 26px #0005}
+
+.sheet-pager{display:flex;align-items:center;justify-content:center;gap:9px;margin:0 0 9px;padding:7px;border:1px solid #72dbe824;border-radius:13px;background:#081827}.sheet-pager span{min-width:0;color:#9fc3d3;font-size:10px;font-weight:750;text-align:center}.sheet-pager button:disabled{opacity:.35;pointer-events:none}
