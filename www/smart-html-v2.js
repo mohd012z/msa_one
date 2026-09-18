@@ -1,0 +1,17 @@
+(()=>{'use strict';
+const AVAILABLE='AVAILABLE',BLOCKED='BLOCKED',SANITIZED='SANITIZED',UNSUPPORTED='UNSUPPORTED',KEY='msa-smart-html-v2';
+let current=null,previewMode='desktop',sourceMode=true,zoom=1;
+const store=()=>window.MSAProjectStore;
+function cleanText(v=''){return String(v).replace(/\u0000/g,'')}
+function sanitizeHTML(input=''){let html=cleanText(input),blocked=[];html=html.replace(/<script\b[^>]*>[\s\S]*?<\/script\s*>/gi,m=>{blocked.push('script');return''}).replace(/<iframe\b[^>]*>[\s\S]*?<\/iframe\s*>/gi,m=>{blocked.push('iframe');return''}).replace(/\son\w+\s*=\s*(["']).*?\1/gi,'').replace(/\son\w+\s*=\s*[^\s>]+/gi,'').replace(/\s(?:src|href)\s*=\s*(["'])\s*javascript:[\s\S]*?\1/gi,'').replace(/<link\b[^>]*rel\s*=\s*(["'])?stylesheet\1?[^>]*>/gi,m=>{blocked.push('external');return''});return{html,status:blocked.length?SANITIZED:AVAILABLE,blocked}}
+function createProject(title='Smart HTML'){let now=new Date().toISOString();current={id:'html-'+Date.now().toString(36),title:cleanText(title),type:'html',source:'<!doctype html><html><head><meta charset="utf-8"></head><body></body></html>',created:now,updated:now};saveProject();return{...current}}
+function importHTML(source,title='Imported HTML'){let r=sanitizeHTML(source);current=createProject(title);current.source=r.html;current.importStatus=r.status;current.blocked=r.blocked;saveProject();return{project:{...current},status:r.status,blocked:r.blocked}}
+function saveProject(project=current){if(!project)return null;project.updated=new Date().toISOString();current=project;try{localStorage.setItem(KEY,JSON.stringify(project))}catch{};store()?.save?.(project);return{...project}}
+function restoreProject(id){let p=id?store()?.get?.(id):null;if(!p)try{p=JSON.parse(localStorage.getItem(KEY)||'null')}catch{};current=p||null;return current?{...current}:null}
+function exportHTML(project=current){if(!project)return{status:UNSUPPORTED};let r=sanitizeHTML(project.source);return{status:r.status===AVAILABLE?AVAILABLE:SANITIZED,name:(project.title||'smart-html').replace(/[^a-z0-9._-]+/gi,'_')+'.html',type:'text/html',content:r.html}}
+function buildPreview(source=current?.source||'',opts={}){let r=sanitizeHTML(source),mode=opts.mode||previewMode;return{status:r.status,srcdoc:r.html,sandbox:'allow-forms allow-modals',mode,orientation:opts.orientation||'portrait',zoom:Math.max(.25,Math.min(2,Number(opts.zoom||zoom))),blocked:r.blocked,security:{script:BLOCKED,external:BLOCKED,iframe:BLOCKED,'allow-scripts':BLOCKED,'allow-same-origin':BLOCKED}}}
+function setPreviewMode(mode='desktop',orientation='portrait',scale=1){previewMode=['mobile','desktop'].includes(mode)?mode:'desktop';zoom=Math.max(.25,Math.min(2,Number(scale)||1));return{previewMode,orientation:['portrait','landscape'].includes(orientation)?orientation:'portrait',zoom}}
+function setSourceMode(v=true){sourceMode=!!v;return sourceMode}
+function handoff(target='raga',action='convert'){let auth=window.MSAAgentRouter?.authorize?.(target,action);if(auth?.status==='DENIED')return auth;if(target==='raga'&&window.MSARagaConverter)return{status:'ROUTED',target,action,documentIR:window.MSADocumentIR||null,project:current?{...current}:null};return{status:UNSUPPORTED,target}}
+window.MSASmartHTML={AVAILABLE,BLOCKED,SANITIZED,UNSUPPORTED,createProject,importHTML,exportHTML,saveProject,restoreProject,sanitizeHTML,buildPreview,setPreviewMode,setSourceMode,handoff,get previewMode(){return previewMode},get sourceMode(){return sourceMode},get current(){return current?{...current}:null}};
+})();
