@@ -8,15 +8,26 @@ globalThis.localStorage={
   clear:()=>store.clear()
 };
 
+const build46Modules=[
+  'core','document','spreadsheet','presentation','pdf','html','files','storage',
+  'planner','media','voice','ui','helper','performance'
+];
+const build46Templates=[
+  'doc-report','doc-letter','doc-minutes','doc-procedure',
+  'sheet-budget','sheet-inventory','sheet-kpi','sheet-task',
+  'ppt-update','ppt-training','ppt-proposal',
+  'pdf-note','pdf-checklist','html-guide','html-dashboard','html-form'
+];
+
 localStorage.setItem('msaLibraryStateV2',JSON.stringify({
   schema:2,
-  lastBuild:'MSA-ONE-47',
-  lastVersion:'47.0.0',
+  lastBuild:'MSA-ONE-46',
+  lastVersion:'46.0.0',
   lastSync:'2026-09-18T00:00:00.000Z',
-  catalog:{modules:['core','document'],templates:['doc-report']},
+  catalog:{modules:build46Modules,templates:build46Templates},
   lastUpdate:null,
   history:[],
-  ackBuild:'MSA-ONE-47'
+  ackBuild:'MSA-ONE-46'
 }));
 localStorage.setItem('msaUserLibraryV1',JSON.stringify({
   schema:1,
@@ -40,11 +51,12 @@ const synced=U.sync({quiet:true});
 assert.equal(synced.version,'47.0.0');
 assert.equal(synced.buildId,'MSA-ONE-47');
 assert.equal(synced.pendingUpdate,true,'upgrade must be marked new until acknowledged');
-assert.equal(synced.lastUpdate.fromBuild,'MSA-ONE-47');
+assert.equal(synced.lastUpdate.fromBuild,'MSA-ONE-46');
 assert.equal(synced.lastUpdate.toBuild,'MSA-ONE-47');
-assert.ok(synced.lastUpdate.addedModules.includes('premium'),'upgrade must discover prepared Premium module');
-assert.ok(synced.lastUpdate.addedModules.includes('updates'),'upgrade must discover prepared Update Policy module');
-assert.ok(Array.isArray(synced.lastUpdate.addedTemplates),'upgrade must diff built-in templates');
+assert.deepEqual(synced.lastUpdate.addedModules.sort(),['premium','updates']);
+assert.deepEqual(synced.lastUpdate.removedModules,[]);
+assert.deepEqual(synced.lastUpdate.addedTemplates,[]);
+assert.deepEqual(synced.lastUpdate.removedTemplates,[]);
 
 assert.equal(U.isFavorite('doc-report'),true,'favorite must survive app upgrade');
 assert.ok(U.userTemplates().some(t=>t.id==='user-checklist'),'personal template must survive app upgrade');
@@ -59,6 +71,6 @@ assert.ok(!U.userTemplates().some(t=>t.id===added.id),'personal template must be
 
 const ack=U.acknowledge();
 assert.equal(ack.pendingUpdate,false,'acknowledging update must clear NEW state');
-assert.ok(ack.history.some(x=>x.toBuild==='MSA-ONE-47'),'upgrade must remain in update history');
+assert.ok(ack.history.some(x=>x.fromBuild==='MSA-ONE-46'&&x.toBuild==='MSA-ONE-47'),'46→47 upgrade must remain in update history');
 
-console.log('app-to-library upgrade migration contract passed');
+console.log('Build 46 to 47 Library migration contract passed');
