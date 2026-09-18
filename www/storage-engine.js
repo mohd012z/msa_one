@@ -32,8 +32,9 @@
     return data;
   }
   function downloadBackup(){
-    const data=JSON.stringify(snapshot(),null,2),blob=new Blob([data],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');
-    a.href=u;a.download='msa-one-backup-'+new Date().toISOString().slice(0,10)+'.json';a.click();setTimeout(()=>URL.revokeObjectURL(u),800);
+    const data=JSON.stringify(snapshot(),null,2),name='msa-one-backup-'+new Date().toISOString().slice(0,10)+'.json';
+    if(window.MSACore?.download)window.MSACore.download(name,data,'application/json');
+    else{const blob=new Blob([data],{type:'application/json'}),u=URL.createObjectURL(blob),a=document.createElement('a');a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),800)}
   }
   function importBackup(){
     const input=document.createElement('input');input.type='file';input.accept='application/json,.json';input.hidden=true;
