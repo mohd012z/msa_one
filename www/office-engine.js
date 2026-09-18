@@ -131,7 +131,7 @@
     pageIds.forEach((id,i)=>objs[id-1]='<< /Type /Page /Parent '+pagesId+' 0 R /MediaBox [0 0 595 842] /Resources << /Font << /F1 '+font+' 0 R >> >> /Contents '+contentIds[i]+' 0 R >>');
     objs[pagesId-1]='<< /Type /Pages /Kids ['+pageIds.map(id=>id+' 0 R').join(' ')+'] /Count '+pageIds.length+' >>';
     const catalog=add('<< /Type /Catalog /Pages '+pagesId+' 0 R >>');
-    const info=add('<< /Title ('+String(title).replace(/[()\\]/g,'')+') /Producer (MSA One) >>');
+    const safeTitle=String(title).replace(/[^\\x20-\\x7E]/g,'?').replace(/[()\\]/g,'');\n    const info=add('<< /Title ('+safeTitle+') /Producer (MSA One) >>');
     let out='%PDF-1.4\n', offsets=[0];
     objs.forEach((o,i)=>{offsets.push(out.length);out+=(i+1)+' 0 obj\n'+o+'\nendobj\n'});
     const xref=out.length;
