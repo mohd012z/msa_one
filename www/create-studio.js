@@ -12,6 +12,8 @@
   function esc(s=''){return window.MSACore?.escapeHTML(s)??String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
   function safeName(s='msa-one'){return window.MSACore?.safeName(s)??(String(s).trim().replace(/[^\w-]+/g,'-').replace(/^-+|-+$/g,'')||'msa-one')}
   function json(s,fallback){return window.MSACore?.parseJSON(s,fallback)??(()=>{try{return JSON.parse(s)}catch{return fallback}})()}
+  function friendlyError(message){if(window.MSAHelper?.error)window.MSAHelper.error(message,[{label:'Troubleshoot',run:()=>window.MSAHelper.open('trouble')}]);else alert(message)}
+  function friendlySuccess(message){if(window.MSAHelper?.success)window.MSAHelper.success(message);}
   function defaultSheet(){
     const rows=Array.from({length:12},()=>Array.from({length:6},()=>''));rows[0]=['Item','Description','Qty','Price','Total','Status'];rows[1]=['A001','Sample item','2','15','=C2*D2','Open'];return rows;
   }
@@ -139,7 +141,7 @@
   }
   function pickDocumentImage(editor){
     const input=document.createElement('input');input.type='file';input.accept='image/*';input.hidden=true;
-    input.onchange=async()=>{const file=input.files?.[0];if(!file)return;try{const data=await resizeImage(file);editor.focus();document.execCommand('insertHTML',false,'<p><img src="'+data+'" alt="'+esc(file.name)+'"></p><p><br></p>');queueSave()}catch(e){alert(e.message)}finally{input.remove()}};
+    input.onchange=async()=>{const file=input.files?.[0];if(!file)return;try{const data=await resizeImage(file);editor.focus();document.execCommand('insertHTML',false,'<p><img src="'+data+'" alt="'+esc(file.name)+'"></p><p><br></p>');queueSave()}catch(e){friendlyError(e.message)}finally{input.remove()}};
     document.body.appendChild(input);input.click();
   }
   function resizeImage(file){
@@ -148,7 +150,7 @@
   }
   function pickSlideImage(slides){
     const input=document.createElement('input');input.type='file';input.accept='image/*';input.hidden=true;
-    input.onchange=async()=>{const file=input.files?.[0];if(!file)return;try{const data=await resizeImage(file),a=readSlides(slides);a[state.slide].image=data;if(a[state.slide].layout==='title-body')a[state.slide].layout='image-right';replaceSlides(a)}catch(e){alert(e.message)}finally{input.remove()}};
+    input.onchange=async()=>{const file=input.files?.[0];if(!file)return;try{const data=await resizeImage(file),a=readSlides(slides);a[state.slide].image=data;if(a[state.slide].layout==='title-body')a[state.slide].layout='image-right';replaceSlides(a)}catch(e){friendlyError(e.message)}finally{input.remove()}};
     document.body.appendChild(input);input.click();
   }
   function replaceSlides(slides){
@@ -168,7 +170,7 @@
   }
   function saveDraft(){
     if(!TYPES[state.type])return;const title=document.querySelector('[data-title]')?.value.trim()||'Untitled '+TYPES[state.type][1];if(!state.id)state.id='p_'+Date.now().toString(36);
-    try{put({id:state.id,type:state.type,title,content:currentContent(),updated:Date.now()})}catch(e){alert('This draft is too large for local storage. Remove large images or export/backup first.');return}
+    try{put({id:state.id,type:state.type,title,content:currentContent(),updated:Date.now()})}catch(e){friendlyError('This draft is too large for local storage. Remove a large image, export the file, or back up the workspace first.');return}
     const s=document.querySelector('.studio-status');if(s)s.textContent='Saved · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});renderRecents();
   }
   function queueSave(){clearTimeout(state.timer);state.timer=setTimeout(saveDraft,350)}
@@ -187,7 +189,7 @@
     r.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openProject(b.dataset.open));
   }
   function exportPDF(text){
-    const title=document.querySelector('[data-title]')?.value||'MSA One',name=safeName(title);if(!window.MSAOffice)return alert('Office engine is not loaded.');
+    const title=document.querySelector('[data-title]')?.value||'MSA One',name=safeName(title);if(!window.MSAOffice){friendlyError('The Office export engine is not available. Open Help for recovery options.');return}
     window.MSAOffice.download(name+'.pdf',window.MSAOffice.pdf(text,title),'application/pdf');
   }
   function sanitizeHTML(html){
@@ -248,7 +250,7 @@
           if(!Array.isArray(slides)||!slides.length)throw new Error('Presentation JSON must contain a slides array');
           replaceSlides(slides.map(x=>({title:String(x.title||''),body:String(x.body||''),layout:['title-body','image-right','image-full'].includes(x.layout)?x.layout:'title-body',image:/^data:image\//.test(x.image||'')?x.image:''})));
         }
-      }catch(e){alert('Import failed: '+e.message)}finally{input.remove()}
+      }catch(e){friendlyError('Import failed: '+e.message)}finally{input.remove()}
     };
     document.body.appendChild(input);input.click();
   }
@@ -260,6 +262,7 @@
     else if(state.type==='spreadsheet')window.MSAOffice.download(name+'.xlsx',window.MSAOffice.xlsx({sheets:currentSheets()}),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     else if(state.type==='presentation')window.MSAOffice.download(name+'.pptx',window.MSAOffice.pptx(currentSlides()),'application/vnd.openxmlformats-officedocument.presentationml.presentation');
     else if(state.type==='pdf')exportPDF(currentContent());
+    if(state.type!=='pdf')friendlySuccess((TYPES[state.type]?.[1]||'File')+' export prepared on this device.');
   }
 
   window.MSAStudio={open,close,saveDraft,importCurrent,exportCurrent,openProject,createProject,evalFormula,pickDocumentImage};
