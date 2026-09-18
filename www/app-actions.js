@@ -142,7 +142,7 @@
   function runAction(action){
     switch(action){
       case 'reader': openAI('Read and present the selected file or pasted text.'); break;
-      case 'converter': page('create'); toast('Choose a source workspace. Native Office conversion engine is not connected yet.'); break;
+      case 'converter': page('create'); toast('Offline Office export is ready: DOCX, XLSX, PPTX, PDF, CSV and HTML.'); break;
       case 'automation': openAI('Create an automation for: '); break;
       case 'files': page('files'); break;
       case 'scan': page('ai'); openPicker('image/*','environment'); break;
@@ -150,7 +150,7 @@
       case 'voice': page('ai'); voice(); break;
       case 'start': routeTask(); break;
       case 'profile': editProfile(); break;
-      case 'ui-studio': uiStudio(); break;
+      case 'ui-studio': uiStudio(); break;\n      case 'backup': window.MSAStorage?.downloadBackup(); toast('Workspace backup prepared'); break;\n      case 'restore': window.MSAStorage?.importBackup(); break;
       case 'advanced-ai': openAI('Help me with: '); break;
       case 'presenter': openAI('Prepare presenter notes in Bahasa Melayu for: '); break;
       case 'templates': page('create'); break;
