@@ -6,7 +6,7 @@ const L=globalThis.MSALibrary;
 assert.ok(L,'MSALibrary must be registered');
 
 const ids=L.modules.map(x=>x.id);
-for(const id of ['core','document','spreadsheet','presentation','pdf','html','files','storage','planner','media','voice','ui']){
+for(const id of ['core','document','spreadsheet','presentation','pdf','html','files','storage','planner','media','voice','ui','helper']){
   assert.ok(ids.includes(id),'missing library module '+id);
 }
 assert.ok(L.templates.length>=16,'built-in template library must include at least 16 templates');
@@ -28,6 +28,7 @@ assert.equal(typeof L.call,'function','library gateway must expose call()');
 assert.equal(typeof L.api('spreadsheet').formula,'function');
 assert.equal(typeof L.api('storage').backup,'function');
 assert.equal(typeof L.api('files').openOffice,'function');
+assert.equal(typeof L.api('helper').open,'function');
 
 const health=L.selfCheck();
 assert.equal(health.offline,true);
