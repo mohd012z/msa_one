@@ -117,7 +117,7 @@
     const name=prompt('Workspace name',current);
     if(!name||!name.trim()) return;
     saved.name=name.trim();
-    localStorage.setItem(STORAGE_PROFILE,JSON.stringify(saved));
+    const raw=JSON.stringify(saved);localStorage.setItem(STORAGE_PROFILE,raw);window.MSAStorage?.mirror(STORAGE_PROFILE,raw);
     applyProfile();
     toast('Workspace name saved on this device');
   }
@@ -173,7 +173,7 @@
       const saved=localStorage.getItem('msaOneLanguage');
       if(saved==='EN'||saved==='MY') lang.value=saved;
       lang.addEventListener('change',()=>{
-        localStorage.setItem('msaOneLanguage',lang.value);
+        localStorage.setItem('msaOneLanguage',lang.value);window.MSAStorage?.mirror('msaOneLanguage',lang.value);
         toast(lang.value==='MY'?'Bahasa Melayu dipilih':'English selected');
       });
     }
