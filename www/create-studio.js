@@ -28,8 +28,8 @@
   function mount(){
     if(document.querySelector('.studio-overlay')){wireTiles();return}
     const x=document.createElement('section');x.className='studio-overlay';
-    x.innerHTML='<header class="studio-top"><button data-close>‹</button><div class="studio-title"><input data-title value="Untitled"><div class="studio-status">Ready · autosaves on this device</div></div><button class="studio-primary" data-export>Export</button></header><div class="studio-body"><div class="studio-mode">'+Object.entries(TYPES).map(([k,v])=>'<button class="studio-type" data-type="'+k+'">'+v[0]+'<br>'+v[1]+'</button>').join('')+'</div><div data-work></div><div class="studio-recents" data-recents></div></div>';
-    document.body.appendChild(x);x.querySelector('[data-close]').onclick=close;x.querySelector('[data-export]').onclick=exportCurrent;x.querySelector('[data-title]').oninput=queueSave;
+    x.innerHTML='<header class="studio-top"><button data-close>‹</button><div class="studio-title"><input data-title value="Untitled"><div class="studio-status">Ready · autosaves on this device</div></div><button class="studio-tool" data-import>Import</button><button class="studio-primary" data-export>Export</button></header><div class="studio-body"><div class="studio-mode">'+Object.entries(TYPES).map(([k,v])=>'<button class="studio-type" data-type="'+k+'">'+v[0]+'<br>'+v[1]+'</button>').join('')+'</div><div data-work></div><div class="studio-recents" data-recents></div></div>';
+    document.body.appendChild(x);x.querySelector('[data-close]').onclick=close;x.querySelector('[data-import]').onclick=importCurrent;x.querySelector('[data-export]').onclick=exportCurrent;x.querySelector('[data-title]').oninput=queueSave;
     x.querySelectorAll('[data-type]').forEach(b=>b.onclick=()=>open(b.dataset.type));wireTiles();renderRecents();
   }
 
@@ -152,6 +152,58 @@
     const title=document.querySelector('[data-title]')?.value||'MSA One',name=safeName(title);if(!window.MSAOffice)return alert('Office engine is not loaded.');
     window.MSAOffice.download(name+'.pdf',window.MSAOffice.pdf(text,title),'application/pdf');
   }
+  function sanitizeHTML(html){
+    const d=document.createElement('div');d.innerHTML=html;
+    d.querySelectorAll('script,style,iframe,object,embed,link,meta').forEach(x=>x.remove());
+    d.querySelectorAll('*').forEach(el=>[...el.attributes].forEach(a=>{if(/^on/i.test(a.name))el.removeAttribute(a.name);if((a.name==='href'||a.name==='src')&&/^javascript:/i.test(a.value))el.removeAttribute(a.name)}));
+    return d.innerHTML;
+  }
+  function parseCSV(text,delimiter=','){
+    const rows=[];let row=[],cell='',quoted=false;
+    for(let i=0;i<text.length;i++){
+      const ch=text[i],next=text[i+1];
+      if(ch==='"'&&quoted&&next==='"'){cell+='"';i++;continue}
+      if(ch==='"'){quoted=!quoted;continue}
+      if(ch===delimiter&&!quoted){row.push(cell);cell='';continue}
+      if((ch==='\n'||ch==='\r')&&!quoted){
+        if(ch==='\r'&&next==='\n')i++;row.push(cell);cell='';if(row.some(x=>x!==''))rows.push(row);row=[];continue;
+      }
+      cell+=ch;
+    }
+    row.push(cell);if(row.some(x=>x!==''))rows.push(row);return rows.length?rows:[['']];
+  }
+  function importCurrent(){
+    const input=document.createElement('input');input.type='file';input.hidden=true;
+    if(state.type==='spreadsheet')input.accept='.csv,.tsv,text/csv,text/tab-separated-values';
+    else if(state.type==='document')input.accept='.txt,.html,.htm,text/plain,text/html';
+    else if(state.type==='html')input.accept='.html,.htm,.txt,text/html,text/plain';
+    else if(state.type==='presentation')input.accept='image/*,.json,application/json';
+    else input.accept='.txt,text/plain';
+    input.onchange=async()=>{
+      const file=input.files?.[0];if(!file)return;
+      try{
+        if(state.type==='spreadsheet'){
+          const text=await file.text(),delimiter=file.name.toLowerCase().endsWith('.tsv')?'\t':',',rows=parseCSV(text,delimiter);replaceSheet(rows);
+        }else if(state.type==='document'){
+          const text=await file.text(),html=/\.html?$/i.test(file.name)?sanitizeHTML(text):'<p>'+esc(text).replace(/\r?\n/g,'</p><p>')+'</p>';
+          const ed=document.querySelector('[data-doc]');if(ed){ed.innerHTML=html;queueSave()}
+        }else if(state.type==='html'){
+          const text=await file.text(),c=document.querySelector('[data-code]');if(c){c.value=text;preview();queueSave()}
+        }else if(state.type==='pdf'){
+          const text=await file.text(),ta=document.querySelector('[data-pdf-text]');if(ta){ta.value=text;queueSave()}
+        }else if(state.type==='presentation'&&file.type.startsWith('image/')){
+          const data=await resizeImage(file),slides=currentSlides();slides[state.slide].image=data;if(slides[state.slide].layout==='title-body')slides[state.slide].layout='image-right';replaceSlides(slides);
+        }else if(state.type==='presentation'){
+          const data=JSON.parse(await file.text()),slides=Array.isArray(data)?data:data.slides;
+          if(!Array.isArray(slides)||!slides.length)throw new Error('Presentation JSON must contain a slides array');
+          replaceSlides(slides.map(x=>({title:String(x.title||''),body:String(x.body||''),layout:['title-body','image-right','image-full'].includes(x.layout)?x.layout:'title-body',image:/^data:image\//.test(x.image||'')?x.image:''})));
+        }
+        const title=document.querySelector('[data-title]');if(title&&!state.id)title.value=file.name.replace(/\.[^.]+$/,'');
+      }catch(e){alert('Import failed: '+e.message)}finally{input.remove()}
+    };
+    document.body.appendChild(input);input.click();
+  }
+
   function exportCurrent(){
     saveDraft();if(!window.MSAOffice)return alert('Office engine is not loaded.');const title=document.querySelector('[data-title]')?.value||'MSA One',name=safeName(title);
     if(state.type==='html')window.MSAOffice.download(name+'.html',currentContent(),'text/html;charset=utf-8');
@@ -161,6 +213,6 @@
     else if(state.type==='pdf')exportPDF(currentContent());
   }
 
-  window.MSAStudio={open,close,saveDraft,exportCurrent,openProject,evalFormula};
+  window.MSAStudio={open,close,saveDraft,importCurrent,exportCurrent,openProject,evalFormula};
   document.addEventListener('DOMContentLoaded',mount);setTimeout(mount,400);
 })();
