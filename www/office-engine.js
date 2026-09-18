@@ -53,13 +53,56 @@
     setTimeout(()=>URL.revokeObjectURL(u),1000);
   }
 
+  function wordRun(text,opt={}){
+    const rp=(opt.bold?'<w:b/>':'')+(opt.italic?'<w:i/>':'')+(opt.underline?'<w:u w:val="single"/>':'')+(opt.size?'<w:sz w:val="'+opt.size+'"/><w:szCs w:val="'+opt.size+'"/>':'');
+    return '<w:r>'+(rp?'<w:rPr>'+rp+'</w:rPr>':'')+'<w:t xml:space="preserve">'+xml(text||' ')+'</w:t></w:r>';
+  }
+  function inlineRuns(node,opt={}){
+    let out='';
+    for(const child of node.childNodes){
+      if(child.nodeType===3){out+=wordRun(child.nodeValue,opt);continue}
+      if(child.nodeType!==1)continue;
+      const tag=child.tagName.toLowerCase(),next={...opt};
+      if(tag==='b'||tag==='strong')next.bold=true;
+      if(tag==='i'||tag==='em')next.italic=true;
+      if(tag==='u')next.underline=true;
+      if(tag==='br'){out+='<w:r><w:br/></w:r>';continue}
+      out+=inlineRuns(child,next);
+    }
+    return out;
+  }
+  function wordParagraph(node,opt={}){
+    const tag=(node.tagName||'').toLowerCase();
+    const heading=tag==='h1'?36:tag==='h2'?30:tag==='h3'?26:0;
+    const pPr=(heading?'<w:pPr><w:spacing w:before="180" w:after="100"/></w:pPr>':'');
+    const runs=inlineRuns(node,{...opt,bold:opt.bold||!!heading,size:heading||opt.size});
+    return '<w:p>'+pPr+(runs||wordRun(' ',opt))+'</w:p>';
+  }
+  function wordTable(table){
+    const rows=[...table.rows].map(row=>'<w:tr>'+[...row.cells].map(cell=>'<w:tc><w:tcPr><w:tcW w:w="2400" w:type="dxa"/></w:tcPr>'+wordParagraph(cell,{bold:cell.tagName.toLowerCase()==='th'})+'</w:tc>').join('')+'</w:tr>').join('');
+    return '<w:tbl><w:tblPr><w:tblW w:w="0" w:type="auto"/><w:tblBorders><w:top w:val="single" w:sz="4" w:color="B7C9D6"/><w:left w:val="single" w:sz="4" w:color="B7C9D6"/><w:bottom w:val="single" w:sz="4" w:color="B7C9D6"/><w:right w:val="single" w:sz="4" w:color="B7C9D6"/><w:insideH w:val="single" w:sz="4" w:color="D7E1E8"/><w:insideV w:val="single" w:sz="4" w:color="D7E1E8"/></w:tblBorders></w:tblPr>'+rows+'</w:tbl>';
+  }
+  function htmlToWord(html){
+    const d=document.createElement('div');d.innerHTML=html;
+    let out='';
+    for(const node of d.childNodes){
+      if(node.nodeType===3){if(node.nodeValue.trim())out+='<w:p>'+wordRun(node.nodeValue)+'</w:p>';continue}
+      if(node.nodeType!==1)continue;
+      const tag=node.tagName.toLowerCase();
+      if(tag==='table')out+=wordTable(node);
+      else if(tag==='ul'||tag==='ol'){
+        [...node.children].forEach((li,i)=>{const mark=tag==='ol'?(i+1)+'. ':'• ';out+='<w:p>'+wordRun(mark,{bold:true})+inlineRuns(li)+'</w:p>'});
+      }else out+=wordParagraph(node);
+    }
+    return out||'<w:p>'+wordRun(' ')+'</w:p>';
+  }
   function docx(title,html){
-    const text=plain(html), paras=(text||' ').split(/\n+/).map((p,i)=>'<w:p><w:r><w:t xml:space="preserve">'+xml(p||' ')+'</w:t></w:r></w:p>').join('');
+    const body=htmlToWord(html);
     const files=[
       {name:'[Content_Types].xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/word/document.xml" ContentType="application/vnd.openxmlformats-officedocument.wordprocessingml.document.main+xml"/><Override PartName="/docProps/core.xml" ContentType="application/vnd.openxmlformats-package.core-properties+xml"/></Types>'},
       {name:'_rels/.rels',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="word/document.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/package/2006/relationships/metadata/core-properties" Target="docProps/core.xml"/></Relationships>'},
-      {name:'docProps/core.xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:dcterms="http://purl.org/dc/terms/"><dc:title>'+xml(title)+'</dc:title><dc:creator>MSA One</dc:creator></cp:coreProperties>'},
-      {name:'word/document.xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+paras+'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1440" w:right="1440" w:bottom="1440" w:left="1440"/></w:sectPr></w:body></w:document>'}
+      {name:'docProps/core.xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><cp:coreProperties xmlns:cp="http://schemas.openxmlformats.org/package/2006/metadata/core-properties" xmlns:dc="http://purl.org/dc/elements/1.1/"><dc:title>'+xml(title)+'</dc:title><dc:creator>MSA One</dc:creator></cp:coreProperties>'},
+      {name:'word/document.xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><w:document xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"><w:body>'+body+'<w:sectPr><w:pgSz w:w="11906" w:h="16838"/><w:pgMar w:top="1134" w:right="1134" w:bottom="1134" w:left="1134"/></w:sectPr></w:body></w:document>'}
     ];
     return zip(files);
   }
@@ -68,14 +111,18 @@
   function xlsx(rows){
     rows=Array.isArray(rows)?rows:[];
     const sheet=rows.map((row,r)=>'<row r="'+(r+1)+'">'+row.map((v,c)=>{
-      const ref=colName(c)+(r+1), str=String(v??'');
-      const num=str.trim()!==''&&Number.isFinite(Number(str));
-      return num?'<c r="'+ref+'"><v>'+Number(str)+'</v></c>':'<c r="'+ref+'" t="inlineStr"><is><t xml:space="preserve">'+xml(str)+'</t></is></c>';
+      const ref=colName(c)+(r+1),str=String(v??''),trim=str.trim();
+      if(trim.startsWith('=')){
+        const formula=xml(trim.slice(1));
+        return '<c r="'+ref+'"><f>'+formula+'</f><v>0</v></c>';
+      }
+      const num=trim!==''&&Number.isFinite(Number(trim));
+      return num?'<c r="'+ref+'"><v>'+Number(trim)+'</v></c>':'<c r="'+ref+'" t="inlineStr"><is><t xml:space="preserve">'+xml(str)+'</t></is></c>';
     }).join('')+'</row>').join('');
     const files=[
       {name:'[Content_Types].xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/></Types>'},
       {name:'_rels/.rels',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>'},
-      {name:'xl/workbook.xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets></workbook>'},
+      {name:'xl/workbook.xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="Sheet1" sheetId="1" r:id="rId1"/></sheets><calcPr calcId="191029" fullCalcOnLoad="1" forceFullCalc="1"/></workbook>'},
       {name:'xl/_rels/workbook.xml.rels',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/></Relationships>'},
       {name:'xl/worksheets/sheet1.xml',data:'<?xml version="1.0" encoding="UTF-8" standalone="yes"?><worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>'+sheet+'</sheetData></worksheet>'}
     ];
