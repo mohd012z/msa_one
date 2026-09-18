@@ -155,7 +155,9 @@
       case 'restore': window.MSAStorage?.importBackup(); break;
       case 'advanced-ai': openAI('Help me with: '); break;
       case 'presenter': openAI('Prepare presenter notes in Bahasa Melayu for: '); break;
-      case 'templates': page('create'); break;
+      case 'templates': window.MSALibrary?.open(); break;
+      case 'dashboard-template': window.MSALibrary?.openTemplate('html-dashboard'); break;
+      case 'library': window.MSALibrary?.open(); break;
       case 'premium-lens': page('ai'); toast('AI workspace opened'); break;
       default: break;
     }
