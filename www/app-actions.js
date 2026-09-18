@@ -150,7 +150,9 @@
       case 'voice': page('ai'); voice(); break;
       case 'start': routeTask(); break;
       case 'profile': editProfile(); break;
-      case 'ui-studio': uiStudio(); break;\n      case 'backup': window.MSAStorage?.downloadBackup(); toast('Workspace backup prepared'); break;\n      case 'restore': window.MSAStorage?.importBackup(); break;
+      case 'ui-studio': uiStudio(); break;
+      case 'backup': window.MSAStorage?.downloadBackup(); toast('Workspace backup prepared'); break;
+      case 'restore': window.MSAStorage?.importBackup(); break;
       case 'advanced-ai': openAI('Help me with: '); break;
       case 'presenter': openAI('Prepare presenter notes in Bahasa Melayu for: '); break;
       case 'templates': page('create'); break;
