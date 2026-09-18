@@ -10,7 +10,7 @@ globalThis.localStorage={
 
 const build48Modules=[
   'core','document','spreadsheet','presentation','pdf','html','files','storage',
-  'planner','media','voice','ui','helper','performance','premium','updates'
+  'planner','media','voice','ui','helper','performance','premium','updates','security'
 ];
 const build48Templates=[
   'doc-report','doc-letter','doc-minutes','doc-procedure',
@@ -72,6 +72,6 @@ U.removeUserTemplate(added.id);
 
 const ack=U.acknowledge();
 assert.equal(ack.pendingUpdate,false,'acknowledging update must clear NEW state');
-assert.ok(ack.history.some(x=>x.fromBuild==='MSA-ONE-48'&&x.toBuild==='MSA-ONE-49'),'47→48 upgrade must remain in update history');
+assert.ok(ack.history.some(x=>x.fromBuild==='MSA-ONE-48'&&x.toBuild==='MSA-ONE-49'),'48→49 upgrade must remain in update history');
 
 console.log('Build 48 to 49 secure update migration contract passed');
