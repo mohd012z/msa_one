@@ -118,7 +118,8 @@
   function addUserTemplate(t){
     if(!t||!t.type||!t.name)throw new Error('Template type and name are required');
     const u=userData(),id=t.id||('user-'+(globalThis.MSACore?.uid?.('tpl')||Date.now().toString(36)));
-    const item={id,type:t.type,icon:t.icon||'◇',name:String(t.name).slice(0,80),group:t.group||'My Templates',title:t.title||t.name,content:String(t.content??''),source:'user',created:now(),updated:now()};
+    let item={id,type:t.type,icon:t.icon||'◇',name:String(t.name).slice(0,80),group:t.group||'My Templates',title:t.title||t.name,content:String(t.content??''),source:'user',created:now(),updated:now()};
+    if(globalThis.MSASecurity?.sanitizeTemplate)item=globalThis.MSASecurity.sanitizeTemplate(item);
     const i=u.templates.findIndex(x=>x.id===id);i<0?u.templates.unshift(item):u.templates[i]={...u.templates[i],...item,updated:now()};saveUser(u);if(typeof document!=='undefined')globalThis.MSALibrary?.render?.();return item;
   }
   function removeUserTemplate(id){
