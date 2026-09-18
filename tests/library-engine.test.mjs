@@ -21,6 +21,14 @@ const budgetContent=typeof budget.content==='function'?budget.content():budget.c
 const parsed=JSON.parse(budgetContent);
 assert.ok(Array.isArray(parsed.sheets)&&parsed.sheets.length>=2,'budget template must be multi-sheet');
 
+for(const mod of ['core','document','spreadsheet','presentation','pdf','html','files','storage','planner','media','voice','ui']){
+  assert.ok(L.api(mod),'missing API group '+mod);
+}
+assert.equal(typeof L.call,'function','library gateway must expose call()');
+assert.equal(typeof L.api('spreadsheet').formula,'function');
+assert.equal(typeof L.api('storage').backup,'function');
+assert.equal(typeof L.api('files').openOffice,'function');
+
 const health=L.selfCheck();
 assert.equal(health.offline,true);
 assert.equal(health.total,L.modules.length);
