@@ -9,9 +9,9 @@
     const raw=JSON.stringify(a);localStorage.setItem(KEY,raw);window.MSAStorage?.mirror(KEY,raw);return p;
   }
   function get(id){return all().find(x=>x.id===id)}
-  function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-  function safeName(s='msa-one'){return String(s).trim().replace(/[^\w-]+/g,'-').replace(/^-+|-+$/g,'')||'msa-one'}
-  function json(s,fallback){try{return JSON.parse(s)}catch{return fallback}}
+  function esc(s=''){return window.MSACore?.escapeHTML(s)??String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+  function safeName(s='msa-one'){return window.MSACore?.safeName(s)??(String(s).trim().replace(/[^\w-]+/g,'-').replace(/^-+|-+$/g,'')||'msa-one')}
+  function json(s,fallback){return window.MSACore?.parseJSON(s,fallback)??(()=>{try{return JSON.parse(s)}catch{return fallback}})()}
   function defaultSheet(){
     const rows=Array.from({length:12},()=>Array.from({length:6},()=>''));rows[0]=['Item','Description','Qty','Price','Total','Status'];rows[1]=['A001','Sample item','2','15','=C2*D2','Open'];return rows;
   }
@@ -143,6 +143,7 @@
     document.body.appendChild(input);input.click();
   }
   function resizeImage(file){
+    if(window.MSAMedia?.resizeImage)return window.MSAMedia.resizeImage(file,{max:1280,quality:.78,type:'image/jpeg'});
     return new Promise((resolve,reject)=>{const fr=new FileReader();fr.onerror=()=>reject(fr.error);fr.onload=()=>{const img=new Image();img.onerror=()=>reject(new Error('Image could not be read'));img.onload=()=>{const max=1280,scale=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*scale));c.height=Math.max(1,Math.round(img.height*scale));c.getContext('2d').drawImage(img,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',.78))};img.src=fr.result};fr.readAsDataURL(file)});
   }
   function pickSlideImage(slides){
@@ -174,6 +175,12 @@
   function open(type='document',id=null){mount();state.type=TYPES[type]?type:'document';state.id=id;state.slide=0;state.sheet=0;document.querySelector('.studio-overlay').classList.add('on');render()}
   function close(){saveDraft();document.querySelector('.studio-overlay')?.classList.remove('on')}
   function openProject(id){const p=get(id);if(p)open(p.type,p.id)}
+  function createProject(type,title,content){
+    if(!TYPES[type])throw new Error('Unsupported project type: '+type);
+    const id=window.MSACore?.uid('p')||('p_'+Date.now().toString(36));
+    put({id,type,title:title||('Untitled '+TYPES[type][1]),content:content??'',updated:Date.now()});
+    open(type,id);return id;
+  }
   function renderRecents(){
     const r=document.querySelector('[data-recents]');if(!r)return;const a=all().slice(0,5);
     r.innerHTML=a.length?'<div class="studio-status">RECENT DRAFTS</div>'+a.map(p=>'<div class="studio-recent"><span>'+(TYPES[p.type]?.[0]||'◆')+'</span><div><b>'+esc(p.title)+'</b><div class="studio-status">'+new Date(p.updated).toLocaleString()+'</div></div><button class="studio-tool" data-open="'+p.id+'">Open</button></div>').join(''):'';
@@ -255,6 +262,6 @@
     else if(state.type==='pdf')exportPDF(currentContent());
   }
 
-  window.MSAStudio={open,close,saveDraft,importCurrent,exportCurrent,openProject,evalFormula,pickDocumentImage};
+  window.MSAStudio={open,close,saveDraft,importCurrent,exportCurrent,openProject,createProject,evalFormula,pickDocumentImage};
   document.addEventListener('DOMContentLoaded',mount);setTimeout(mount,400);
 })();
