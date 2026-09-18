@@ -108,7 +108,7 @@
   function docParagraphHtml(p,files,part,relMap){
     let inner='';
     for(const child of p.children){
-      if(child.localName==='r')inner+=runHtml(child);
+      if(child.localName==='r'){inner+=runHtml(child);for(const blip of descendants(child,'blip')){const src=officeImage(files,part,relMap,attr(blip,'embed'));if(src)inner+='<img src="'+src+'" alt="Imported document image">'}}
       else if(child.localName==='hyperlink')for(const r of children(child,'r'))inner+=runHtml(r);
       else{
         for(const blip of descendants(child,'blip')){
