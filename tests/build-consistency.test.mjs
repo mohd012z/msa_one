@@ -27,6 +27,7 @@ for(const asset of ['core-library.js','library-engine.js','library.css','helper-
   assert.ok(workflow.includes(asset),'workflow must verify packaged UX asset '+asset);
 }
 assert.ok(pkg.scripts['check:syntax'].includes('www/helper-engine.js'),'Helper engine must be syntax checked');
+assert.ok(workflow.includes('cancel-in-progress: true'),'workflow must cancel superseded APK builds');
 assert.ok(!workflow.includes('Package Calendar and adaptive display UI'),'workflow must not mutate source UI before packaging');
 assert.ok(!workflow.includes('\\n          grep'),'workflow must not contain escaped newline commands');
 
