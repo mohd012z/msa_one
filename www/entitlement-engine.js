@@ -103,15 +103,25 @@
   function bridge(){
     return globalThis.Capacitor?.Plugins?.[config().billing?.bridge||'MSABilling']||null;
   }
+  async function verifyPurchase(purchase){
+    const c=config();
+    if(!c.active||!c.billing?.enabled)return inactiveState();
+    if(!purchase?.purchaseToken)throw new Error('Purchase token is missing');
+    if(!c.billing.verifyUrl)throw new Error('Purchase verification endpoint is not configured');
+    const payload=await backendJSON(c.billing.verifyUrl,{method:'POST',body:JSON.stringify({
+      purchaseToken:purchase.purchaseToken,
+      productId:purchase.productId||c.product.id,
+      packageName:'com.msa.one.displayfit37'
+    })});
+    return applyVerified(payload);
+  }
   async function restore(){
     const c=config();
     if(!c.active||!c.billing?.enabled)return inactiveState();
     const b=bridge();if(!b?.restore)throw new Error('Native billing bridge is unavailable');
     const purchase=await b.restore();
     if(!purchase?.purchaseToken)throw new Error('No restorable Premium purchase was returned');
-    if(!c.billing.verifyUrl)throw new Error('Purchase verification endpoint is not configured');
-    const verified=await backendJSON(c.billing.verifyUrl,{method:'POST',body:JSON.stringify({purchaseToken:purchase.purchaseToken,productId:c.product.id,packageName:globalThis.MSAAppManifest?.appId||'com.msa.one.displayfit37'})});
-    return applyVerified(verified);
+    return verifyPurchase({purchaseToken:purchase.purchaseToken,productId:c.product.id});
   }
   function clearCache(){try{localStorage.removeItem(KEY)}catch{}}
   function diagnostics(){
@@ -128,5 +138,5 @@
     };
   }
 
-  globalThis.MSAEntitlement={FREE,PREMIUM,status,can,isPremiumCapability,require:requireCapability,guard,applyVerified,refresh,restore,clearCache,diagnostics};
+  globalThis.MSAEntitlement={FREE,PREMIUM,status,can,isPremiumCapability,require:requireCapability,guard,applyVerified,verifyPurchase,refresh,restore,clearCache,diagnostics};
 })();
