@@ -1,0 +1,7 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const p='www/kaga-template-library-v2.js';assert.ok(fs.existsSync(p),'missing Kaga Template Library v2 '+p);const s=fs.readFileSync(p,'utf8');
+for(const k of ['MSAKagaTemplateLibrary','listTemplates','getTemplate','createTemplate','updateTemplate','removeTemplate','duplicateTemplate','searchTemplates','filterTemplates','validateTemplate','applyTemplate','importTemplate','exportTemplate','save','recover','getStatus'])assert.ok(s.includes(k),'missing Kaga Template Library v2 '+k);
+for(const k of ['MSAKagaLibrary','MSADocumentIR','MSADocumentProductionEngine','MSASpreadsheetProductionEngine','MSAPresentationProductionEngine','MSAProjectStore','MSARuntimeIntegration'])assert.ok(s.includes(k),'missing Kaga v2 integration '+k);
+for(const k of ['document','spreadsheet','presentation','report','letter','meeting','training','checklist','AVAILABLE','PREVIEW','UNAVAILABLE','version','category','tags','localStorage'])assert.ok(s.includes(k),'missing Kaga v2 template metadata '+k);
+assert.ok(!s.includes('eval('),'Kaga Template Library v2 must not use eval');assert.ok(!s.includes('new Function'),'Kaga Template Library v2 must not use new Function');
+console.log('Kaga Template Library v2 contract passed');
