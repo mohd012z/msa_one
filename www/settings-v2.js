@@ -3,11 +3,11 @@ const S={soft:'18px',round:'26px',pill:'999px',compact:'9px',ios:'14px'};
 const N={soft:'Soft',round:'Round',pill:'Pill',compact:'Compact',ios:'iOS'};
 const E={gradient:'Gradient',glass:'Glass',glow:'Soft Glow',neon:'Neon Edge',minimal:'Minimal'};
 function fitDisplay(){
- const sw=Math.max(240,Math.round(screen.width||0));
+ const sw=Math.max(240,Math.round(screen.width||window.innerWidth||0));
  const iw=Math.max(240,Math.round(window.innerWidth||sw));
  const vv=window.visualViewport?Math.max(240,Math.round(visualViewport.width||iw)):iw;
- const w=Math.min(sw,iw,vv);
- const h=Math.round((window.visualViewport&&visualViewport.height)||window.innerHeight||screen.height||0);
+ const w=Math.max(240,Math.min(iw,vv));
+ const h=Math.max(240,Math.round((window.visualViewport&&visualViewport.height)||window.innerHeight||screen.height||0));
  const dpr=window.devicePixelRatio||1;
  document.documentElement.style.setProperty('--msa-screen-width',w+'px');
  document.documentElement.dataset.displayWidth=String(w);
