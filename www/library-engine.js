@@ -12,7 +12,8 @@
     {id:'media',icon:'🖼️',name:'Media',desc:'Image resize/compression and Office media embedding',requires:['MSAStudio','MSAOffice']},
     {id:'voice',icon:'🎙️',name:'Voice & AI Routing',desc:'Device speech input and local task routing',requires:['MSAActions']},
     {id:'ui',icon:'🎨',name:'UI & Display',desc:'Responsive display fit, Button Studio and visual effects',requires:['MSAActions']},
-    {id:'helper',icon:'?',name:'Friendly Helper',desc:'Context help, Show Me guidance, examples and troubleshooting',requires:['MSAHelper']}
+    {id:'helper',icon:'?',name:'Friendly Helper',desc:'Context help, Show Me guidance, examples and troubleshooting',requires:['MSAHelper']},
+    {id:'performance',icon:'⚡',name:'Performance & Reading',desc:'Adaptive frame pacing, display fit, font/icon scale and Reading View',requires:['MSAPerformance']}
   ];
 
   const TEMPLATES=[
@@ -81,7 +82,8 @@
     },
     voice:{start:()=>globalThis.MSAActions?.voice()},
     ui:{studio:()=>globalThis.MSAActions?.uiStudio()},
-    helper:{open:(tab='guide')=>globalThis.MSAHelper?.open(tab),troubleshoot:()=>globalThis.MSAHelper?.open('trouble'),current:()=>globalThis.MSAHelper?.current()}
+    helper:{open:(tab='guide')=>globalThis.MSAHelper?.open(tab),troubleshoot:()=>globalThis.MSAHelper?.open('trouble'),current:()=>globalThis.MSAHelper?.current()},
+    performance:{reading:(on)=>globalThis.MSAPerformance?.toggleReading(on),mode:(m)=>globalThis.MSAPerformance?.setMode(m),font:(v)=>globalThis.MSAPerformance?.setFontScale(v),icons:(v)=>globalThis.MSAPerformance?.setIconScale(v),device:()=>globalThis.MSAPerformance?.device()}
   };
   function api(module){return API[module]||null}
   function call(module,action,...args){
@@ -125,6 +127,7 @@
       case'voice':return globalThis.show?.('ai');
       case'ui':return globalThis.show?.('me');
       case'helper':return globalThis.MSAHelper?.open();
+      case'performance':return globalThis.show?.('me');
     }
   }
   function filter(q=''){
