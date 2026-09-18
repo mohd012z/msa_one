@@ -18,8 +18,8 @@ const UI=globalThis.MSAPremiumUI;
 assert.ok(C.prepared,'Premium must be prepared');
 assert.equal(C.active,false,'Premium must NOT be active');
 assert.equal(C.billing.enabled,false,'Google Play Billing must NOT be active');
-assert.equal(C.updatePolicy.enabled,false,'remote update policy must NOT be active');
-assert.equal(C.updatePolicy.enforce,false,'force-update enforcement must NOT be active');
+assert.equal(C.updatePolicy.enabled,true,'remote update policy must be active');
+assert.equal(C.updatePolicy.enforce,true,'force-update enforcement must be active');
 assert.equal(C.billing.libraryVersion,'9.1.0');
 
 assert.equal(E.can('document'),true,'free capabilities must remain available');
