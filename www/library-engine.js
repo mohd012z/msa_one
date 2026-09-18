@@ -1,5 +1,6 @@
 (()=> {
   const MODULES=[
+    {id:'core',icon:'🧩',name:'Core SDK',desc:'Shared helpers, file picking, downloads, media resize and event utilities',requires:['MSACore','MSAMedia']},
     {id:'document',icon:'📄',name:'Document',desc:'Rich text, tables, images, DOCX/PDF import-export',requires:['MSAStudio','MSAOffice','MSAImport']},
     {id:'spreadsheet',icon:'📊',name:'Spreadsheet',desc:'Multi-sheet grid, formulas, charts, XLSX/CSV round trip',requires:['MSAStudio','MSAOffice','MSAImport','MSAFormula']},
     {id:'presentation',icon:'📽️',name:'Presentation',desc:'Slides, layouts, images, PPTX import-export',requires:['MSAStudio','MSAOffice','MSAImport']},
@@ -54,6 +55,7 @@
   }
   function runModule(id){
     switch(id){
+      case'core':return open();
       case'document':return globalThis.MSAStudio?.open('document');
       case'spreadsheet':return globalThis.MSAStudio?.open('spreadsheet');
       case'presentation':return globalThis.MSAStudio?.open('presentation');
@@ -107,6 +109,8 @@
   }
 
   globalThis.MSALibrary={modules:MODULES,templates:TEMPLATES,capabilities,selfCheck,filter,template,openTemplate,runModule,render,open,close,mount};
-  document.addEventListener('DOMContentLoaded',mount);
-  setTimeout(mount,650);
+  if(typeof document!=='undefined'){
+    document.addEventListener('DOMContentLoaded',mount);
+    setTimeout(mount,650);
+  }
 })();
