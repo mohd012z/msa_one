@@ -40,9 +40,9 @@ jobs:
       - name: Test source contracts
         run: npm test
 
-      - name: Verify MSA One 49 source UI
+      - name: Verify MSA One 50 source UI
         run: |
-          grep -q 'data-build-id="MSA-ONE-49"' www/index.html
+          grep -q 'data-build-id="MSA-ONE-50"' www/index.html
           grep -q 'data-calendar-home' www/index.html
           grep -q 'data-calendar-me' www/index.html
           grep -q 'theme-v2.css' www/index.html
@@ -77,8 +77,8 @@ jobs:
           test -f scripts/activate-premium-android.mjs
           grep -q 'library-updater.js' www/index.html
           grep -q 'MSAAppManifest' www/app-manifest.js
-          grep -q "version:'49.0.0'" www/app-manifest.js
-          grep -q "buildId:'MSA-ONE-49'" www/app-manifest.js
+          grep -q "version:'50.0.0'" www/app-manifest.js
+          grep -q "buildId:'MSA-ONE-50'" www/app-manifest.js
           grep -q 'MSALibraryUpdate' www/library-updater.js
           grep -q 'core-library.js' www/index.html
           grep -q 'library-engine.js' www/index.html
@@ -120,23 +120,23 @@ jobs:
       - name: Apply Android security hardening
         run: node scripts/apply-android-security.mjs
 
-      - name: Set Android Build 49 version
+      - name: Set Android Build 50 version
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('android/app/build.gradle')
           s=p.read_text()
-          s=s.replace('versionCode 1','versionCode 49')
-          s=s.replace('versionName "1.0"','versionName "49.0"')
+          s=s.replace('versionCode 1','versionCode 50')
+          s=s.replace('versionName "1.0"','versionName "50.0"')
           p.write_text(s)
           PY
 
       - name: Verify Android package and assets
         run: |
           grep -q 'com.msa.one.displayfit37' android/app/build.gradle
-          grep -q 'versionCode 49' android/app/build.gradle
-          grep -q 'versionName "49.0"' android/app/build.gradle
-          grep -q 'data-build-id="MSA-ONE-49"' android/app/src/main/assets/public/index.html
+          grep -q 'versionCode 50' android/app/build.gradle
+          grep -q 'versionName "50.0"' android/app/build.gradle
+          grep -q 'data-build-id="MSA-ONE-50"' android/app/src/main/assets/public/index.html
           grep -q 'data-calendar-home' android/app/src/main/assets/public/index.html
           grep -q 'data-calendar-me' android/app/src/main/assets/public/index.html
           test -f android/app/src/main/assets/public/theme-v2.css
@@ -181,6 +181,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MSA-One-49-APK
+          name: MSA-One-50-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
