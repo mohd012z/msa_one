@@ -16,10 +16,10 @@ assert.equal(cap.appName,'MSA One 51','Capacitor app name must match build');
 assert.equal(cap.appId,'com.msa.one.displayfit37','Android app ID must remain stable for in-place upgrades');
 assert.ok(manifest.includes("version:'51.0.0'"),'app manifest version must match package');
 assert.ok(manifest.includes("buildId:'MSA-ONE-51'"),'app manifest build ID must match UI');
-assert.ok(premium.includes('active:false'),'Premium must remain inactive in Build 49');
-assert.ok(premium.includes("billing:{\n      enabled:false"),'Billing must remain disabled in Build 49');
-assert.ok(premium.includes("updatePolicy:{\n      enabled:true"),'remote update policy must be active in Build 49');
-assert.ok(premium.includes('enforce:true'),'force update must be active in Build 49');
+assert.ok(premium.includes('active:false'),'Premium must remain inactive in Build 51');
+assert.ok(premium.includes("billing:{\n      enabled:false"),'Billing must remain disabled in Build 51');
+assert.ok(premium.includes("updatePolicy:{\n      enabled:true"),'remote update policy must be active in Build 51');
+assert.ok(premium.includes('enforce:true'),'force update must be active in Build 51');
 assert.ok(premium.includes("libraryVersion:'9.1.0'"),'prepared billing version must be 9.1.0');
 
 assert.ok(html.includes('data-build-id="MSA-ONE-51"'),'source UI build ID must match build');
@@ -38,7 +38,7 @@ assert.ok(html.indexOf('security-engine.js')<html.indexOf('storage-engine.js'),'
 assert.ok(workflow.includes('versionCode 51'),'Android versionCode must match build');
 assert.ok(workflow.includes('versionName "51.0"'),'Android versionName must match build');
 assert.ok(workflow.includes('MSA-One-51-APK'),'artifact name must match build');
-for(const asset of ['app-manifest.js','core-library.js','library-engine.js','library-updater.js','library.css','helper-engine.js','helper.css','performance.css','performance-engine.js','premium.css','premium-config.js','entitlement-engine.js','version-policy.js','premium-ui.js','security-engine.js']){
+for(const asset of ['app-manifest.js','core-library.js','library-engine.js','library-updater.js','library.css','helper-engine.js','helper.css','performance.css','performance-engine.js','premium.css','premium-config.js','entitlement-engine.js','version-policy.js','premium-ui.js','security-engine.js','native-file-bridge.js']){
   assert.ok(workflow.includes(asset),'workflow must verify packaged UX asset '+asset);
 }
 assert.ok(pkg.scripts['check:syntax'].includes('www/helper-engine.js'),'Helper engine must be syntax checked');
