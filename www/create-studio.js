@@ -3,12 +3,13 @@
   const TYPES={document:['📄','Document'],spreadsheet:['📊','Spreadsheet'],presentation:['📽️','Presentation'],pdf:['📕','PDF'],html:['🌐','Smart HTML']};
   let state={type:'document',id:null,timer:null,idleSave:null,slide:0,sheet:0,rowStart:0,colStart:0};
 
-  function all(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}}
+  function all(){if(window.MSAProjects)return window.MSAProjects.all();try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}}
   function put(p){
+    if(window.MSAProjects){window.MSAProjects.upsert(p,50);return p}
     let a=all(),i=a.findIndex(x=>x.id===p.id);i<0?a.unshift(p):a[i]=p;a=a.slice(0,50);
     const raw=JSON.stringify(a);localStorage.setItem(KEY,raw);window.MSAStorage?.mirror(KEY,raw);return p;
   }
-  function get(id){return all().find(x=>x.id===id)}
+  function get(id){return window.MSAProjects?.get(id)||all().find(x=>x.id===id)}
   function esc(s=''){return window.MSACore?.escapeHTML(s)??String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
   function safeName(s='msa-one'){return window.MSACore?.safeName(s)??(String(s).trim().replace(/[^\w-]+/g,'-').replace(/^-+|-+$/g,'')||'msa-one')}
   function json(s,fallback){return window.MSACore?.parseJSON(s,fallback)??(()=>{try{return JSON.parse(s)}catch{return fallback}})()}
