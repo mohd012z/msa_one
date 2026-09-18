@@ -24,9 +24,9 @@ for(const hardening of [
 ]) assert.ok(script.includes(hardening),'Android hardening missing '+hardening);
 
 assert.ok(network.includes('cleartextTrafficPermitted="false"'));
-assert.ok(script.includes('android:usesCleartextTraffic="false"'));
-assert.ok(script.includes('android:allowBackup="false"'));
-assert.ok(script.includes('android:networkSecurityConfig="@xml/network_security_config"'));
+assert.ok(script.includes("setApplicationAttribute(m,'usesCleartextTraffic','false')"));
+assert.ok(script.includes("setApplicationAttribute(m,'allowBackup','false')"));
+assert.ok(script.includes("setApplicationAttribute(m,'networkSecurityConfig','@xml/network_security_config')"));
 assert.ok(workflow.includes('Apply Android security hardening'));
 assert.ok(premiumActivation.includes('setAllowFileAccess(false)'),'Premium activation must require hardened MainActivity');
 
