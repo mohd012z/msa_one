@@ -6,9 +6,10 @@
     "node": ">=22"
   },
   "scripts": {
-    "test": "node --test tests/*.test.mjs",
+    "test": "npm run check:syntax && node --test tests/*.test.mjs",
     "android:add": "npx cap add android",
-    "android:sync": "npx cap sync android"
+    "android:sync": "npx cap sync android",
+    "check:syntax": "node --check www/office-engine.js && node --check www/formula-engine.js && node --check www/create-studio.js && node --check www/storage-engine.js && node --check www/app-actions.js && node --check www/planner.js && node --check www/settings-v2.js && node --check www/files-workspace.js"
   },
   "dependencies": {
     "@capacitor/android": "7.4.3",
