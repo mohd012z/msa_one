@@ -32,7 +32,15 @@ public class MainActivity extends BridgeActivity {
                     top = insets.getSystemWindowInsetTop();
                     bottom = insets.getSystemWindowInsetBottom();
                 }
-                v.setPadding(0, top, 0, bottom);
+                float density = getResources().getDisplayMetrics().density;
+                final int topCss = Math.max(0, Math.round(top / density));
+                final int bottomCss = Math.max(0, Math.round(bottom / density));
+                webView.post(() -> webView.evaluateJavascript(
+                    "document.documentElement.style.setProperty('--native-safe-top','" + topCss + "px');" +
+                    "document.documentElement.style.setProperty('--native-safe-bottom','" + bottomCss + "px');",
+                    null
+                ));
+                v.setPadding(0, 0, 0, 0);
                 return insets;
             }
         });
