@@ -24,6 +24,11 @@
     const p=plugin();if(!p?.status)return {available:false,folderPersisted:false};
     try{return await p.status()}catch{return {available:false,folderPersisted:false}}
   }
+  async function pickFiles({multiple=false}={}){
+    const p=plugin();if(!p?.pickFiles)throw new Error('Native file picker is unavailable');
+    const result=await p.pickFiles({multiple});
+    return {...result,files:Array.isArray(result?.files)?result.files.filter(x=>supported(x?.name)):[]};
+  }
   async function pickFolder(){
     const p=plugin();if(!p?.pickFolder)throw new Error('Native folder picker is unavailable');
     const result=await p.pickFolder();
@@ -66,5 +71,5 @@
     const p=plugin();if(!p?.clearFolder)return false;
     await p.clearFolder();return true;
   }
-  globalThis.MSANativeFiles={MAX_IMPORT_BYTES,isNative,status,pickFolder,rescanFolder,readDescriptor,materializeFolder,saveBlob,clearFolder,supported};
+  globalThis.MSANativeFiles={MAX_IMPORT_BYTES,isNative,status,pickFiles,pickFolder,rescanFolder,readDescriptor,materializeFolder,saveBlob,clearFolder,supported};
 })();
