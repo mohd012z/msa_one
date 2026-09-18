@@ -60,8 +60,8 @@
   function removeOverlay(){document.querySelector('[data-update-gate]')?.remove()}
   function openStore(url){
     if(!url)return false;
-    try{window.open(url,'_system');return true}catch{}
-    try{location.href=url;return true}catch{return false}
+    if(globalThis.MSASecurity?.safeExternalOpen)return globalThis.MSASecurity.safeExternalOpen(url,{hosts:['play.google.com']});
+    return false;
   }
   function showGate(result){
     if(typeof document==='undefined'||!result?.blocked)return result;
