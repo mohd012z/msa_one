@@ -1,7 +1,7 @@
 (()=> {
   const KEY='msaOneProjectsV1';
   const TYPES={document:['📄','Document'],spreadsheet:['📊','Spreadsheet'],presentation:['📽️','Presentation'],pdf:['📕','PDF'],html:['🌐','Smart HTML']};
-  let state={type:'document',id:null,timer:null,idleSave:null,slide:0,sheet:0,rowStart:0,colStart:0};
+  let state={type:'document',id:null,timer:null,idleSave:null,slide:0,sheet:0,rowStart:0,colStart:0,pdfObjectUrl:null};
 
   function all(){if(window.MSAProjects)return window.MSAProjects.all();try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}}
   function put(p){
@@ -59,10 +59,19 @@
       const data=json(p?.content,{slides:defaultSlides()}),slides=Array.isArray(data)?data:(data.slides||defaultSlides());state.slide=Math.min(state.slide,Math.max(0,slides.length-1));renderPresentation(w,slides);
     }else if(state.type==='pdf'){
       const content=p?.content||'MSA One PDF\n\nType or paste content here. Export creates a real PDF file locally.';
-      if(/^blob:/.test(content)){
-        w.innerHTML='<div class="studio-tools"><span class="studio-status">PDF viewer · imported file</span><button class="studio-tool" data-pdf-new>New editable PDF</button></div><iframe class="studio-pdf-viewer" data-pdf-viewer title="PDF document"></iframe>';
-        w.querySelector('[data-pdf-viewer]').src=content;
-        w.querySelector('[data-pdf-new]').onclick=()=>{put({id:state.id,type:'pdf',title:x.querySelector('[data-title]').value,content:'',updated:Date.now()});render()};
+      const nativePdf=String(content).startsWith('native-pdf:');
+      if(/^blob:/.test(content)||nativePdf){
+        w.innerHTML='<div class="studio-tools"><span class="studio-status" data-pdf-status>PDF viewer · imported file</span><button class="studio-tool" data-pdf-new>New editable PDF</button></div><iframe class="studio-pdf-viewer" data-pdf-viewer title="PDF document"></iframe>';
+        const frame=w.querySelector('[data-pdf-viewer]'),status=w.querySelector('[data-pdf-status]');
+        if(nativePdf){
+          const uri=decodeURIComponent(String(content).slice('native-pdf:'.length));
+          status.textContent='PDF viewer · reconnecting native file…';
+          window.MSANativeFiles?.readDescriptor?.({uri}).then(file=>{
+            if(state.pdfObjectUrl)URL.revokeObjectURL(state.pdfObjectUrl);
+            state.pdfObjectUrl=URL.createObjectURL(file);frame.src=state.pdfObjectUrl;status.textContent='PDF viewer · persisted Android source';
+          }).catch(e=>{status.textContent='PDF source unavailable';friendlyError('PDF could not be reopened: '+e.message)});
+        }else frame.src=content;
+        w.querySelector('[data-pdf-new]').onclick=()=>{if(state.pdfObjectUrl){URL.revokeObjectURL(state.pdfObjectUrl);state.pdfObjectUrl=null}put({id:state.id,type:'pdf',title:x.querySelector('[data-title]').value,content:'',updated:Date.now()});render()};
       }else{
         w.innerHTML='<div class="studio-tools"><span class="studio-status">Editable text PDF · offline export</span></div><textarea class="studio-pdf-text" data-pdf-text></textarea>';
         const ta=w.querySelector('[data-pdf-text]');ta.value=content;ta.oninput=queueSave;
@@ -210,7 +219,7 @@
     if(state.type==='html')return document.querySelector('[data-code]')?.value||'';
     if(state.type==='spreadsheet')return JSON.stringify({sheets:currentSheets(),activeSheet:state.sheet});
     if(state.type==='presentation')return JSON.stringify({slides:currentSlides()});
-    if(state.type==='pdf')return document.querySelector('[data-pdf-text]')?.value||'';return'';
+    if(state.type==='pdf'){const ta=document.querySelector('[data-pdf-text]');return ta?ta.value:(get(state.id)?.content||'')}return'';
   }
   function saveDraft(manual=false){
     if(!TYPES[state.type])return;const title=document.querySelector('[data-title]')?.value.trim()||'Untitled '+TYPES[state.type][1];if(!state.id)state.id='p_'+Date.now().toString(36);
@@ -228,7 +237,7 @@
   function open(type='document',id=null){mount();state.type=TYPES[type]?type:'document';state.id=id;state.slide=0;state.sheet=0;state.rowStart=0;state.colStart=0;document.body.classList.add('studio-open');const overlay=document.querySelector('.studio-overlay');overlay.classList.add('on','studio-opening');setTimeout(()=>overlay.classList.remove('studio-opening'),260);render();requestAnimationFrame(()=>{window.MSAHelper?.refresh?.();window.MSAPerformance?.mount?.()})}
   function close(){
     clearTimeout(state.timer);if(state.idleSave!=null){window.MSAPerformance?.cancelIdle?.(state.idleSave);state.idleSave=null}
-    saveDraft();document.body.classList.remove('studio-open');document.querySelector('.studio-overlay')?.classList.remove('on');requestAnimationFrame(()=>window.MSAHelper?.refresh?.());
+    saveDraft();if(state.pdfObjectUrl){URL.revokeObjectURL(state.pdfObjectUrl);state.pdfObjectUrl=null}document.body.classList.remove('studio-open');document.querySelector('.studio-overlay')?.classList.remove('on');requestAnimationFrame(()=>window.MSAHelper?.refresh?.());
   }
   function openProject(id){const p=get(id);if(p)open(p.type,p.id)}
   function createProject(type,title,content){
@@ -285,7 +294,17 @@
     return fn(()=>{});
   }
 
-  function importCurrent(){
+  async function importCurrent(){
+    if(state.type==='pdf'&&window.MSANativeFiles?.isNative?.()){
+      try{
+        const result=await window.MSANativeFiles.pickFiles({multiple:false}),item=result?.files?.[0];
+        if(item&&String(item.name||'').toLowerCase().endsWith('.pdf')){
+          const title=document.querySelector('[data-title]');if(title)title.value=(item.name||'PDF').replace(/\.[^.]+$/,'');
+          if(!state.id)state.id='p_'+Date.now().toString(36);
+          put({id:state.id,type:'pdf',title:title?.value||'PDF',content:'native-pdf:'+encodeURIComponent(item.uri),updated:Date.now()});render();friendlySuccess('PDF linked securely from Android storage.');return;
+        }
+      }catch(e){window.MSAHelper?.notify?.('Native PDF picker unavailable · using standard picker','info')}
+    }
     const input=document.createElement('input');input.type='file';input.hidden=true;
     if(state.type==='spreadsheet')input.accept='.xlsx,.csv,.tsv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/tab-separated-values';
     else if(state.type==='document')input.accept='.docx,.txt,.html,.htm,application/vnd.openxmlformats-officedocument.wordprocessingml.document,text/plain,text/html';
