@@ -31,7 +31,25 @@ async function importOneFile(file,{open=false}={}){
  if(open)openProject(id);
  return id;
 }
-function importOfficeFile(){
+async function importNativeDescriptor(item,{open=false}={}){
+ if(!item?.uri)return null;
+ const ext=(item.name?.split('.').pop()||'').toLowerCase();
+ if(ext==='pdf'){
+   const id='p_'+Date.now().toString(36)+Math.random().toString(36).slice(2,6),base=(item.name||'PDF').replace(/\.[^.]+$/,'');
+   const a=all();a.unshift({id,type:'pdf',title:base,content:'native-pdf:'+encodeURIComponent(item.uri),updated:Date.now()});write(a.slice(0,50));
+   if(open)openProject(id);return id;
+ }
+ const file=await window.MSANativeFiles.readDescriptor(item);
+ return importOneFile(file,{open});
+}
+async function importOfficeFile(){
+ if(window.MSANativeFiles?.isNative?.()){
+   try{
+     const result=await window.MSANativeFiles.pickFiles({multiple:false});
+     const item=result?.files?.[0];if(!item)return;
+     await importNativeDescriptor(item,{open:true});return;
+   }catch(e){window.MSAHelper?.notify?.('Native picker unavailable · using browser picker','info')}
+ }
  const input=document.createElement('input');input.type='file';input.hidden=true;input.accept='.docx,.xlsx,.pptx,.pdf,.csv,.tsv,.txt,.rtf,.html,.htm,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.openxmlformats-officedocument.presentationml.presentation,text/plain,text/csv,text/html';
  input.onchange=async()=>{const file=input.files?.[0];if(!file)return;try{await importOneFile(file,{open:true})}catch(e){if(window.MSAHelper?.error)window.MSAHelper.error('Office file could not be opened: '+e.message,[{label:'Troubleshoot',run:()=>window.MSAHelper.open('trouble')}]);else alert('Office file could not be opened: '+e.message)}finally{input.remove()}};
  document.body.appendChild(input);input.click();
@@ -42,11 +60,18 @@ async function importFolder(nativeRescan=false){
    if(window.MSANativeFiles?.isNative?.()){
      const folder=nativeRescan?await window.MSANativeFiles.rescanFolder():await window.MSANativeFiles.pickFolder();
      if(folder?.cancelled)return;
-     const materialized=await window.MSANativeFiles.materializeFolder(folder,{limit:50,onProgress:({index,total,item})=>window.MSAHelper?.notify?.('Reading '+(index+1)+'/'+total+' · '+item.name,'info')});
-     files=materialized.filter(x=>x instanceof File);
-     const failed=materialized.length-files.length;
+     let imported=0,failed=0;
+     const list=(folder.files||[]).slice(0,50);
+     for(let i=0;i<list.length;i++){
+       const item=list[i];window.MSAHelper?.notify?.('Importing '+(i+1)+'/'+list.length+' · '+item.name,'info');
+       try{if(await importNativeDescriptor(item))imported++}catch(e){failed++;console.warn('Native folder import',item.name,e)}
+       if((i&3)===3)await(window.MSAPerformance?.yieldUI?.()||Promise.resolve());
+     }
+     renderFiles();
      if(folder.truncated)window.MSAHelper?.notify?.('Folder scan limited to first 1000 supported files.','info');
-     if(failed)window.MSAHelper?.notify?.(failed+' file(s) could not be read.','info');
+     if(failed)window.MSAHelper?.notify?.(failed+' file(s) could not be imported.','info');
+     window.MSAHelper?.success?.('Folder import complete · '+imported+' file(s) added.');
+     return;
    }else{
      files=await new Promise(resolve=>{
        const input=document.createElement('input');input.type='file';input.multiple=true;input.setAttribute('webkitdirectory','');input.hidden=true;
@@ -61,5 +86,5 @@ async function importFolder(nativeRescan=false){
 }
 function renderFiles(){updateWorkspaceStats();let page=document.querySelector('#files .wrap');if(!page)return;let old=page.querySelector('.msa-files-live');if(!old){old=document.createElement('section');old.className='msa-files-live';page.innerHTML='';page.appendChild(old)}let items=all().filter(p=>(p.title||'').toLowerCase().includes(query.toLowerCase()));old.innerHTML='<section class="hero"><h1>Your files</h1><p class="muted">Saved locally on this device · reopen and continue anytime.</p><div class="files-hero-actions"><button class="studio-primary" data-open-office>Open File</button><button class="files-secondary" data-open-folder>Import Folder</button><button class="files-secondary" data-rescan-folder>Re-scan</button><button class="files-secondary" data-create>＋ Create</button></div><input class="files-search" type="search" placeholder="Search drafts…" value="'+esc(query)+'"></section><div class="files-count">'+items.length+' LOCAL DRAFT'+(items.length===1?'':'S')+'</div><div class="files-list">'+(items.length?items.map(p=>'<article class="file-card"><button class="file-open" data-open="'+p.id+'"><span class="file-icon">'+(ICON[p.type]||'◆')+'</span><span><b>'+esc(p.title||'Untitled')+'</b><small>'+esc(p.type)+' · '+new Date(p.updated).toLocaleString()+'</small></span></button><div class="file-actions"><button data-rename="'+p.id+'">Rename</button><button data-copy="'+p.id+'">Duplicate</button><button data-delete="'+p.id+'">Delete</button></div></article>').join(''):'<div class="files-empty"><b>No saved drafts yet</b><p>Create a Document or Smart HTML project and it will appear here automatically.</p><button class="studio-primary" data-create>＋ Create</button></div>')+'</div>';
  old.querySelector('.files-search').oninput=e=>{query=e.target.value;renderFiles();let s=document.querySelector('.files-search');s?.focus();try{s?.setSelectionRange(query.length,query.length)}catch{}};old.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>openProject(b.dataset.open));old.querySelectorAll('[data-rename]').forEach(b=>b.onclick=()=>renameProject(b.dataset.rename));old.querySelectorAll('[data-copy]').forEach(b=>b.onclick=()=>duplicateProject(b.dataset.copy));old.querySelectorAll('[data-delete]').forEach(b=>b.onclick=()=>deleteProject(b.dataset.delete));old.querySelectorAll('[data-create]').forEach(c=>c.onclick=()=>window.show?.('create'));let o=old.querySelector('[data-open-office]');if(o)o.onclick=importOfficeFile;let f=old.querySelector('[data-open-folder]');if(f)f.onclick=()=>importFolder(false);let r=old.querySelector('[data-rescan-folder]');if(r)r.onclick=()=>importFolder(true)}
-window.MSAFiles={renderFiles,openProject,renameProject,duplicateProject,deleteProject,importOneFile,importOfficeFile,importFolder,updateWorkspaceStats};document.addEventListener('DOMContentLoaded',renderFiles);document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderFiles()});document.addEventListener('click',e=>{if(e.target.closest('.nav button')?.textContent.includes('Files'))setTimeout(renderFiles,0)});setTimeout(renderFiles,500);
+window.MSAFiles={renderFiles,openProject,renameProject,duplicateProject,deleteProject,importOneFile,importNativeDescriptor,importOfficeFile,importFolder,updateWorkspaceStats};document.addEventListener('DOMContentLoaded',renderFiles);document.addEventListener('visibilitychange',()=>{if(!document.hidden)renderFiles()});document.addEventListener('click',e=>{if(e.target.closest('.nav button')?.textContent.includes('Files'))setTimeout(renderFiles,0)});setTimeout(renderFiles,500);
 })();
