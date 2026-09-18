@@ -22,6 +22,8 @@ assert.ok(js.includes('MSAStorage'),'Create Studio must mirror drafts to durable
 assert.ok(js.includes('MSACore'),'Create Studio must consume shared Core SDK');
 assert.ok(js.includes('MSAMedia'),'Create Studio must consume shared Media SDK');
 assert.ok(js.includes('MSAPerformance'),'Create Studio must use adaptive performance services');
+assert.ok(js.includes('MSASecurity'),'Create Studio must sanitize stored rich content');
+assert.ok(js.includes('previewHTML'),'Smart HTML preview must use isolated security wrapper');
 assert.ok(js.includes('MSAProjects'),'Create Studio must use the shared project cache');
 assert.ok(js.includes('idleSave'),'autosave must support idle scheduling');
 assert.ok(js.includes('virtual view'),'large spreadsheets must use virtual row/column rendering');
