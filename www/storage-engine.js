@@ -1,6 +1,6 @@
 (()=> {
   const DB='MSAOneDB', STORE='kv';
-  const KEYS=['msaOneProjectsV1','msaOnePlannerV1','msaOneProfileV1','msaButtonShape','msaButtonEffect','msaButtonIntensity','msaOneLanguage','msaHelperV1'];
+  const KEYS=['msaOneProjectsV1','msaOnePlannerV1','msaOneProfileV1','msaButtonShape','msaButtonEffect','msaButtonIntensity','msaOneLanguage','msaHelperV1','msaPerformanceV1'];
 
   function db(){
     return new Promise((resolve,reject)=>{
