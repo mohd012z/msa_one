@@ -1,7 +1,7 @@
 (()=> {
   const KEY='msaOneProjectsV1';
   const TYPES={document:['📄','Document'],spreadsheet:['📊','Spreadsheet'],presentation:['📽️','Presentation'],pdf:['📕','PDF'],html:['🌐','Smart HTML']};
-  let state={type:'document',id:null,timer:null,slide:0};
+  let state={type:'document',id:null,timer:null,slide:0,sheet:0};
 
   function all(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}}
   function put(p){
@@ -49,7 +49,7 @@
       w.innerHTML='<textarea class="studio-code" data-code></textarea><iframe class="studio-preview-frame" data-preview sandbox></iframe>';
       const c=w.querySelector('[data-code]');c.value=src;c.oninput=()=>{preview();queueSave()};preview();
     }else if(state.type==='spreadsheet'){
-      const data=json(p?.content,{rows:defaultSheet()}),rows=Array.isArray(data)?data:(data.rows||defaultSheet());renderSheet(w,rows);
+      const data=json(p?.content,{sheets:[{name:'Sheet1',rows:defaultSheet()}]}),sheets=normalizeSheets(data);state.sheet=Math.min(Number.isInteger(data?.activeSheet)?data.activeSheet:state.sheet,Math.max(0,sheets.length-1));renderSheet(w,sheets);
     }else if(state.type==='presentation'){
       const data=json(p?.content,{slides:defaultSlides()}),slides=Array.isArray(data)?data:(data.slides||defaultSlides());state.slide=Math.min(state.slide,Math.max(0,slides.length-1));renderPresentation(w,slides);
     }else if(state.type==='pdf'){
@@ -64,18 +64,44 @@
   function cellNumber(rows,r,c){return window.MSAFormula?.cellNumber(rows,r,c)??0}
   function evalFormula(formula,rows){return window.MSAFormula?.evaluate(formula,rows)??NaN}
 
-  function renderSheet(w,rows){
-    const cols=Math.max(1,...rows.map(r=>r.length),6);rows=rows.map(r=>Array.from({length:cols},(_,c)=>r[c]??''));
+  function normalizeSheets(data){
+    if(Array.isArray(data))return[{name:'Sheet1',rows:data}];
+    if(Array.isArray(data?.sheets)&&data.sheets.length)return data.sheets.map((sh,i)=>({name:String(sh.name||('Sheet'+(i+1))),rows:Array.isArray(sh.rows)?sh.rows:[['']]}));
+    if(Array.isArray(data?.rows))return[{name:'Sheet1',rows:data.rows}];
+    return[{name:'Sheet1',rows:defaultSheet()}];
+  }
+  function storedSheets(){
+    const p=state.id&&get(state.id),data=json(p?.content,{sheets:[{name:'Sheet1',rows:defaultSheet()}]});
+    return normalizeSheets(data);
+  }
+  function captureSheets(base){
+    const sheets=(base||storedSheets()).map(sh=>({name:sh.name,rows:(sh.rows||[]).map(r=>[...r])}));
+    const cells=document.querySelectorAll('[data-cell]');
+    if(cells.length&&sheets[state.sheet])sheets[state.sheet].rows=readSheet();
+    return sheets;
+  }
+  function replaceSheets(sheets,next=state.sheet){
+    state.sheet=Math.max(0,Math.min(next,sheets.length-1));
+    const p={id:state.id||('p_'+Date.now().toString(36)),type:'spreadsheet',title:document.querySelector('[data-title]')?.value||'Untitled Spreadsheet',content:JSON.stringify({sheets,activeSheet:state.sheet}),updated:Date.now()};
+    state.id=p.id;put(p);render();
+  }
+  function renderSheet(w,sheets){
+    sheets=normalizeSheets({sheets});state.sheet=Math.max(0,Math.min(state.sheet,sheets.length-1));
+    let rows=sheets[state.sheet].rows||[['']];
+    const cols=Math.max(1,...rows.map(r=>r.length),6);rows=rows.map(r=>Array.from({length:cols},(_,c)=>r[c]??''));sheets[state.sheet].rows=rows;
     const head=Array.from({length:cols},(_,c)=>'<th>'+colName(c)+'</th>').join('');
     const body=rows.map((r,ri)=>'<tr><th>'+(ri+1)+'</th>'+r.map((v,ci)=>'<td><input data-cell data-r="'+ri+'" data-c="'+ci+'" value="'+esc(v)+'"></td>').join('')+'</tr>').join('');
-    w.innerHTML='<div class="studio-tools"><button class="studio-tool" data-add-row>＋ Row</button><button class="studio-tool" data-add-col>＋ Column</button><button class="studio-tool" data-chart>▥ Chart</button><button class="studio-tool" data-csv>CSV</button><span class="studio-status">XLSX formulas · '+rows.length+' × '+cols+'</span></div><div class="formula-bar" data-formula-bar>Tap a cell · formulas: =C2*D2, =SUM(C2:C10)</div><div class="sheet-wrap"><table class="sheet-grid"><thead><tr><th>#</th>'+head+'</tr></thead><tbody>'+body+'</tbody></table></div><div class="sheet-chart" data-chart-panel hidden></div>';
-    w.querySelectorAll('[data-cell]').forEach(i=>{
-      i.oninput=()=>{queueSave();showFormula(i,readSheet())};i.onfocus=()=>showFormula(i,readSheet());
-    });
-    w.querySelector('[data-add-row]').onclick=()=>{const r=readSheet();r.push(Array.from({length:r[0]?.length||6},()=>''));replaceSheet(r)};
-    w.querySelector('[data-add-col]').onclick=()=>{const r=readSheet();r.forEach(x=>x.push(''));replaceSheet(r)};
+    const tabs='<div class="sheet-tabs">'+sheets.map((sh,i)=>'<button class="studio-tool '+(i===state.sheet?'on':'')+'" data-sheet="'+i+'">'+esc(sh.name)+'</button>').join('')+'<button class="studio-tool" data-add-sheet>＋ Sheet</button></div>';
+    w.innerHTML='<div class="studio-tools"><button class="studio-tool" data-add-row>＋ Row</button><button class="studio-tool" data-add-col>＋ Column</button><button class="studio-tool" data-rename-sheet>Rename Sheet</button>'+(sheets.length>1?'<button class="studio-tool" data-delete-sheet>Delete Sheet</button>':'')+'<button class="studio-tool" data-chart>▥ Chart</button><button class="studio-tool" data-csv>CSV</button><span class="studio-status">'+sheets.length+' sheet'+(sheets.length===1?'':'s')+' · '+rows.length+' × '+cols+'</span></div>'+tabs+'<div class="formula-bar" data-formula-bar>Tap a cell · formulas: =C2*D2, =SUM(C2:C10)</div><div class="sheet-wrap"><table class="sheet-grid"><thead><tr><th>#</th>'+head+'</tr></thead><tbody>'+body+'</tbody></table></div><div class="sheet-chart" data-chart-panel hidden></div>';
+    w.querySelectorAll('[data-cell]').forEach(i=>{i.oninput=()=>{queueSave();showFormula(i,readSheet())};i.onfocus=()=>showFormula(i,readSheet())});
+    w.querySelectorAll('[data-sheet]').forEach(b=>b.onclick=()=>{const a=captureSheets(sheets);replaceSheets(a,+b.dataset.sheet)});
+    w.querySelector('[data-add-sheet]').onclick=()=>{const a=captureSheets(sheets);a.push({name:'Sheet'+(a.length+1),rows:[['']]});replaceSheets(a,a.length-1)};
+    w.querySelector('[data-rename-sheet]').onclick=()=>{const a=captureSheets(sheets),name=prompt('Sheet name',a[state.sheet].name);if(name&&name.trim()){a[state.sheet].name=name.trim().slice(0,31);replaceSheets(a)}};
+    const del=w.querySelector('[data-delete-sheet]');if(del)del.onclick=()=>{const a=captureSheets(sheets);a.splice(state.sheet,1);replaceSheets(a,Math.max(0,state.sheet-1))};
+    w.querySelector('[data-add-row]').onclick=()=>{const a=captureSheets(sheets),r=a[state.sheet].rows;r.push(Array.from({length:r[0]?.length||6},()=>''));replaceSheets(a)};
+    w.querySelector('[data-add-col]').onclick=()=>{const a=captureSheets(sheets);a[state.sheet].rows.forEach(x=>x.push(''));replaceSheets(a)};
     w.querySelector('[data-chart]').onclick=()=>toggleChart(readSheet());
-    w.querySelector('[data-csv]').onclick=()=>{saveDraft();const n=safeName(document.querySelector('[data-title]')?.value);window.MSAOffice?.download(n+'.csv',window.MSAOffice.csv(readSheet()),'text/csv;charset=utf-8')};
+    w.querySelector('[data-csv]').onclick=()=>{saveDraft();const n=safeName(document.querySelector('[data-title]')?.value)+'-'+safeName(sheets[state.sheet].name);window.MSAOffice?.download(n+'.csv',window.MSAOffice.csv(readSheet()),'text/csv;charset=utf-8')};
   }
   function showFormula(input,rows){
     const bar=document.querySelector('[data-formula-bar]');if(!bar)return;const raw=input.value,ref=colName(+input.dataset.c)+(+input.dataset.r+1);
@@ -88,13 +114,12 @@
     const points=rows.slice(1).map((r,i)=>({label:String(r[0]||'Row '+(i+2)),value:cellNumber(rows,i+1,valueCol)})).filter(x=>Number.isFinite(x.value)).slice(0,16);
     const max=Math.max(1,...points.map(x=>Math.abs(x.value)));p.innerHTML='<b class="chart-title">'+esc(rows[0]?.[valueCol]||'Chart')+'</b>'+points.map(x=>'<div class="chart-row"><span>'+esc(x.label)+'</span><i><b style="width:'+Math.max(2,Math.abs(x.value)/max*100)+'%"></b></i><strong>'+x.value+'</strong></div>').join('');p.hidden=false;
   }
-  function replaceSheet(rows){
-    const p={id:state.id||('p_'+Date.now().toString(36)),type:'spreadsheet',title:document.querySelector('[data-title]')?.value||'Untitled Spreadsheet',content:JSON.stringify({rows}),updated:Date.now()};state.id=p.id;put(p);render();
-  }
   function readSheet(){
-    const cells=[...document.querySelectorAll('[data-cell]')];let mr=0,mc=0;cells.forEach(i=>{mr=Math.max(mr,+i.dataset.r);mc=Math.max(mc,+i.dataset.c)});
+    const cells=[...document.querySelectorAll('[data-cell]')];if(!cells.length)return[['']];
+    let mr=0,mc=0;cells.forEach(i=>{mr=Math.max(mr,+i.dataset.r);mc=Math.max(mc,+i.dataset.c)});
     const rows=Array.from({length:mr+1},()=>Array.from({length:mc+1},()=>''));cells.forEach(i=>rows[+i.dataset.r][+i.dataset.c]=i.value);return rows;
   }
+  function currentSheets(){return captureSheets(storedSheets())}
 
   function renderPresentation(w,slides){
     const s=slides[state.slide]||slides[0],image=s.image||'',layout=s.layout||'title-body';
@@ -130,7 +155,7 @@
   function currentContent(){
     if(state.type==='document')return document.querySelector('[data-doc]')?.innerHTML||'';
     if(state.type==='html')return document.querySelector('[data-code]')?.value||'';
-    if(state.type==='spreadsheet')return JSON.stringify({rows:readSheet()});
+    if(state.type==='spreadsheet')return JSON.stringify({sheets:currentSheets(),activeSheet:state.sheet});
     if(state.type==='presentation')return JSON.stringify({slides:currentSlides()});
     if(state.type==='pdf')return document.querySelector('[data-pdf-text]')?.value||'';return'';
   }
@@ -140,7 +165,7 @@
     const s=document.querySelector('.studio-status');if(s)s.textContent='Saved · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});renderRecents();
   }
   function queueSave(){clearTimeout(state.timer);state.timer=setTimeout(saveDraft,350)}
-  function open(type='document',id=null){mount();state.type=TYPES[type]?type:'document';state.id=id;state.slide=0;document.querySelector('.studio-overlay').classList.add('on');render()}
+  function open(type='document',id=null){mount();state.type=TYPES[type]?type:'document';state.id=id;state.slide=0;state.sheet=0;document.querySelector('.studio-overlay').classList.add('on');render()}
   function close(){saveDraft();document.querySelector('.studio-overlay')?.classList.remove('on')}
   function openProject(id){const p=get(id);if(p)open(p.type,p.id)}
   function renderRecents(){
@@ -208,7 +233,7 @@
     saveDraft();if(!window.MSAOffice)return alert('Office engine is not loaded.');const title=document.querySelector('[data-title]')?.value||'MSA One',name=safeName(title);
     if(state.type==='html')window.MSAOffice.download(name+'.html',currentContent(),'text/html;charset=utf-8');
     else if(state.type==='document')window.MSAOffice.download(name+'.docx',window.MSAOffice.docx(title,currentContent()),'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    else if(state.type==='spreadsheet')window.MSAOffice.download(name+'.xlsx',window.MSAOffice.xlsx(readSheet()),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    else if(state.type==='spreadsheet')window.MSAOffice.download(name+'.xlsx',window.MSAOffice.xlsx({sheets:currentSheets()}),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
     else if(state.type==='presentation')window.MSAOffice.download(name+'.pptx',window.MSAOffice.pptx(currentSlides()),'application/vnd.openxmlformats-officedocument.presentationml.presentation');
     else if(state.type==='pdf')exportPDF(currentContent());
   }
