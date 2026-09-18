@@ -84,7 +84,7 @@
     }else{
       write(STATE_KEY,{...s,lastSync:now()});
     }
-    globalThis.MSALibrary?.render?.();
+    if(typeof document!=='undefined')globalThis.MSALibrary?.render?.();
     return status();
   }
   function status(){
@@ -104,12 +104,12 @@
     };
   }
   function acknowledge(){
-    const s=state(),m=manifest();write(STATE_KEY,{...s,ackBuild:m.buildId});globalThis.MSALibrary?.render?.();return status();
+    const s=state(),m=manifest();write(STATE_KEY,{...s,ackBuild:m.buildId});if(typeof document!=='undefined')globalThis.MSALibrary?.render?.();return status();
   }
   function isFavorite(id){return userData().favorites.includes(id)}
   function toggleFavorite(id){
     const u=userData(),set=new Set(u.favorites);
-    set.has(id)?set.delete(id):set.add(id);u.favorites=[...set];saveUser(u);globalThis.MSALibrary?.render?.();return set.has(id);
+    set.has(id)?set.delete(id):set.add(id);u.favorites=[...set];saveUser(u);if(typeof document!=='undefined')globalThis.MSALibrary?.render?.();return set.has(id);
   }
   function markRecent(id){
     const u=userData();u.recent=[id,...u.recent.filter(x=>x!==id)].slice(0,20);saveUser(u);
@@ -119,10 +119,10 @@
     if(!t||!t.type||!t.name)throw new Error('Template type and name are required');
     const u=userData(),id=t.id||('user-'+(globalThis.MSACore?.uid?.('tpl')||Date.now().toString(36)));
     const item={id,type:t.type,icon:t.icon||'◇',name:String(t.name).slice(0,80),group:t.group||'My Templates',title:t.title||t.name,content:String(t.content??''),source:'user',created:now(),updated:now()};
-    const i=u.templates.findIndex(x=>x.id===id);i<0?u.templates.unshift(item):u.templates[i]={...u.templates[i],...item,updated:now()};saveUser(u);globalThis.MSALibrary?.render?.();return item;
+    const i=u.templates.findIndex(x=>x.id===id);i<0?u.templates.unshift(item):u.templates[i]={...u.templates[i],...item,updated:now()};saveUser(u);if(typeof document!=='undefined')globalThis.MSALibrary?.render?.();return item;
   }
   function removeUserTemplate(id){
-    const u=userData();u.templates=u.templates.filter(x=>x.id!==id);u.favorites=u.favorites.filter(x=>x!==id);saveUser(u);globalThis.MSALibrary?.render?.();
+    const u=userData();u.templates=u.templates.filter(x=>x.id!==id);u.favorites=u.favorites.filter(x=>x!==id);saveUser(u);if(typeof document!=='undefined')globalThis.MSALibrary?.render?.();
   }
   function updateSummary(){
     const st=status(),u=st.lastUpdate;
@@ -145,7 +145,8 @@
       '<div class="library-update-actions"><button data-library-resync>↻ Re-index library</button><button data-library-history>Update history</button></div><div class="library-history" data-library-history-panel hidden></div>'+
       '</section>';
   }
-  function bindPanel(root=document){
+  function bindPanel(root=(typeof document!=='undefined'?document:null)){
+    if(!root)return;
     const resync=root.querySelector?.('[data-library-resync]');
     if(resync)resync.onclick=()=>{sync({force:true,quiet:true});globalThis.MSAHelper?.success?.('Library re-indexed from the installed app build.')};
     const ack=root.querySelector?.('[data-library-ack]');
