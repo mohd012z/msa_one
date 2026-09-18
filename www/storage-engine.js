@@ -37,7 +37,7 @@
   }
   function importBackup(){
     const input=document.createElement('input');input.type='file';input.accept='application/json,.json';input.hidden=true;
-    input.onchange=async()=>{const f=input.files?.[0];if(!f)return;try{const data=JSON.parse(await f.text());if(!data.values||typeof data.values!=='object')throw new Error('Invalid backup');for(const [k,v] of Object.entries(data.values)){if(KEYS.includes(k)){localStorage.setItem(k,String(v));await set(k,String(v))}}alert('MSA One backup restored. The app will reload.');location.reload()}catch(e){alert('Backup could not be restored: '+e.message)}};
+    input.onchange=async()=>{const f=input.files?.[0];if(!f)return;try{const data=JSON.parse(await f.text());if(!data.values||typeof data.values!=='object')throw new Error('Invalid backup');for(const [k,v] of Object.entries(data.values)){if(KEYS.includes(k)){localStorage.setItem(k,String(v));await set(k,String(v))}}if(window.MSAHelper?.success)window.MSAHelper.success('Backup restored. MSA One will reload.');setTimeout(()=>location.reload(),650)}catch(e){if(window.MSAHelper?.error)window.MSAHelper.error('Backup could not be restored: '+e.message,[{label:'Help',run:()=>window.MSAHelper.open('trouble')}]);else alert('Backup could not be restored: '+e.message)}};
     document.body.appendChild(input);input.click();setTimeout(()=>input.remove(),1000);
   }
   window.MSAStorage={set,get,mirror,bootstrap,snapshot,downloadBackup,importBackup};
