@@ -9,7 +9,7 @@ const fingerprint=f=>[f.name,f.size,f.lastModified||0].join(':');
 function detectDuplicate(f){let fp=fingerprint(f);return state.importHistory.some(x=>x.fingerprint===fp&&x.status==='completed')}
 function persist(){try{localStorage.setItem(KEY,JSON.stringify({...state,current:null}))}catch{}}
 function recover(){try{let x=JSON.parse(localStorage.getItem(KEY)||'null');if(x)state={...state,...x,status:x.status==='running'?'recovered':x.status,cancelled:false}}catch{}return getStatus()}
-function routeFile(file,record){let t=record.type;
+function routeFile(file,record){let t=record.type;let runtime=window.MSARuntimeIntegration;
  if(t==='pdf'&&window.MSAPDFWorkspace?.open)return window.MSAPDFWorkspace.open(file);
  if(t==='html'&&window.MSASmartHTML?.importFile)return window.MSASmartHTML.importFile(file);
  if(['csv','html','txt'].includes(t)&&window.MSARagaConverter)return{target:'raga',type:t};
