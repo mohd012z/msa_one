@@ -163,6 +163,8 @@
   }
 
   globalThis.MSAHelper={contexts:HELP,state,current,open,close,complete,showMe,notify,error,success,refresh,mount};
-  document.addEventListener('DOMContentLoaded',mount);
-  setTimeout(mount,800);
+  if(typeof document!=='undefined'){
+    document.addEventListener('DOMContentLoaded',mount);
+    setTimeout(mount,800);
+  }
 })();
