@@ -14,6 +14,8 @@
     if(p.appId&&p.appId!=='com.msa.one.displayfit37')return false;
     if(p.latestVersion&&!/^\d+(?:\.\d+){1,3}(?:[-+][\w.-]+)?$/.test(String(p.latestVersion)))return false;
     if(p.minSupportedVersion&&!/^\d+(?:\.\d+){1,3}(?:[-+][\w.-]+)?$/.test(String(p.minSupportedVersion)))return false;
+    if(p.latestVersion&&p.minSupportedVersion&&compare(p.minSupportedVersion,p.latestVersion)>0)return false;
+    if(p.storeUrl&&globalThis.MSASecurity&&!globalThis.MSASecurity.isHTTPS(p.storeUrl))return false;
     return true;
   }
   function evaluate(policy,version=current()){
@@ -34,7 +36,10 @@
       minSupportedVersion:min,
       forceUpdate:policy.forceUpdate===true,
       requireExactVersion:policy.requireExactVersion===true,
+      title:policy.title||(blocked?'Update required':'Update available'),
       message:policy.message||'A newer MSA One version is available.',
+      releaseNotes:Array.isArray(policy.releaseNotes)?policy.releaseNotes.slice(0,8).map(x=>String(x).slice(0,240)):[],
+      publishedAt:policy.publishedAt||'',
       storeUrl:policy.storeUrl||config().storeUrl||'',
       checkedAt:new Date().toISOString()
     };
@@ -63,11 +68,22 @@
     if(globalThis.MSASecurity?.safeExternalOpen)return globalThis.MSASecurity.safeExternalOpen(url,{hosts:['play.google.com']});
     return false;
   }
+  function showNotice(result){
+    if(typeof document==='undefined'||result?.blocked||result?.reason!=='update-available')return result;
+    document.querySelector('[data-update-notice]')?.remove();
+    const box=document.createElement('section');box.className='update-notice';box.setAttribute('data-update-notice','');
+    const notes=(result.releaseNotes||[]).map(x=>'<li>'+escapeHTML(x)+'</li>').join('');
+    box.innerHTML='<div><b>'+escapeHTML(result.title||'Update available')+'</b><p>'+escapeHTML(result.message)+'</p><small>Installed '+escapeHTML(result.currentVersion)+' · Latest '+escapeHTML(result.latestVersion)+'</small>'+(notes?'<ul>'+notes+'</ul>':'')+'</div><div class="update-notice-actions"><button data-update-later>Later</button><button data-update-now>Update</button></div>';
+    document.body.appendChild(box);
+    box.querySelector('[data-update-later]').onclick=()=>box.remove();
+    box.querySelector('[data-update-now]').onclick=()=>openStore(result.storeUrl);
+    return result;
+  }
   function showGate(result){
     if(typeof document==='undefined'||!result?.blocked)return result;
     removeOverlay();
     const gate=document.createElement('section');gate.className='update-gate';gate.setAttribute('data-update-gate','');
-    gate.innerHTML='<div class="update-gate-card"><span class="update-gate-icon">↻</span><h1>Update required</h1><p>'+escapeHTML(result.message)+'</p><div class="update-gate-version"><span>Installed <b>'+escapeHTML(result.currentVersion)+'</b></span><span>Required <b>'+escapeHTML(result.minSupportedVersion||result.latestVersion)+'</b></span></div><button data-update-now>Update MSA One</button><button data-update-retry>Check again</button><small>This screen appears only when update enforcement is explicitly activated.</small></div>';
+    gate.innerHTML='<div class="update-gate-card"><span class="update-gate-icon">↻</span><h1>'+escapeHTML(result.title||'Update required')+'</h1><p>'+escapeHTML(result.message)+'</p><div class="update-gate-version"><span>Installed <b>'+escapeHTML(result.currentVersion)+'</b></span><span>Required <b>'+escapeHTML(result.minSupportedVersion||result.latestVersion)+'</b></span></div><button data-update-now>Update MSA One</button><button data-update-retry>Check again</button><small>This screen appears only when update enforcement is explicitly activated.</small></div>';
     document.body.appendChild(gate);
     gate.querySelector('[data-update-now]').onclick=()=>openStore(result.storeUrl);
     gate.querySelector('[data-update-retry]').onclick=()=>check({show:true});
@@ -80,7 +96,8 @@
     try{
       const policy=await fetchPolicy(),result=evaluate({...policy,requireExactVersion:policy.requireExactVersion??c.exactVersion},current());
       cache(policy,result);
-      if(c.enforce&&result.blocked&&show)showGate(result);else if(!result.blocked)removeOverlay();
+      if(c.enforce&&result.blocked&&show)showGate(result);
+      else if(!result.blocked){removeOverlay();if(show&&result.reason==='update-available')showNotice(result)}
       return {...result,enforced:!!c.enforce};
     }catch(e){
       const result={state:'error',blocked:c.failMode==='closed'&&c.enforce,currentVersion:current(),reason:'policy-error',error:String(e?.message||e),enforced:!!c.enforce};
@@ -94,9 +111,13 @@
   }
   function mount(){
     const c=config();
-    if(c.enabled&&c.checkOnLaunch)check({show:true});
+    if(c.enabled&&c.checkOnLaunch){
+      check({show:true});
+      const ms=Math.max(15,Number(c.recheckMinutes)||360)*60000;
+      setInterval(()=>check({show:true}),ms);
+    }
   }
 
-  globalThis.MSAUpdatePolicy={compare,validPolicy,evaluate,fetchPolicy,check,cached,diagnostics,showGate,removeOverlay,openStore,mount};
+  globalThis.MSAUpdatePolicy={compare,validPolicy,evaluate,fetchPolicy,check,cached,diagnostics,showNotice,showGate,removeOverlay,openStore,mount};
   if(typeof document!=='undefined'){document.addEventListener('DOMContentLoaded',mount);setTimeout(mount,1200)}
 })();
