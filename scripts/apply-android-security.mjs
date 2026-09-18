@@ -10,15 +10,41 @@ const mainActivity=`package com.msa.one.displayfit37;
 
 import android.os.Build;
 import android.os.Bundle;
+import android.view.View;
+import android.view.WindowInsets;
 import android.webkit.WebSettings;
 import android.webkit.WebView;
 import com.getcapacitor.BridgeActivity;
 
 public class MainActivity extends BridgeActivity {
+    private void applySystemBarInsets(WebView webView) {
+        webView.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() {
+            @Override
+            public WindowInsets onApplyWindowInsets(View v, WindowInsets insets) {
+                int top;
+                int bottom;
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                    top = insets.getInsets(
+                        WindowInsets.Type.statusBars() | WindowInsets.Type.displayCutout()
+                    ).top;
+                    bottom = insets.getInsets(WindowInsets.Type.navigationBars()).bottom;
+                } else {
+                    top = insets.getSystemWindowInsetTop();
+                    bottom = insets.getSystemWindowInsetBottom();
+                }
+                v.setPadding(0, top, 0, bottom);
+                return insets;
+            }
+        });
+        webView.requestApplyInsets();
+    }
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        registerPlugin(MSAFileBridgePlugin.class);
         super.onCreate(savedInstanceState);
         WebView webView = getBridge().getWebView();
+        applySystemBarInsets(webView);
         WebSettings settings = webView.getSettings();
         settings.setAllowFileAccess(false);
         settings.setAllowFileAccessFromFileURLs(false);
@@ -33,6 +59,10 @@ public class MainActivity extends BridgeActivity {
 }
 `;
 fs.writeFileSync(path.join(pkgDir,'MainActivity.java'),mainActivity);
+fs.copyFileSync(
+  path.join(root,'native-prep','android','MSAFileBridgePlugin.java'),
+  path.join(pkgDir,'MSAFileBridgePlugin.java')
+);
 
 const resDir=path.join(android,'app','src','main','res','xml');
 fs.mkdirSync(resDir,{recursive:true});
