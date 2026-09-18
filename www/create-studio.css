@@ -11,3 +11,29 @@
 .studio-editor img{display:block;max-width:100%;height:auto;margin:12px auto;border-radius:14px;border:1px solid #72dbe82b;background:#06101b;box-shadow:0 8px 26px #0005}
 
 .sheet-pager{display:flex;align-items:center;justify-content:center;gap:9px;margin:0 0 9px;padding:7px;border:1px solid #72dbe824;border-radius:13px;background:#081827}.sheet-pager span{min-width:0;color:#9fc3d3;font-size:10px;font-weight:750;text-align:center}.sheet-pager button:disabled{opacity:.35;pointer-events:none}
+
+/* Build 50 native workspace alignment */
+.studio-overlay{overflow:hidden!important;padding-bottom:0!important;height:100dvh;animation:studioFade .22s ease both}
+.studio-overlay.studio-opening{animation:studioOpen .24s cubic-bezier(.2,.8,.2,1) both}
+.studio-body{height:calc(100dvh - 70px - 64px - env(safe-area-inset-top) - env(safe-area-inset-bottom));max-width:none!important;overflow:auto;padding:12px 14px 90px}
+.studio-top{min-height:64px;padding:max(8px,env(safe-area-inset-top)) 12px 8px}
+.studio-top button,.studio-tool,.studio-primary,.studio-actions button,.studio-recent button{min-height:44px;min-width:44px;padding:0 13px!important;display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;font-size:12px;font-weight:800;line-height:1}
+.studio-icon-btn{width:44px!important;min-width:44px!important;padding:0!important;font-size:26px!important}
+.studio-tools{min-height:52px;align-items:center;padding:4px 0 8px}
+.studio-type{min-height:58px;padding:6px!important;display:grid;place-items:center}
+.studio-editor{min-height:calc(100dvh - 235px);border-radius:16px}
+.studio-pdf-viewer{display:block;width:100%;height:calc(100dvh - 220px);min-height:520px;border:0;border-radius:14px;background:#fff}
+.studio-bottom{position:fixed;left:0;right:0;bottom:0;z-index:75;height:calc(60px + env(safe-area-inset-bottom));padding:5px 8px env(safe-area-inset-bottom);display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:#071522f5;border-top:1px solid #70dff02b;backdrop-filter:blur(18px)}
+.studio-bottom button{min-width:0;min-height:48px;border:0;border-radius:12px;background:transparent;color:#dff9ff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:17px;font-weight:800;transition:transform .12s ease,background .18s ease}
+.studio-bottom button span{font-size:9px}.studio-bottom button:active{transform:scale(.92);background:#6ee8dc22}
+body.studio-open>.nav{visibility:hidden!important;pointer-events:none!important}
+button,.tile,.chip,.go,.studio-type,.shape-swatch,.effect-chip{transition:transform .12s ease,box-shadow .2s ease,filter .18s ease,background .2s ease}
+button:active,.tile:active,.chip:active,.go:active,.studio-type:active,.shape-swatch:active,.effect-chip:active{transform:scale(.95);filter:brightness(1.12)}
+@keyframes studioOpen{from{opacity:.4;transform:translateY(12px) scale(.995)}to{opacity:1;transform:none}}
+@keyframes studioFade{from{opacity:0}to{opacity:1}}
+@media(max-width:620px){
+ .studio-top{gap:5px}.studio-title input{font-size:14px}.studio-top .studio-tool,.studio-top .studio-primary{padding:0 9px!important;font-size:10px}
+ .studio-mode{grid-template-columns:repeat(5,minmax(62px,1fr));overflow-x:auto}
+ .studio-body{padding-left:8px;padding-right:8px}.studio-editor{padding:14px}
+}
+@media(prefers-reduced-motion:reduce){.studio-overlay,.studio-overlay.studio-opening{animation:none!important}button,.tile,.chip,.go{transition:none!important}}
