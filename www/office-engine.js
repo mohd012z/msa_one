@@ -240,5 +240,5 @@
     return bytes(out);
   }
 
-  window.MSAOffice={zip,docx,xlsx,csv,pptx,pdf,plain,download};
+  globalThis.MSAOffice={zip,docx,xlsx,csv,pptx,pdf,plain,download};
 })();
