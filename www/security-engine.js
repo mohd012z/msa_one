@@ -54,8 +54,8 @@
     if(typeof document==='undefined'){
       return html
         .replace(/<\s*(script|style|iframe|object|embed|link|meta|base|form|svg|math|template)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi,'')
-        .replace(/\son\w+\s*=\s*(['"]).*?\1/gi,'')
-        .replace(/\s(?:srcdoc|formaction|ping)\s*=\s*(['"]).*?\1/gi,'')
+        .replace(/\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi,'')
+        .replace(/\s(?:srcdoc|formaction|ping)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi,'')
         .replace(/javascript\s*:/gi,'');
     }
     const root=document.createElement('div');root.innerHTML=html;
