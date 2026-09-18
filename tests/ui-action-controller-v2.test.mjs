@@ -1,0 +1,7 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';
+const p='www/ui-action-controller-v2.js';assert.ok(fs.existsSync(p),'missing UI Action Controller v2 '+p);const s=fs.readFileSync(p,'utf8');
+for(const k of ['MSAUIActionController','bind','dispatch','openWorkspace','createDocument','createSpreadsheet','createPresentation','openPDF','openSmartHTML','importFiles','openConverter','openPlanner','openAI','saveCurrent','recoverCurrent','exportCurrent','buttonStatus','auditButtons','getStatus'])assert.ok(s.includes(k),'missing UI action '+k);
+for(const k of ['MSARuntimeIntegration','MSAFileImportCenter','MSADocumentProductionEngine','MSASpreadsheetProductionEngine','MSAPresentationProductionEngine','MSAPDFIntelligenceWorkspace','MSASmartHTML','MSARagaConversionMatrix','MSACelebPlanner','MSAAnwarLens'])assert.ok(s.includes(k),'missing UI engine '+k);
+for(const k of ['data-msa-action','click','keydown','disabled','AVAILABLE','UNAVAILABLE','PREVIEW','aria-disabled','msa:action-success','msa:action-error'])assert.ok(s.includes(k),'missing UI behavior '+k);
+assert.ok(!s.includes('eval('),'UI controller must not use eval');assert.ok(!s.includes('new Function'),'UI controller must not use new Function');
+console.log('UI Action Controller v2 contract passed');
