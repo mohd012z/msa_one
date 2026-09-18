@@ -101,10 +101,14 @@
     return MODULES.map(m=>({...m,...moduleStatus(m)}));
   }
   function selfCheck(){
-    const modules=capabilities(),ready=modules.filter(x=>x.ready).length;
-    return {ready,total:modules.length,modules,templates:TEMPLATES.length,offline:true};
+    const modules=capabilities(),ready=modules.filter(x=>x.ready).length,templates=allTemplates();
+    return {ready,total:modules.length,modules,templates:templates.length,builtInTemplates:TEMPLATES.length,userTemplates:templates.length-TEMPLATES.length,offline:true};
   }
-  function template(id){return TEMPLATES.find(x=>x.id===id)}
+  function allTemplates(){
+    const user=globalThis.MSALibraryUpdate?.userTemplates?.()||[];
+    return [...TEMPLATES,...user];
+  }
+  function template(id){return allTemplates().find(x=>x.id===id)}
   function openTemplate(id){
     const t=template(id);if(!t)throw new Error('Template not found');
     if(!globalThis.MSAStudio?.createProject)throw new Error('Create Studio library API is not ready');
@@ -132,21 +136,26 @@
   }
   function filter(q=''){
     q=q.trim().toLowerCase();
-    if(!q)return {modules:capabilities(),templates:TEMPLATES};
+    if(!q){
+      const fav=globalThis.MSALibraryUpdate?.isFavorite;
+      const templates=allTemplates().sort((a,b)=>Number(!!fav?.(b.id))-Number(!!fav?.(a.id)));
+      return {modules:capabilities(),templates};
+    }
     return {
       modules:capabilities().filter(x=>(x.name+' '+x.desc+' '+x.id).toLowerCase().includes(q)),
-      templates:TEMPLATES.filter(x=>(x.name+' '+x.group+' '+x.type).toLowerCase().includes(q))
+      templates:allTemplates().filter(x=>(x.name+' '+x.group+' '+x.type).toLowerCase().includes(q))
     };
   }
   function render(q=''){
     const page=document.querySelector('#library .wrap');if(!page)return;
-    const data=filter(q),health=selfCheck();
-    page.innerHTML='<section class="hero library-hero"><h1>Built-in Library</h1><p class="muted">Reusable offline modules, templates and capability checks packaged inside MSA One.</p><div class="library-health"><b>'+health.ready+'/'+health.total+'</b><span>main modules ready</span><strong>'+health.templates+' templates</strong></div><input class="library-search" type="search" placeholder="Search modules or templates…" value="'+escapeHTML(q)+'"></section>'+
+    const data=filter(q),health=selfCheck(),updatePanel=globalThis.MSALibraryUpdate?.panelHTML?.()||'';
+    page.innerHTML='<section class="hero library-hero"><h1>Built-in Library</h1><p class="muted">Reusable offline modules, templates and capability checks packaged inside MSA One.</p><div class="library-health"><b>'+health.ready+'/'+health.total+'</b><span>main modules ready</span><strong>'+health.builtInTemplates+' built-in</strong>'+(health.userTemplates?'<strong>'+health.userTemplates+' mine</strong>':'')+'</div><input class="library-search" type="search" placeholder="Search modules or templates…" value="'+escapeHTML(q)+'"></section>'+updatePanel+
       '<div class="cap">MAIN FUNCTION LIBRARIES</div><div class="library-modules">'+(data.modules.length?data.modules.map(m=>'<article class="library-module"><button data-module="'+m.id+'"><span>'+m.icon+'</span><div><b>'+escapeHTML(m.name)+'</b><small>'+escapeHTML(m.desc)+'</small></div><i class="'+(m.ready?'ready':'missing')+'">'+(m.ready?'READY':'CHECK')+'</i></button></article>').join(''):'<div class="library-empty">No module matches.</div>')+'</div>'+
-      '<div class="cap">BUILT-IN TEMPLATES</div><div class="library-templates">'+(data.templates.length?data.templates.map(t=>'<button class="library-template" data-template="'+t.id+'"><span>'+t.icon+'</span><div><b>'+escapeHTML(t.name)+'</b><small>'+escapeHTML(t.group)+'</small></div><strong>Use</strong></button>').join(''):'<div class="library-empty">No template matches.</div>')+'</div>';
+      '<div class="cap">TEMPLATES</div><div class="library-templates">'+(data.templates.length?data.templates.map(t=>'<article class="library-template-wrap"><button class="library-template" data-template="'+t.id+'"><span>'+t.icon+'</span><div><b>'+escapeHTML(t.name)+'</b><small>'+escapeHTML(t.group)+(t.source==='user'?' · My template':'')+'</small></div><strong>Use</strong></button><button class="library-favorite '+(globalThis.MSALibraryUpdate?.isFavorite?.(t.id)?'on':'')+'" data-library-favorite="'+t.id+'" aria-label="Favorite '+escapeHTML(t.name)+'">★</button></article>').join(''):'<div class="library-empty">No template matches.</div>')+'</div>';
     const input=page.querySelector('.library-search');input.oninput=e=>render(e.target.value);
     page.querySelectorAll('[data-module]').forEach(b=>b.onclick=()=>runModule(b.dataset.module));
-    page.querySelectorAll('[data-template]').forEach(b=>b.onclick=()=>openTemplate(b.dataset.template));
+    page.querySelectorAll('[data-template]').forEach(b=>b.onclick=()=>{globalThis.MSALibraryUpdate?.markRecent?.(b.dataset.template);openTemplate(b.dataset.template)});
+    globalThis.MSALibraryUpdate?.bindPanel?.(page);
   }
   function escapeHTML(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
   function open(){globalThis.show?.('library');render()}
@@ -169,7 +178,7 @@
     render();
   }
 
-  globalThis.MSALibrary={modules:MODULES,templates:TEMPLATES,api,call,capabilities,selfCheck,filter,template,openTemplate,runModule,render,open,close,mount};
+  globalThis.MSALibrary={modules:MODULES,templates:TEMPLATES,allTemplates,api,call,capabilities,selfCheck,filter,template,openTemplate,runModule,render,open,close,mount};
   if(typeof document!=='undefined'){
     document.addEventListener('DOMContentLoaded',mount);
     setTimeout(mount,650);
