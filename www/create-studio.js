@@ -201,9 +201,19 @@
     try{put({id:state.id,type:state.type,title,content:currentContent(),updated:Date.now()})}catch(e){friendlyError('This draft is too large for local storage. Remove a large image, export the file, or back up the workspace first.');return}
     const s=document.querySelector('.studio-status');if(s)s.textContent='Saved · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});renderRecents();
   }
-  function queueSave(){clearTimeout(state.timer);state.timer=setTimeout(saveDraft,350)}
-  function open(type='document',id=null){mount();state.type=TYPES[type]?type:'document';state.id=id;state.slide=0;state.sheet=0;document.querySelector('.studio-overlay').classList.add('on');render()}
-  function close(){saveDraft();document.querySelector('.studio-overlay')?.classList.remove('on')}
+  function queueSave(){
+    clearTimeout(state.timer);
+    if(state.idleSave!=null){window.MSAPerformance?.cancelIdle?.(state.idleSave);state.idleSave=null}
+    state.timer=setTimeout(()=>{
+      if(window.MSAPerformance?.idle)state.idleSave=window.MSAPerformance.idle(()=>{state.idleSave=null;saveDraft()},900);
+      else saveDraft();
+    },480);
+  }
+  function open(type='document',id=null){mount();state.type=TYPES[type]?type:'document';state.id=id;state.slide=0;state.sheet=0;state.rowStart=0;document.querySelector('.studio-overlay').classList.add('on');render()}
+  function close(){
+    clearTimeout(state.timer);if(state.idleSave!=null){window.MSAPerformance?.cancelIdle?.(state.idleSave);state.idleSave=null}
+    saveDraft();document.querySelector('.studio-overlay')?.classList.remove('on');
+  }
   function openProject(id){const p=get(id);if(p)open(p.type,p.id)}
   function createProject(type,title,content){
     if(!TYPES[type])throw new Error('Unsupported project type: '+type);
@@ -240,6 +250,27 @@
     }
     row.push(cell);if(row.some(x=>x!==''))rows.push(row);return rows.length?rows:[['']];
   }
+  async function parseCSVAsync(text,delimiter=','){
+    if(text.length<180000)return parseCSV(text,delimiter);
+    const rows=[];let row=[],cell='',quoted=false,start=performance.now();
+    for(let i=0;i<text.length;i++){
+      const ch=text[i],next=text[i+1];
+      if(ch==='"'&&quoted&&next==='"'){cell+='"';i++;continue}
+      if(ch==='"'){quoted=!quoted;continue}
+      if(ch===delimiter&&!quoted){row.push(cell);cell='';continue}
+      if((ch==='\n'||ch==='\r')&&!quoted){
+        if(ch==='\r'&&next==='\n')i++;row.push(cell);cell='';if(row.some(x=>x!==''))rows.push(row);row=[];continue;
+      }
+      cell+=ch;
+      if((i&8191)===0&&performance.now()-start>8){await(window.MSAPerformance?.yieldUI?.()||Promise.resolve());start=performance.now()}
+    }
+    row.push(cell);if(row.some(x=>x!==''))rows.push(row);return rows.length?rows:[['']];
+  }
+  async function runBusy(label,fn){
+    if(window.MSAPerformance?.withBusy)return window.MSAPerformance.withBusy(label,fn);
+    return fn(()=>{});
+  }
+
   function importCurrent(){
     const input=document.createElement('input');input.type='file';input.hidden=true;
     if(state.type==='spreadsheet')input.accept='.xlsx,.csv,.tsv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/tab-separated-values';
@@ -253,7 +284,7 @@
         const ext=(file.name.split('.').pop()||'').toLowerCase(),base=file.name.replace(/\.[^.]+$/,'');
         if(['docx','xlsx','pptx'].includes(ext)){
           if(!window.MSAImport)throw new Error('Office import engine is not loaded.');
-          const imported=await window.MSAImport.readFile(file),id='p_'+Date.now().toString(36);
+          const imported=await runBusy('Opening '+file.name,progress=>window.MSAImport.readFile(file,progress)),id='p_'+Date.now().toString(36);
           let content='';
           if(imported.type==='document')content=imported.html;
           else if(imported.type==='spreadsheet')content=JSON.stringify({sheets:imported.sheets,activeSheet:0});
@@ -263,7 +294,7 @@
         }
         const title=document.querySelector('[data-title]');if(title)title.value=base;
         if(state.type==='spreadsheet'){
-          const text=await file.text(),delimiter=ext==='tsv'?'\t':',',rows=parseCSV(text,delimiter);replaceSheets([{name:'Sheet1',rows}],0);
+          const text=await file.text(),delimiter=ext==='tsv'?'\t':',',rows=await runBusy('Reading '+file.name,async progress=>{progress('Parsing rows…');return parseCSVAsync(text,delimiter)});replaceSheets([{name:'Sheet1',rows}],0);
         }else if(state.type==='document'){
           const text=await file.text(),html=/\.html?$/i.test(file.name)?sanitizeHTML(text):'<p>'+esc(text).replace(/\r?\n/g,'</p><p>')+'</p>';
           const ed=document.querySelector('[data-doc]');if(ed){ed.innerHTML=html;queueSave()}
@@ -283,14 +314,20 @@
     document.body.appendChild(input);input.click();
   }
 
-  function exportCurrent(){
-    saveDraft();if(!window.MSAOffice)return alert('Office engine is not loaded.');const title=document.querySelector('[data-title]')?.value||'MSA One',name=safeName(title);
-    if(state.type==='html')window.MSAOffice.download(name+'.html',currentContent(),'text/html;charset=utf-8');
-    else if(state.type==='document')window.MSAOffice.download(name+'.docx',window.MSAOffice.docx(title,currentContent()),'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
-    else if(state.type==='spreadsheet')window.MSAOffice.download(name+'.xlsx',window.MSAOffice.xlsx({sheets:currentSheets()}),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
-    else if(state.type==='presentation')window.MSAOffice.download(name+'.pptx',window.MSAOffice.pptx(currentSlides()),'application/vnd.openxmlformats-officedocument.presentationml.presentation');
-    else if(state.type==='pdf')exportPDF(currentContent());
-    if(state.type!=='pdf')friendlySuccess((TYPES[state.type]?.[1]||'File')+' export prepared on this device.');
+  async function exportCurrent(){
+    saveDraft();if(!window.MSAOffice){friendlyError('The Office export engine is not available. Open Help for recovery options.');return}
+    const title=document.querySelector('[data-title]')?.value||'MSA One',name=safeName(title);
+    try{
+      await runBusy('Preparing '+(TYPES[state.type]?.[1]||'file'),async progress=>{
+        progress('Building file…');await(window.MSAPerformance?.yieldUI?.()||Promise.resolve());
+        if(state.type==='html')window.MSAOffice.download(name+'.html',currentContent(),'text/html;charset=utf-8');
+        else if(state.type==='document')window.MSAOffice.download(name+'.docx',window.MSAOffice.docx(title,currentContent()),'application/vnd.openxmlformats-officedocument.wordprocessingml.document');
+        else if(state.type==='spreadsheet')window.MSAOffice.download(name+'.xlsx',window.MSAOffice.xlsx({sheets:currentSheets()}),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        else if(state.type==='presentation')window.MSAOffice.download(name+'.pptx',window.MSAOffice.pptx(currentSlides()),'application/vnd.openxmlformats-officedocument.presentationml.presentation');
+        else if(state.type==='pdf')exportPDF(currentContent());
+      });
+      friendlySuccess((TYPES[state.type]?.[1]||'File')+' export prepared on this device.');
+    }catch(e){friendlyError('Export failed: '+e.message)}
   }
 
   window.MSAStudio={open,close,saveDraft,importCurrent,exportCurrent,openProject,createProject,evalFormula,pickDocumentImage};
