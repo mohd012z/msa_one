@@ -1,6 +1,6 @@
 {
   "name": "msa-one",
-  "version": "39.0.0",
+  "version": "40.0.0",
   "private": true,
   "engines": {
     "node": ">=22"
