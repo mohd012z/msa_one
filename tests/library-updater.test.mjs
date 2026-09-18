@@ -8,11 +8,11 @@ globalThis.localStorage={
   clear:()=>store.clear()
 };
 
-const build47Modules=[
+const build48Modules=[
   'core','document','spreadsheet','presentation','pdf','html','files','storage',
   'planner','media','voice','ui','helper','performance','premium','updates'
 ];
-const build47Templates=[
+const build48Templates=[
   'doc-report','doc-letter','doc-minutes','doc-procedure',
   'sheet-budget','sheet-inventory','sheet-kpi','sheet-task',
   'ppt-update','ppt-training','ppt-proposal',
@@ -21,13 +21,13 @@ const build47Templates=[
 
 localStorage.setItem('msaLibraryStateV2',JSON.stringify({
   schema:2,
-  lastBuild:'MSA-ONE-47',
-  lastVersion:'47.0.0',
+  lastBuild:'MSA-ONE-48',
+  lastVersion:'48.0.0',
   lastSync:'2026-09-18T00:00:00.000Z',
-  catalog:{modules:build47Modules,templates:build47Templates},
+  catalog:{modules:build48Modules,templates:build48Templates},
   lastUpdate:null,
   history:[],
-  ackBuild:'MSA-ONE-47'
+  ackBuild:'MSA-ONE-48'
 }));
 localStorage.setItem('msaUserLibraryV1',JSON.stringify({
   schema:1,
@@ -45,16 +45,16 @@ await import('../www/library-updater.js');
 const U=globalThis.MSALibraryUpdate;
 const L=globalThis.MSALibrary;
 assert.ok(U,'Library updater must register');
-assert.equal(globalThis.MSAAppManifest.version,'48.0.0');
-assert.equal(globalThis.MSAAppManifest.buildId,'MSA-ONE-48');
+assert.equal(globalThis.MSAAppManifest.version,'49.0.0');
+assert.equal(globalThis.MSAAppManifest.buildId,'MSA-ONE-49');
 
 const synced=U.sync({quiet:true});
-assert.equal(synced.version,'48.0.0');
-assert.equal(synced.buildId,'MSA-ONE-48');
+assert.equal(synced.version,'49.0.0');
+assert.equal(synced.buildId,'MSA-ONE-49');
 assert.equal(synced.pendingUpdate,true,'upgrade must be marked new until acknowledged');
-assert.equal(synced.lastUpdate.fromBuild,'MSA-ONE-47');
-assert.equal(synced.lastUpdate.toBuild,'MSA-ONE-48');
-assert.deepEqual(synced.lastUpdate.addedModules,['security']);
+assert.equal(synced.lastUpdate.fromBuild,'MSA-ONE-48');
+assert.equal(synced.lastUpdate.toBuild,'MSA-ONE-49');
+assert.deepEqual(synced.lastUpdate.addedModules,[]);
 assert.deepEqual(synced.lastUpdate.removedModules,[]);
 assert.deepEqual(synced.lastUpdate.addedTemplates,[]);
 assert.deepEqual(synced.lastUpdate.removedTemplates,[]);
@@ -72,6 +72,6 @@ U.removeUserTemplate(added.id);
 
 const ack=U.acknowledge();
 assert.equal(ack.pendingUpdate,false,'acknowledging update must clear NEW state');
-assert.ok(ack.history.some(x=>x.fromBuild==='MSA-ONE-47'&&x.toBuild==='MSA-ONE-48'),'47→48 upgrade must remain in update history');
+assert.ok(ack.history.some(x=>x.fromBuild==='MSA-ONE-48'&&x.toBuild==='MSA-ONE-49'),'47→48 upgrade must remain in update history');
 
-console.log('Build 47 to 48 Security Center Library migration contract passed');
+console.log('Build 48 to 49 secure update migration contract passed');
