@@ -23,4 +23,5 @@ for(const feature of ['data-helper-fab','data-helper-sheet','data-show-index','h
   assert.ok(source.includes(feature),'missing helper feature '+feature);
 }
 
+assert.ok(!source.includes('MutationObserver'),'Helper must avoid a global subtree MutationObserver');
 console.log('Friendly Helper context and API contract passed');
