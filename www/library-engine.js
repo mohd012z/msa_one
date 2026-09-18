@@ -33,6 +33,61 @@
     {id:'html-form',type:'html',icon:'📋',name:'Offline Form',group:'Smart HTML',title:'Offline Form',content:'<!doctype html><html><head><meta name="viewport" content="width=device-width"><title>Form</title><style>body{font-family:system-ui;max-width:680px;margin:auto;padding:24px}label{display:block;margin:14px 0}input,textarea,select{width:100%;padding:10px}</style></head><body><h1>Offline Form</h1><label>Name<input></label><label>Status<select><option>Open</option><option>Done</option></select></label><label>Details<textarea rows="6"></textarea></label></body></html>'}
   ];
 
+  const API={
+    core:{
+      escapeHTML:(v)=>globalThis.MSACore?.escapeHTML(v),
+      safeName:(v)=>globalThis.MSACore?.safeName(v),
+      pickFile:(o)=>globalThis.MSACore?.pickFile(o),
+      emit:(n,d)=>globalThis.MSACore?.emit(n,d)
+    },
+    document:{
+      create:(title='Document',html='')=>globalThis.MSAStudio?.createProject('document',title,html),
+      open:()=>globalThis.MSAStudio?.open('document'),
+      import:()=>globalThis.MSAStudio?.open('document')
+    },
+    spreadsheet:{
+      create:(title='Spreadsheet',content='')=>globalThis.MSAStudio?.createProject('spreadsheet',title,content),
+      open:()=>globalThis.MSAStudio?.open('spreadsheet'),
+      formula:(formula,rows)=>globalThis.MSAFormula?.evaluate(formula,rows)
+    },
+    presentation:{
+      create:(title='Presentation',content='')=>globalThis.MSAStudio?.createProject('presentation',title,content),
+      open:()=>globalThis.MSAStudio?.open('presentation')
+    },
+    pdf:{
+      create:(title='PDF',text='')=>globalThis.MSAStudio?.createProject('pdf',title,text),
+      open:()=>globalThis.MSAStudio?.open('pdf')
+    },
+    html:{
+      create:(title='Smart HTML',html='')=>globalThis.MSAStudio?.createProject('html',title,html),
+      open:()=>globalThis.MSAStudio?.open('html')
+    },
+    files:{
+      open:()=>globalThis.show?.('files'),
+      openOffice:()=>globalThis.MSAFiles?.importOfficeFile(),
+      refresh:()=>globalThis.MSAFiles?.renderFiles()
+    },
+    storage:{
+      backup:()=>globalThis.MSAStorage?.downloadBackup(),
+      restore:()=>globalThis.MSAStorage?.importBackup(),
+      get:(k)=>globalThis.MSAStorage?.get(k),
+      set:(k,v)=>globalThis.MSAStorage?.set(k,v)
+    },
+    planner:{open:()=>globalThis.MSAPlanner?.open()},
+    media:{
+      resize:(file,opt)=>globalThis.MSAMedia?.resizeImage(file,opt),
+      asset:(url)=>globalThis.MSAMedia?.dataUrlAsset(url)
+    },
+    voice:{start:()=>globalThis.MSAActions?.voice()},
+    ui:{studio:()=>globalThis.MSAActions?.uiStudio()}
+  };
+  function api(module){return API[module]||null}
+  function call(module,action,...args){
+    const group=api(module),fn=group?.[action];
+    if(typeof fn!=='function')throw new Error('Library action not found: '+module+'.'+action);
+    return fn(...args);
+  }
+
   function globalObj(name){return globalThis[name]}
   function moduleStatus(m){
     const missing=m.requires.filter(x=>!globalObj(x));
@@ -108,7 +163,7 @@
     render();
   }
 
-  globalThis.MSALibrary={modules:MODULES,templates:TEMPLATES,capabilities,selfCheck,filter,template,openTemplate,runModule,render,open,close,mount};
+  globalThis.MSALibrary={modules:MODULES,templates:TEMPLATES,api,call,capabilities,selfCheck,filter,template,openTemplate,runModule,render,open,close,mount};
   if(typeof document!=='undefined'){
     document.addEventListener('DOMContentLoaded',mount);
     setTimeout(mount,650);
