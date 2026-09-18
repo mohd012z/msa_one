@@ -1,20 +1,20 @@
 (()=> {
   const KEY='msaPerformanceV1';
-  let mounted=false,rafPending=false,refreshHz=0,readerOn=false;
+  let mounted=false,refreshHz=0,readerOn=false;
   const defaults={mode:'auto',fontScale:1,iconScale:1,lineHeight:1.55};
 
   function load(){
-    try{return {...defaults,...JSON.parse(localStorage.getItem(KEY)||'{}')}}catch{return {...defaults}}
+    try{return {...defaults,...JSON.parse((typeof localStorage!=='undefined'&&localStorage.getItem(KEY))||'{}')}}catch{return {...defaults}}
   }
   function save(next){
     const value={...load(),...next},raw=JSON.stringify(value);
-    try{localStorage.setItem(KEY,raw)}catch{}
+    try{if(typeof localStorage!=='undefined')localStorage.setItem(KEY,raw)}catch{}
     globalThis.MSAStorage?.mirror(KEY,raw);
     apply(value);return value;
   }
   function device(){
-    const cores=Number(navigator.hardwareConcurrency||0),memory=Number(navigator.deviceMemory||0),dpr=Number(devicePixelRatio||1);
-    const vv=window.visualViewport;
+    const nav=typeof navigator!=='undefined'?navigator:{},cores=Number(nav.hardwareConcurrency||0),memory=Number(nav.deviceMemory||0),dpr=Number(globalThis.devicePixelRatio||1);
+    const vv=typeof window!=='undefined'?window.visualViewport:null;
     return {cores,memory,dpr,width:Math.round(vv?.width||innerWidth||0),height:Math.round(vv?.height||innerHeight||0),refreshHz};
   }
   function autoProfile(){
@@ -42,9 +42,8 @@
     updateControls(p);
   }
   function scheduleFrame(fn){
-    let args;
-    const call=(...a)=>{args=a;if(rafPending)return;rafPending=true;requestAnimationFrame(()=>{rafPending=false;fn?.(...args)})};
-    return call;
+    let args,pending=false;
+    return(...a)=>{args=a;if(pending)return;pending=true;requestAnimationFrame(()=>{pending=false;fn?.(...args)})};
   }
   function rafThrottle(fn){
     let pending=false,lastArgs;
@@ -83,7 +82,7 @@
   function hideBusy(){document.querySelector('[data-perf-busy]')?.classList.remove('on')}
 
   const viewportUpdate=rafThrottle(()=>{
-    const vv=visualViewport,w=Math.max(240,Math.round(vv?.width||innerWidth||screen.width||360)),h=Math.max(240,Math.round(vv?.height||innerHeight||screen.height||640));
+    const vv=window.visualViewport,w=Math.max(240,Math.round(vv?.width||innerWidth||screen.width||360)),h=Math.max(240,Math.round(vv?.height||innerHeight||screen.height||640));
     const root=document.documentElement;
     root.style.setProperty('--msa-vw',(w/100)+'px');
     root.style.setProperty('--msa-vh',(h/100)+'px');
@@ -157,8 +156,8 @@
   function mount(){
     viewportUpdate();apply(load());mountControls();
     if(mounted)return;mounted=true;
-    visualViewport?.addEventListener('resize',viewportUpdate,{passive:true});
-    visualViewport?.addEventListener('scroll',viewportUpdate,{passive:true});
+    window.visualViewport?.addEventListener('resize',viewportUpdate,{passive:true});
+    window.visualViewport?.addEventListener('scroll',viewportUpdate,{passive:true});
     window.addEventListener('resize',viewportUpdate,{passive:true});
     window.addEventListener('orientationchange',()=>setTimeout(viewportUpdate,80),{passive:true});
     document.addEventListener('visibilitychange',()=>{if(!document.hidden)measureRefresh()});
