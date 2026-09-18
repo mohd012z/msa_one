@@ -231,14 +231,24 @@
     return {slides};
   }
 
+
+  async function pdf(input,progress){
+    if(progress)progress('Reading PDF…');
+    const bytes=new Uint8Array(input);
+    if(bytes.length<5||String.fromCharCode(...bytes.slice(0,5))!=='%PDF-')throw new Error('This is not a valid PDF file.');
+    const blob=new Blob([bytes],{type:'application/pdf'});
+    return {blobUrl:URL.createObjectURL(blob),size:bytes.length};
+  }
+
   async function readFile(file,progress){
     const ext=(file.name.split('.').pop()||'').toLowerCase();if(progress)progress('Loading '+file.name+'…');
     const buffer=await file.arrayBuffer();await breathe(progress,'Opening '+file.name+'…');
     if(ext==='docx')return {type:'document',...(await docx(buffer,progress))};
     if(ext==='xlsx')return {type:'spreadsheet',...(await xlsx(buffer,progress))};
     if(ext==='pptx')return {type:'presentation',...(await pptx(buffer,progress))};
+    if(ext==='pdf')return {type:'pdf',...(await pdf(buffer,progress))};
     throw new Error('Unsupported Office file: .'+ext);
   }
 
-  globalThis.MSAImport={unzip,docx,xlsx,pptx,readFile};
+  globalThis.MSAImport={unzip,docx,xlsx,pptx,pdf,readFile};
 })();
