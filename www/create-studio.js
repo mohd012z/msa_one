@@ -218,10 +218,10 @@
       else saveDraft();
     },480);
   }
-  function open(type='document',id=null){mount();state.type=TYPES[type]?type:'document';state.id=id;state.slide=0;state.sheet=0;state.rowStart=0;state.colStart=0;document.querySelector('.studio-overlay').classList.add('on');render()}
+  function open(type='document',id=null){mount();state.type=TYPES[type]?type:'document';state.id=id;state.slide=0;state.sheet=0;state.rowStart=0;state.colStart=0;document.querySelector('.studio-overlay').classList.add('on');render();requestAnimationFrame(()=>{window.MSAHelper?.refresh?.();window.MSAPerformance?.mount?.()})}
   function close(){
     clearTimeout(state.timer);if(state.idleSave!=null){window.MSAPerformance?.cancelIdle?.(state.idleSave);state.idleSave=null}
-    saveDraft();document.querySelector('.studio-overlay')?.classList.remove('on');
+    saveDraft();document.querySelector('.studio-overlay')?.classList.remove('on');requestAnimationFrame(()=>window.MSAHelper?.refresh?.());
   }
   function openProject(id){const p=get(id);if(p)open(p.type,p.id)}
   function createProject(type,title,content){
