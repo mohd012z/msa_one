@@ -10,7 +10,7 @@ for(const api of ['load','save','device','profile','apply','scheduleFrame','rafT
 }
 
 const js=fs.readFileSync('www/performance-engine.js','utf8');
-for(const feature of ['requestAnimationFrame','requestIdleCallback','visualViewport','refreshHz','data-perf-mode','data-reading-toggle','reader-bar','fontScale','iconScale','lineHeight','data-refresh-class']){
+for(const feature of ['requestAnimationFrame','requestIdleCallback','visualViewport','refreshHz','data-perf-mode','data-reading-toggle','reader-bar','fontScale','iconScale','lineHeight','refreshClass']){
   assert.ok(js.includes(feature),'missing performance feature '+feature);
 }
 assert.equal(P.profile({mode:'battery'}),'low');
