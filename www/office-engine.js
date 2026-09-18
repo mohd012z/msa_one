@@ -41,6 +41,7 @@
     return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&apos;'}[c]));
   }
   function plain(html=''){
+    if(globalThis.MSACore?.textFromHTML)return globalThis.MSACore.textFromHTML(html);
     const d=document.createElement('div');d.innerHTML=html;
     d.querySelectorAll('br').forEach(x=>x.replaceWith('\n'));
     d.querySelectorAll('p,div,h1,h2,h3,h4,h5,h6,li').forEach(x=>x.append('\n'));
@@ -165,6 +166,7 @@
   }
 
   function dataUrlAsset(dataUrl){
+    const shared=globalThis.MSAMedia?.dataUrlAsset?.(dataUrl);if(shared)return shared;
     const m=String(dataUrl||'').match(/^data:(image\/(?:png|jpeg|jpg));base64,(.+)$/);
     if(!m)return null;
     const raw=atob(m[2]),out=new Uint8Array(raw.length);
