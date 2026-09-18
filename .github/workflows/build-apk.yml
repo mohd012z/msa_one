@@ -37,9 +37,9 @@ jobs:
       - name: Test source contracts
         run: npm test
 
-      - name: Verify MSA One 44 source UI
+      - name: Verify MSA One 45 source UI
         run: |
-          grep -q 'data-build-id="MSA-ONE-44"' www/index.html
+          grep -q 'data-build-id="MSA-ONE-45"' www/index.html
           grep -q 'data-calendar-home' www/index.html
           grep -q 'data-calendar-me' www/index.html
           grep -q 'theme-v2.css' www/index.html
@@ -50,6 +50,10 @@ jobs:
           grep -q 'library.css' www/index.html
           grep -q 'helper.css' www/index.html
           grep -q 'helper-engine.js' www/index.html
+          grep -q 'performance.css' www/index.html
+          grep -q 'performance-engine.js' www/index.html
+          grep -q 'MSAPerformance' www/performance-engine.js
+          grep -q 'sheetColPageSize' www/create-studio.js
           grep -q 'MSAHelper' www/helper-engine.js
           grep -q 'MSALibrary' www/library-engine.js
           grep -q 'MSACore' www/core-library.js
@@ -78,23 +82,23 @@ jobs:
       - name: Sync web app
         run: npx cap sync android
 
-      - name: Set Android Build 44 version
+      - name: Set Android Build 45 version
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('android/app/build.gradle')
           s=p.read_text()
-          s=s.replace('versionCode 1','versionCode 44')
-          s=s.replace('versionName "1.0"','versionName "44.0"')
+          s=s.replace('versionCode 1','versionCode 45')
+          s=s.replace('versionName "1.0"','versionName "45.0"')
           p.write_text(s)
           PY
 
       - name: Verify Android package and assets
         run: |
           grep -q 'com.msa.one.displayfit37' android/app/build.gradle
-          grep -q 'versionCode 44' android/app/build.gradle
-          grep -q 'versionName "44.0"' android/app/build.gradle
-          grep -q 'data-build-id="MSA-ONE-44"' android/app/src/main/assets/public/index.html
+          grep -q 'versionCode 45' android/app/build.gradle
+          grep -q 'versionName "45.0"' android/app/build.gradle
+          grep -q 'data-build-id="MSA-ONE-45"' android/app/src/main/assets/public/index.html
           grep -q 'data-calendar-home' android/app/src/main/assets/public/index.html
           grep -q 'data-calendar-me' android/app/src/main/assets/public/index.html
           test -f android/app/src/main/assets/public/theme-v2.css
@@ -105,6 +109,8 @@ jobs:
           test -f android/app/src/main/assets/public/library.css
           test -f android/app/src/main/assets/public/helper.css
           test -f android/app/src/main/assets/public/helper-engine.js
+          test -f android/app/src/main/assets/public/performance.css
+          test -f android/app/src/main/assets/public/performance-engine.js
           test -f android/app/src/main/assets/public/storage-engine.js
           test -f android/app/src/main/assets/public/office-engine.js
           test -f android/app/src/main/assets/public/import-engine.js
@@ -117,6 +123,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MSA-One-44-APK
+          name: MSA-One-45-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
