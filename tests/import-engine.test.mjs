@@ -5,9 +5,12 @@ await import('../www/office-engine.js');
 await import('../www/import-engine.js');
 
 const source=fs.readFileSync('www/import-engine.js','utf8');
-for(const capability of ['DecompressionStream','word/document.xml','xl/sharedStrings.xml','ppt/presentation.xml','relationships','readFile','MAX_ZIP_BYTES','MAX_ENTRY_BYTES','MAX_TOTAL_UNCOMPRESSED','MAX_ENTRIES']) {
+for(const capability of ['DecompressionStream','word/document.xml','xl/sharedStrings.xml','ppt/presentation.xml','relationships','readFile','MAX_ZIP_BYTES','MAX_ENTRY_BYTES','MAX_TOTAL_UNCOMPRESSED','MAX_ENTRIES','breathe','yieldUI']) {
   assert.ok(source.includes(capability),'missing Office import capability '+capability);
 }
+
+assert.ok(source.includes('worksheetRows(files,path,shared,progress'),'spreadsheet import must support progress/yielding');
+assert.ok(source.includes("progress,'Reading Office package"),'ZIP import must report progress');
 
 const zip=globalThis.MSAOffice.xlsx({sheets:[
   {name:'Data',rows:[['Item','Qty','Price','Total'],['A','2','10','=B2*C2']]},
