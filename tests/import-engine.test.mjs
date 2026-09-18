@@ -5,7 +5,7 @@ await import('../www/office-engine.js');
 await import('../www/import-engine.js');
 
 const source=fs.readFileSync('www/import-engine.js','utf8');
-for(const capability of ['DecompressionStream','word/document.xml','xl/sharedStrings.xml','ppt/presentation.xml','relationships','readFile']) {
+for(const capability of ['DecompressionStream','word/document.xml','xl/sharedStrings.xml','ppt/presentation.xml','relationships','readFile','MAX_ZIP_BYTES','MAX_ENTRY_BYTES','MAX_TOTAL_UNCOMPRESSED','MAX_ENTRIES']) {
   assert.ok(source.includes(capability),'missing Office import capability '+capability);
 }
 
