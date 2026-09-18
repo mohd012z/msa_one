@@ -71,7 +71,9 @@
   function manage(){
     const url=config().billing?.manageUrl;
     if(!config().active||!url)return showLocked('premium','premium-not-active');
-    try{window.open(url,'_system')}catch{location.href=url}
+    if(globalThis.MSASecurity?.safeExternalOpen)return globalThis.MSASecurity.safeExternalOpen(url,{hosts:['play.google.com']});
+    globalThis.MSAHelper?.error?.('Subscription management URL was blocked by security policy.');
+    return false;
   }
   function capture(e){
     const button=e.target.closest?.('#premium [data-msa-action]');if(!button)return;
