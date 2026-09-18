@@ -49,6 +49,31 @@
     return(d.textContent||'').replace(/\n{3,}/g,'\n\n').trim();
   }
 
+
+  const PROJECT_KEY='msaOneProjectsV1';
+  let projectCache=null;
+  function projectAll(){
+    if(projectCache)return projectCache;
+    try{const a=JSON.parse(localStorage.getItem(PROJECT_KEY)||'[]');projectCache=Array.isArray(a)?a:[]}catch{projectCache=[]}
+    return projectCache;
+  }
+  function projectWrite(items){
+    projectCache=Array.isArray(items)?items:[];
+    const raw=JSON.stringify(projectCache);
+    localStorage.setItem(PROJECT_KEY,raw);
+    globalThis.MSAStorage?.mirror(PROJECT_KEY,raw);
+    return projectCache;
+  }
+  function projectGet(id){return projectAll().find(x=>x.id===id)}
+  function projectUpsert(project,limit=50){
+    const a=[...projectAll()],i=a.findIndex(x=>x.id===project.id);
+    if(i<0)a.unshift(project);else a[i]=project;
+    return projectWrite(a.slice(0,limit));
+  }
+  function projectRemove(id){return projectWrite(projectAll().filter(x=>x.id!==id))}
+  function projectInvalidate(){projectCache=null}
+
   globalThis.MSACore={escapeHTML,safeName,parseJSON,uid,clamp,debounce,emit,on,download,pickFile,readText,readArrayBuffer,textFromHTML};
+  globalThis.MSAProjects={all:projectAll,write:projectWrite,get:projectGet,upsert:projectUpsert,remove:projectRemove,invalidate:projectInvalidate};
   globalThis.MSAMedia={fileToDataURL,loadImage,resizeImage,bytesToDataURL,dataUrlAsset};
 })();
