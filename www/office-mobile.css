@@ -1,12 +1,12 @@
 /* Build 52 · mobile Office-style full-page workspace */
 :root{--office-zoom:1}
 .office-mobile-shell{position:fixed;inset:0;z-index:79;pointer-events:none}
-.office-mobile-sheet,.office-more-sheet{pointer-events:auto}
+.office-ribbon,.office-mobile-sheet,.office-more-sheet,.office-zoom-hud{pointer-events:auto}
 .studio-overlay.office-mobile .studio-mode{display:none}
 .studio-overlay.office-mobile .studio-top{background:#151719f5;border-bottom-color:#ffffff12}
 .studio-overlay.office-mobile .studio-body{padding:0 0 calc(68px + env(safe-area-inset-bottom));background:#111315}
 .studio-overlay.office-mobile [data-work]{min-height:100%;transform-origin:top left}
-.office-ribbon{position:sticky;top:0;z-index:6;background:#1c1e20f5;border-bottom:1px solid #ffffff12;backdrop-filter:blur(18px)}
+.office-ribbon{position:fixed;left:0;right:0;top:calc(64px + env(safe-area-inset-top));z-index:6;background:#1c1e20f5;border-bottom:1px solid #ffffff12;backdrop-filter:blur(18px)}
 .office-ribbon-head{height:58px;display:flex;align-items:center;gap:8px;padding:7px 10px}
 .office-home-btn,.office-icon-btn{height:44px;border:0;border-radius:16px;background:#ffffff0d;color:#f4f4f4;font-weight:850;padding:0 15px}
 .office-home-btn{background:var(--office-accent,#62c58a);color:#07140c;min-width:104px}
@@ -30,3 +30,6 @@
 .office-zoom-target{zoom:var(--office-zoom)}
 @supports not (zoom:1){.office-zoom-target{transform:scale(var(--office-zoom));transform-origin:top left;width:calc(100% / var(--office-zoom))}}
 @media(min-width:760px){.office-more-sheet{left:50%;right:auto;width:min(620px,92vw);transform:translateX(-50%)}.office-tab-menu{left:calc(50% - 440px)}}
+
+.studio-overlay.office-mobile .studio-body{padding-top:116px}
+@media(max-width:620px){.studio-overlay.office-mobile .studio-top [data-import],.studio-overlay.office-mobile .studio-top [data-save],.studio-overlay.office-mobile .studio-top [data-export]{display:none}.studio-overlay.office-mobile .studio-title .studio-status{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:68vw}}
