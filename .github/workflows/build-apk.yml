@@ -41,9 +41,9 @@ jobs:
       - name: Test source contracts
         run: npm test
 
-      - name: Verify MSA One 53 source UI
+      - name: Verify MSA One 54 source UI
         run: |
-          grep -q 'data-build-id="MSA-ONE-53"' www/index.html
+          grep -q 'data-build-id="MSA-ONE-54"' www/index.html
           grep -q 'data-calendar-home' www/index.html
           grep -q 'data-calendar-me' www/index.html
           grep -q 'theme-v2.css' www/index.html
@@ -106,8 +106,8 @@ jobs:
           test -f scripts/activate-premium-android.mjs
           grep -q 'library-updater.js' www/index.html
           grep -q 'MSAAppManifest' www/app-manifest.js
-          grep -q "version:'53.0.0'" www/app-manifest.js
-          grep -q "buildId:'MSA-ONE-53'" www/app-manifest.js
+          grep -q "version:'54.0.0'" www/app-manifest.js
+          grep -q "buildId:'MSA-ONE-54'" www/app-manifest.js
           grep -q 'MSALibraryUpdate' www/library-updater.js
           grep -q 'core-library.js' www/index.html
           grep -q 'library-engine.js' www/index.html
@@ -136,6 +136,11 @@ jobs:
           grep -q -- '--msa-screen-width' www/theme-v2.css
           grep -q 'screen.width' www/settings-v2.js
           grep -q 'visualViewport' www/settings-v2.js
+          grep -q -- '--native-safe-top' www/workspace-v2.css
+          grep -q 'bindSheetDrag' www/office-mobile.js
+          grep -q 'dismissing' www/office-mobile.css
+          grep -q 'FOLDER ACCESS' www/files-v2.js
+          grep -q -- '--native-safe-top' scripts/apply-android-security.mjs
 
       - name: Install dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
@@ -149,23 +154,23 @@ jobs:
       - name: Apply Android security hardening
         run: node scripts/apply-android-security.mjs
 
-      - name: Set Android Build 53 version
+      - name: Set Android Build 54 version
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('android/app/build.gradle')
           s=p.read_text()
-          s=s.replace('versionCode 1','versionCode 53')
-          s=s.replace('versionName "1.0"','versionName "53.0"')
+          s=s.replace('versionCode 1','versionCode 54')
+          s=s.replace('versionName "1.0"','versionName "54.0"')
           p.write_text(s)
           PY
 
       - name: Verify Android package and assets
         run: |
           grep -q 'com.msa.one.displayfit37' android/app/build.gradle
-          grep -q 'versionCode 53' android/app/build.gradle
-          grep -q 'versionName "53.0"' android/app/build.gradle
-          grep -q 'data-build-id="MSA-ONE-53"' android/app/src/main/assets/public/index.html
+          grep -q 'versionCode 54' android/app/build.gradle
+          grep -q 'versionName "54.0"' android/app/build.gradle
+          grep -q 'data-build-id="MSA-ONE-54"' android/app/src/main/assets/public/index.html
           grep -q 'data-calendar-home' android/app/src/main/assets/public/index.html
           grep -q 'data-calendar-me' android/app/src/main/assets/public/index.html
           test -f android/app/src/main/assets/public/theme-v2.css
@@ -198,6 +203,7 @@ jobs:
           test -f android/app/src/main/java/com/msa/one/displayfit37/MSAFileBridgePlugin.java
           grep -q 'registerPlugin(MSAFileBridgePlugin.class)' android/app/src/main/java/com/msa/one/displayfit37/MainActivity.java
           grep -q 'applySystemBarInsets' android/app/src/main/java/com/msa/one/displayfit37/MainActivity.java
+          grep -q -- '--native-safe-top' android/app/src/main/java/com/msa/one/displayfit37/MainActivity.java
           grep -q 'ACTION_OPEN_DOCUMENT_TREE' android/app/src/main/java/com/msa/one/displayfit37/MSAFileBridgePlugin.java
           grep -q 'MediaStore.Downloads' android/app/src/main/java/com/msa/one/displayfit37/MSAFileBridgePlugin.java
           test -f android/app/src/main/assets/public/library-updater.js
@@ -232,6 +238,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MSA-One-53-APK
+          name: MSA-One-54-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
