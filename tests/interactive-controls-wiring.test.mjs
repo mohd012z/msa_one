@@ -1,0 +1,6 @@
+import fs from 'node:fs';import assert from 'node:assert/strict';const s=fs.readFileSync('www/index.html','utf8');
+for(const label of ['Files','Scan','Image','Voice','Start'])assert.ok(s.includes(label),'missing UI '+label);
+for(const a of ['import','scan','image','voice','ai-submit','file-open','file-menu'])assert.ok(s.includes('data-msa-action="'+a+'"'),'interactive UI missing action '+a);
+for(const label of ['Office Report.docx','Analysis Dashboard.xlsx','Interactive Report.html']){let i=s.indexOf(label);assert.ok(i>=0,'missing sample file '+label);let row=s.lastIndexOf('<div class="row"',i);let end=s.indexOf('</div></div>',i);assert.ok(s.slice(row,end+12).includes('data-msa-action="file-open"'),'sample file not openable '+label)}
+assert.ok(!/<button class="chip"(?![^>]*data-msa-action)[^>]*>/g.test(s),'decorative AI chip remains');assert.ok(!/<button class="go"(?![^>]*data-msa-action)[^>]*>/g.test(s),'AI Start is decorative');
+console.log('Interactive controls wiring contract passed');
