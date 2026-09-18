@@ -40,7 +40,6 @@ jobs:
       - name: Agent Sahab — regression contracts
         run: |
           for test in tests/*.test.mjs; do
-            case "$test" in tests/calendar-visibility.test.mjs) continue ;; esac
             echo "Agent Sahab checking $test"; node "$test"
           done
       - name: Agent Sahab — source bot
