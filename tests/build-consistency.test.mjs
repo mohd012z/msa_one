@@ -8,21 +8,21 @@ const workflow=fs.readFileSync('.github/workflows/build-apk.yml','utf8');
 const manifest=fs.readFileSync('www/app-manifest.js','utf8');
 const premium=fs.readFileSync('www/premium-config.js','utf8');
 
-assert.equal(pkg.version,'49.0.0','package version must match MSA One 49');
+assert.equal(pkg.version,'50.0.0','package version must match MSA One 50');
 assert.equal(pkg.dependencies['@capacitor/android'],'7.4.3','Capacitor Android must be pinned');
 assert.equal(pkg.dependencies['@capacitor/core'],'7.4.3','Capacitor Core must be pinned');
 assert.equal(pkg.devDependencies['@capacitor/cli'],'7.4.3','Capacitor CLI must be pinned');
-assert.equal(cap.appName,'MSA One 49','Capacitor app name must match build');
+assert.equal(cap.appName,'MSA One 50','Capacitor app name must match build');
 assert.equal(cap.appId,'com.msa.one.displayfit37','Android app ID must remain stable for in-place upgrades');
-assert.ok(manifest.includes("version:'49.0.0'"),'app manifest version must match package');
-assert.ok(manifest.includes("buildId:'MSA-ONE-49'"),'app manifest build ID must match UI');
+assert.ok(manifest.includes("version:'50.0.0'"),'app manifest version must match package');
+assert.ok(manifest.includes("buildId:'MSA-ONE-50'"),'app manifest build ID must match UI');
 assert.ok(premium.includes('active:false'),'Premium must remain inactive in Build 49');
 assert.ok(premium.includes("billing:{\n      enabled:false"),'Billing must remain disabled in Build 49');
 assert.ok(premium.includes("updatePolicy:{\n      enabled:true"),'remote update policy must be active in Build 49');
 assert.ok(premium.includes('enforce:true'),'force update must be active in Build 49');
 assert.ok(premium.includes("libraryVersion:'9.1.0'"),'prepared billing version must be 9.1.0');
 
-assert.ok(html.includes('data-build-id="MSA-ONE-49"'),'source UI build ID must match build');
+assert.ok(html.includes('data-build-id="MSA-ONE-50"'),'source UI build ID must match build');
 for(const asset of ['library.css','helper.css','performance.css','premium.css','app-manifest.js','core-library.js','performance-engine.js','storage-engine.js','premium-config.js','entitlement-engine.js','version-policy.js','office-engine.js','import-engine.js','formula-engine.js','library-engine.js','library-updater.js','helper-engine.js','premium-ui.js','security-engine.js']){
   assert.ok(html.includes(asset),'source must load '+asset);
 }
@@ -35,9 +35,9 @@ assert.ok(html.includes("base-uri 'none'"),'CSP must block base-tag rewriting');
 assert.ok(html.indexOf('security-engine.js')>html.indexOf('core-library.js'),'Security engine must load after Core SDK');
 assert.ok(html.indexOf('security-engine.js')<html.indexOf('storage-engine.js'),'Security engine must load before storage restore');
 
-assert.ok(workflow.includes('versionCode 49'),'Android versionCode must match build');
-assert.ok(workflow.includes('versionName "49.0"'),'Android versionName must match build');
-assert.ok(workflow.includes('MSA-One-49-APK'),'artifact name must match build');
+assert.ok(workflow.includes('versionCode 50'),'Android versionCode must match build');
+assert.ok(workflow.includes('versionName "50.0"'),'Android versionName must match build');
+assert.ok(workflow.includes('MSA-One-50-APK'),'artifact name must match build');
 for(const asset of ['app-manifest.js','core-library.js','library-engine.js','library-updater.js','library.css','helper-engine.js','helper.css','performance.css','performance-engine.js','premium.css','premium-config.js','entitlement-engine.js','version-policy.js','premium-ui.js','security-engine.js']){
   assert.ok(workflow.includes(asset),'workflow must verify packaged UX asset '+asset);
 }
@@ -63,4 +63,4 @@ assert.ok(fs.readFileSync('scripts/activate-premium-android.mjs','utf8').include
 assert.ok(!workflow.includes('Package Calendar and adaptive display UI'),'workflow must not mutate source UI before packaging');
 assert.ok(!workflow.includes('\\n          grep'),'workflow must not contain escaped newline commands');
 
-console.log('MSA One 49 Secure Update consistency contract passed');
+console.log('MSA One 50 Native Office consistency contract passed');
