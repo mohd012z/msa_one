@@ -2,8 +2,8 @@
   const manifest={
     app:'MSA One',
     appId:'com.msa.one.displayfit37',
-    version:'52.0.0',
-    buildId:'MSA-ONE-52',
+    version:'53.0.0',
+    buildId:'MSA-ONE-53',
     channel:'built-in',
     dataSchema:1,
     librarySchema:2,
@@ -31,7 +31,13 @@
       'android-system-bar-insets',
       'mobile-office-ribbon',
       'pinch-zoom-workspace',
-      'full-page-office-view'
+      'full-page-office-view',
+      'workspace-ui-v2',
+      'universal-search',
+      'tools-center',
+      'template-center',
+      'assistant-browser',
+      'workspace-drawer'
     ]
   };
   globalThis.MSAAppManifest=Object.freeze(manifest);
