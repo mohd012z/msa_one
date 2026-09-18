@@ -11,6 +11,10 @@ on:
       - 'capacitor.config.json'
       - '.github/workflows/build-apk.yml'
 
+concurrency:
+  group: msa-one-apk-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   build:
     runs-on: ubuntu-latest
