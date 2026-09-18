@@ -10,5 +10,7 @@ for(const x of ['importOfficeFile','MSAImport.readFile','.docx,.xlsx,.pptx','dat
 assert.ok(css.includes('.files-hero-actions'),'Files Office opener must be styled');
 assert.ok(js.includes('Project restored'),'Delete flow must provide Undo recovery');
 assert.ok(js.includes('MSAHelper?.error'),'Office import failures must use Friendly Helper when available');
+assert.ok(js.includes('updateWorkspaceStats'),'Files must update live Me workspace stats');
+assert.ok(js.includes("querySelectorAll('[data-create]')"),'every Files Create button must be wired');
 
 console.log('files workspace Office opener contract passed');
