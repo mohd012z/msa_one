@@ -29,12 +29,13 @@
       manageUrl:''
     },
     updatePolicy:{
-      enabled:false,
-      enforce:false,
-      checkOnLaunch:false,
-      policyUrl:'',
+      enabled:true,
+      enforce:true,
+      checkOnLaunch:true,
+      policyUrl:'https://raw.githubusercontent.com/mohd012z/msa_one/main/premium-prep/update-policy.json',
       storeUrl:'',
-      timeoutMs:5000,
+      timeoutMs:7000,
+      recheckMinutes:360,
       failMode:'open',
       requireHttps:true,
       exactVersion:false
