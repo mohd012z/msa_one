@@ -2,16 +2,19 @@
   "schema": 1,
   "appId": "com.msa.one.displayfit37",
   "channel": "stable",
-  "latestVersion": "49.0.0",
+  "latestVersion": "50.0.0",
   "minSupportedVersion": "49.0.0",
-  "forceUpdate": true,
+  "forceUpdate": false,
   "requireExactVersion": false,
-  "title": "MSA One update required",
-  "message": "A newer MSA One version is required for security, compatibility and app improvements.",
+  "title": "MSA One 50 available",
+  "message": "MSA One 50 improves the native Office workspace, PDF opening, Save controls, settings and interaction feedback.",
   "releaseNotes": [
-    "Force-update notification and version-aware update policy",
-    "Security-hardened update flow",
-    "Remote policy can require future versions without rebuilding older supported clients"
+    "Full-screen Office editing with persistent bottom Save/Import/Export/Files controls",
+    "Unified DOCX/XLSX/PPTX/PDF file import",
+    "Imported PDF viewer",
+    "Standardized 44px touch controls and press/open animation",
+    "Settings apply immediately and persist",
+    "Premium architecture cleaned and kept prepared but inactive"
   ],
   "publishedAt": "2026-09-18T22:39:00+08:00",
   "storeUrl": "https://play.google.com/store/apps/details?id=com.msa.one.displayfit37"
