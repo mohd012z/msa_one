@@ -33,7 +33,7 @@ jobs:
           m='<div class="cap">MY WORKSPACE</div>'; start=s.find('id="me"'); pos=s.find(m,start)
           if start < 0 or pos < 0: raise SystemExit('Me injection marker missing')
           pos+=len(m); s=s[:pos]+me+s[pos:]
-          for x in ['www/project-store.js','www/planner.js','www/settings-v2.js','www/create-studio.js','www/files-workspace.js','www/agent-registry.js','www/agent-router.js','www/kaga-library.js','www/document-ir.js','www/raga-converter.js','www/pdf-workspace.js','www/celeb-planner.js','www/anwar-lens.js','www/knowledge-pack-manager.js','www/mobile-accessibility-security.js','www/smart-html-v2.js','www/runtime-integration-v2.js','www/file-import-center-v2.js','www/document-production-engine-v2.js','www/spreadsheet-production-engine-v2.js','www/presentation-production-engine-v2.js','www/pdf-intelligence-workspace-v2.js','www/kaga-template-library-v2.js','www/raga-conversion-matrix-v2.js']:
+          for x in ['www/project-store.js','www/planner.js','www/settings-v2.js','www/create-studio.js','www/files-workspace.js','www/agent-registry.js','www/agent-router.js','www/kaga-library.js','www/document-ir.js','www/raga-converter.js','www/pdf-workspace.js','www/celeb-planner.js','www/anwar-lens.js','www/knowledge-pack-manager.js','www/mobile-accessibility-security.js','www/smart-html-v2.js','www/runtime-integration-v2.js','www/file-import-center-v2.js','www/document-production-engine-v2.js','www/spreadsheet-production-engine-v2.js','www/presentation-production-engine-v2.js','www/pdf-intelligence-workspace-v2.js','www/kaga-template-library-v2.js','www/raga-conversion-matrix-v2.js','www/ui-action-controller-v2.js']:
               s=s.replace('</body>','<script>'+Path(x).read_text()+'</script></body>')
           p.write_text(s)
           PY
@@ -61,6 +61,7 @@ jobs:
           grep -q 'MSAPDFIntelligenceWorkspace' www/index.html
           grep -q 'MSAKagaTemplateLibrary' www/index.html
           grep -q 'MSARagaConversionMatrix' www/index.html
+          grep -q 'MSAUIActionController' www/index.html
       - name: Install dependencies
         run: npm install
       - name: Create Android project
@@ -89,6 +90,7 @@ jobs:
           grep -q 'MSAPDFIntelligenceWorkspace' android/app/src/main/assets/public/index.html
           grep -q 'MSAKagaTemplateLibrary' android/app/src/main/assets/public/index.html
           grep -q 'MSARagaConversionMatrix' android/app/src/main/assets/public/index.html
+          grep -q 'MSAUIActionController' android/app/src/main/assets/public/index.html
       - name: Agent Sahab — Android lint
         working-directory: android
         run: ./gradlew lintDebug
