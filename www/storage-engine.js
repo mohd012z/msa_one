@@ -25,6 +25,7 @@
         if(saved!=null) localStorage.setItem(key,saved);
       }
     }
+    globalThis.MSAProjects?.invalidate?.();
   }
   function snapshot(){
     const data={schema:1,app:'MSA One',created:new Date().toISOString(),values:{}};
