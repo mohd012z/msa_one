@@ -38,11 +38,12 @@
     const p=state.id&&get(state.id);x.querySelector('[data-title]').value=p?.title||'Untitled '+TYPES[state.type][1];
 
     if(state.type==='document'){
-      w.innerHTML='<div class="studio-tools"><button class="studio-tool" data-cmd="bold"><b>B</b></button><button class="studio-tool" data-cmd="italic"><i>I</i></button><button class="studio-tool" data-cmd="underline"><u>U</u></button><button class="studio-tool" data-block="H1">H1</button><button class="studio-tool" data-block="H2">H2</button><button class="studio-tool" data-block="P">P</button><button class="studio-tool" data-cmd="insertUnorderedList">☷ List</button><button class="studio-tool" data-table>▦ Table</button><button class="studio-tool" data-doc-pdf>PDF</button></div><article class="studio-editor" contenteditable="true" data-doc>'+(p?.content||'<h2>Start writing</h2><p>Your document keeps rich headings, bold, italic, underline, lists and simple tables when exported to DOCX.</p>')+'</article>';
+      w.innerHTML='<div class="studio-tools"><button class="studio-tool" data-cmd="bold"><b>B</b></button><button class="studio-tool" data-cmd="italic"><i>I</i></button><button class="studio-tool" data-cmd="underline"><u>U</u></button><button class="studio-tool" data-block="H1">H1</button><button class="studio-tool" data-block="H2">H2</button><button class="studio-tool" data-block="P">P</button><button class="studio-tool" data-cmd="insertUnorderedList">☷ List</button><button class="studio-tool" data-table>▦ Table</button><button class="studio-tool" data-doc-image>🖼 Image</button><button class="studio-tool" data-doc-pdf>PDF</button></div><article class="studio-editor" contenteditable="true" data-doc>'+(p?.content||'<h2>Start writing</h2><p>Your document keeps rich headings, bold, italic, underline, lists and simple tables when exported to DOCX.</p>')+'</article>';
       const ed=w.querySelector('[data-doc]');ed.oninput=queueSave;
       w.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>{ed.focus();document.execCommand(b.dataset.cmd,false,null);queueSave()});
       w.querySelectorAll('[data-block]').forEach(b=>b.onclick=()=>{ed.focus();document.execCommand('formatBlock',false,b.dataset.block);queueSave()});
       w.querySelector('[data-table]').onclick=()=>{ed.focus();document.execCommand('insertHTML',false,'<table><tr><th>Header 1</th><th>Header 2</th></tr><tr><td>Value</td><td>Value</td></tr></table><p><br></p>');queueSave()};
+      w.querySelector('[data-doc-image]').onclick=()=>pickDocumentImage(ed);
       w.querySelector('[data-doc-pdf]').onclick=()=>exportPDF(window.MSAOffice?.plain(currentContent())||'');
     }else if(state.type==='html'){
       const src=p?.content||'<!doctype html>\n<html>\n<head><meta name="viewport" content="width=device-width"><title>MSA One</title></head>\n<body>\n  <h1>Hello from MSA One</h1>\n  <p>Edit the source and preview it below.</p>\n</body>\n</html>';
@@ -135,6 +136,11 @@
   function readSlides(base){
     const a=base.map(x=>({...x})),t=document.querySelector('[data-slide-title]'),b=document.querySelector('[data-slide-body]'),l=document.querySelector('[data-slide-layout]');
     if(a[state.slide]&&t&&b)a[state.slide]={...a[state.slide],title:t.value,body:b.value,layout:l?.value||a[state.slide].layout||'title-body'};return a;
+  }
+  function pickDocumentImage(editor){
+    const input=document.createElement('input');input.type='file';input.accept='image/*';input.hidden=true;
+    input.onchange=async()=>{const file=input.files?.[0];if(!file)return;try{const data=await resizeImage(file);editor.focus();document.execCommand('insertHTML',false,'<p><img src="'+data+'" alt="'+esc(file.name)+'"></p><p><br></p>');queueSave()}catch(e){alert(e.message)}finally{input.remove()}};
+    document.body.appendChild(input);input.click();
   }
   function resizeImage(file){
     return new Promise((resolve,reject)=>{const fr=new FileReader();fr.onerror=()=>reject(fr.error);fr.onload=()=>{const img=new Image();img.onerror=()=>reject(new Error('Image could not be read'));img.onload=()=>{const max=1280,scale=Math.min(1,max/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(img.width*scale));c.height=Math.max(1,Math.round(img.height*scale));c.getContext('2d').drawImage(img,0,0,c.width,c.height);resolve(c.toDataURL('image/jpeg',.78))};img.src=fr.result};fr.readAsDataURL(file)});
@@ -249,6 +255,6 @@
     else if(state.type==='pdf')exportPDF(currentContent());
   }
 
-  window.MSAStudio={open,close,saveDraft,importCurrent,exportCurrent,openProject,evalFormula};
+  window.MSAStudio={open,close,saveDraft,importCurrent,exportCurrent,openProject,evalFormula,pickDocumentImage};
   document.addEventListener('DOMContentLoaded',mount);setTimeout(mount,400);
 })();
