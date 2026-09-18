@@ -1,7 +1,7 @@
 (()=> {
   const KEY='msaOneProjectsV1';
   const TYPES={document:['📄','Document'],spreadsheet:['📊','Spreadsheet'],presentation:['📽️','Presentation'],pdf:['📕','PDF'],html:['🌐','Smart HTML']};
-  let state={type:'document',id:null,timer:null,slide:0,sheet:0};
+  let state={type:'document',id:null,timer:null,idleSave:null,slide:0,sheet:0,rowStart:0};
 
   function all(){try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}}
   function put(p){
@@ -80,31 +80,63 @@
   function captureSheets(base){
     const sheets=(base||storedSheets()).map(sh=>({name:sh.name,rows:(sh.rows||[]).map(r=>[...r])}));
     const cells=document.querySelectorAll('[data-cell]');
-    if(cells.length&&sheets[state.sheet])sheets[state.sheet].rows=readSheet();
+    if(cells.length&&sheets[state.sheet]){
+      const rows=sheets[state.sheet].rows;
+      cells.forEach(i=>{
+        const r=+i.dataset.r,c=+i.dataset.c;
+        while(rows.length<=r)rows.push([]);
+        while(rows[r].length<=c)rows[r].push('');
+        rows[r][c]=i.value;
+      });
+    }
     return sheets;
   }
   function replaceSheets(sheets,next=state.sheet){
+    const changed=next!==state.sheet;
     state.sheet=Math.max(0,Math.min(next,sheets.length-1));
+    if(changed)state.rowStart=0;
     const p={id:state.id||('p_'+Date.now().toString(36)),type:'spreadsheet',title:document.querySelector('[data-title]')?.value||'Untitled Spreadsheet',content:JSON.stringify({sheets,activeSheet:state.sheet}),updated:Date.now()};
     state.id=p.id;put(p);render();
   }
+  function sheetPageSize(){
+    const p=window.MSAPerformance?.profile?.()||'balanced';
+    return p==='low'?80:p==='smooth'?240:140;
+  }
   function renderSheet(w,sheets){
     sheets=normalizeSheets({sheets});state.sheet=Math.max(0,Math.min(state.sheet,sheets.length-1));
-    let rows=sheets[state.sheet].rows||[['']];
-    const cols=Math.max(1,...rows.map(r=>r.length),6);rows=rows.map(r=>Array.from({length:cols},(_,c)=>r[c]??''));sheets[state.sheet].rows=rows;
+    const rows=sheets[state.sheet].rows||[['']];
+    const cols=Math.max(1,...rows.map(r=>r.length),6);
+    const pageSize=sheetPageSize(),maxStart=Math.max(0,rows.length-pageSize);
+    state.rowStart=Math.min(Math.max(0,state.rowStart),maxStart);
+    const endRow=Math.min(rows.length,state.rowStart+pageSize);
+    const visible=rows.slice(state.rowStart,endRow);
     const head=Array.from({length:cols},(_,c)=>'<th>'+colName(c)+'</th>').join('');
-    const body=rows.map((r,ri)=>'<tr><th>'+(ri+1)+'</th>'+r.map((v,ci)=>'<td><input data-cell data-r="'+ri+'" data-c="'+ci+'" value="'+esc(v)+'"></td>').join('')+'</tr>').join('');
+    const body=visible.map((r,offset)=>{
+      const ri=state.rowStart+offset;
+      return '<tr><th>'+(ri+1)+'</th>'+Array.from({length:cols},(_,ci)=>'<td><input data-cell data-r="'+ri+'" data-c="'+ci+'" value="'+esc(r[ci]??'')+'"></td>').join('')+'</tr>';
+    }).join('');
     const tabs='<div class="sheet-tabs">'+sheets.map((sh,i)=>'<button class="studio-tool '+(i===state.sheet?'on':'')+'" data-sheet="'+i+'">'+esc(sh.name)+'</button>').join('')+'<button class="studio-tool" data-add-sheet>＋ Sheet</button></div>';
-    w.innerHTML='<div class="studio-tools"><button class="studio-tool" data-add-row>＋ Row</button><button class="studio-tool" data-add-col>＋ Column</button><button class="studio-tool" data-rename-sheet>Rename Sheet</button>'+(sheets.length>1?'<button class="studio-tool" data-delete-sheet>Delete Sheet</button>':'')+'<button class="studio-tool" data-chart>▥ Chart</button><button class="studio-tool" data-csv>CSV</button><span class="studio-status">'+sheets.length+' sheet'+(sheets.length===1?'':'s')+' · '+rows.length+' × '+cols+'</span></div>'+tabs+'<div class="formula-bar" data-formula-bar>Tap a cell · formulas: =C2*D2, =SUM(C2:C10)</div><div class="sheet-wrap"><table class="sheet-grid"><thead><tr><th>#</th>'+head+'</tr></thead><tbody>'+body+'</tbody></table></div><div class="sheet-chart" data-chart-panel hidden></div>';
-    w.querySelectorAll('[data-cell]').forEach(i=>{i.oninput=()=>{queueSave();showFormula(i,readSheet())};i.onfocus=()=>showFormula(i,readSheet())});
-    w.querySelectorAll('[data-sheet]').forEach(b=>b.onclick=()=>{const a=captureSheets(sheets);replaceSheets(a,+b.dataset.sheet)});
-    w.querySelector('[data-add-sheet]').onclick=()=>{const a=captureSheets(sheets);a.push({name:'Sheet'+(a.length+1),rows:[['']]});replaceSheets(a,a.length-1)};
+    const pager=rows.length>pageSize?'<div class="sheet-pager"><button class="studio-tool" data-row-prev '+(state.rowStart===0?'disabled':'')+'>‹ Previous</button><span>Rows '+(state.rowStart+1)+'–'+endRow+' of '+rows.length+'</span><button class="studio-tool" data-row-next '+(endRow>=rows.length?'disabled':'')+'>Next ›</button></div>':'';
+    w.innerHTML='<div class="studio-tools"><button class="studio-tool" data-add-row>＋ Row</button><button class="studio-tool" data-add-col>＋ Column</button><button class="studio-tool" data-rename-sheet>Rename Sheet</button>'+(sheets.length>1?'<button class="studio-tool" data-delete-sheet>Delete Sheet</button>':'')+'<button class="studio-tool" data-chart>▥ Chart</button><button class="studio-tool" data-csv>CSV</button><span class="studio-status">'+sheets.length+' sheet'+(sheets.length===1?'':'s')+' · '+rows.length+' × '+cols+'</span></div>'+tabs+pager+'<div class="formula-bar" data-formula-bar>Tap a cell · formulas: =C2*D2, =SUM(C2:C10)</div><div class="sheet-wrap"><table class="sheet-grid"><thead><tr><th>#</th>'+head+'</tr></thead><tbody>'+body+'</tbody></table></div><div class="sheet-chart" data-chart-panel hidden></div>';
+    w.querySelectorAll('[data-cell]').forEach(i=>{
+      i.oninput=()=>{
+        const r=+i.dataset.r,c=+i.dataset.c,row=sheets[state.sheet].rows[r]||(sheets[state.sheet].rows[r]=[]);
+        while(row.length<=c)row.push('');
+        row[c]=i.value;queueSave();showFormula(i,sheets[state.sheet].rows);
+      };
+      i.onfocus=()=>showFormula(i,sheets[state.sheet].rows);
+    });
+    w.querySelectorAll('[data-sheet]').forEach(b=>b.onclick=()=>{const a=captureSheets(sheets);state.rowStart=0;replaceSheets(a,+b.dataset.sheet)});
+    w.querySelector('[data-add-sheet]').onclick=()=>{const a=captureSheets(sheets);a.push({name:'Sheet'+(a.length+1),rows:[['']]});state.rowStart=0;replaceSheets(a,a.length-1)};
     w.querySelector('[data-rename-sheet]').onclick=()=>{const a=captureSheets(sheets),name=prompt('Sheet name',a[state.sheet].name);if(name&&name.trim()){a[state.sheet].name=name.trim().slice(0,31);replaceSheets(a)}};
-    const del=w.querySelector('[data-delete-sheet]');if(del)del.onclick=()=>{const a=captureSheets(sheets);a.splice(state.sheet,1);replaceSheets(a,Math.max(0,state.sheet-1))};
-    w.querySelector('[data-add-row]').onclick=()=>{const a=captureSheets(sheets),r=a[state.sheet].rows;r.push(Array.from({length:r[0]?.length||6},()=>''));replaceSheets(a)};
+    const del=w.querySelector('[data-delete-sheet]');if(del)del.onclick=()=>{const a=captureSheets(sheets);a.splice(state.sheet,1);state.rowStart=0;replaceSheets(a,Math.max(0,state.sheet-1))};
+    w.querySelector('[data-add-row]').onclick=()=>{const a=captureSheets(sheets),r=a[state.sheet].rows;r.push(Array.from({length:r[0]?.length||6},()=>''));state.rowStart=Math.max(0,r.length-pageSize);replaceSheets(a)};
     w.querySelector('[data-add-col]').onclick=()=>{const a=captureSheets(sheets);a[state.sheet].rows.forEach(x=>x.push(''));replaceSheets(a)};
-    w.querySelector('[data-chart]').onclick=()=>toggleChart(readSheet());
-    w.querySelector('[data-csv]').onclick=()=>{saveDraft();const n=safeName(document.querySelector('[data-title]')?.value)+'-'+safeName(sheets[state.sheet].name);window.MSAOffice?.download(n+'.csv',window.MSAOffice.csv(readSheet()),'text/csv;charset=utf-8')};
+    w.querySelector('[data-chart]').onclick=()=>toggleChart(captureSheets(sheets)[state.sheet].rows);
+    w.querySelector('[data-csv]').onclick=()=>{saveDraft();const n=safeName(document.querySelector('[data-title]')?.value)+'-'+safeName(sheets[state.sheet].name),rowsNow=captureSheets(sheets)[state.sheet].rows;window.MSAOffice?.download(n+'.csv',window.MSAOffice.csv(rowsNow),'text/csv;charset=utf-8')};
+    const prev=w.querySelector('[data-row-prev]'),next=w.querySelector('[data-row-next]');
+    if(prev)prev.onclick=()=>{const a=captureSheets(sheets);state.rowStart=Math.max(0,state.rowStart-pageSize);renderSheet(w,a)};
+    if(next)next.onclick=()=>{const a=captureSheets(sheets);state.rowStart=Math.min(maxStart,state.rowStart+pageSize);renderSheet(w,a)};
   }
   function showFormula(input,rows){
     const bar=document.querySelector('[data-formula-bar]');if(!bar)return;const raw=input.value,ref=colName(+input.dataset.c)+(+input.dataset.r+1);
@@ -117,11 +149,7 @@
     const points=rows.slice(1).map((r,i)=>({label:String(r[0]||'Row '+(i+2)),value:cellNumber(rows,i+1,valueCol)})).filter(x=>Number.isFinite(x.value)).slice(0,16);
     const max=Math.max(1,...points.map(x=>Math.abs(x.value)));p.innerHTML='<b class="chart-title">'+esc(rows[0]?.[valueCol]||'Chart')+'</b>'+points.map(x=>'<div class="chart-row"><span>'+esc(x.label)+'</span><i><b style="width:'+Math.max(2,Math.abs(x.value)/max*100)+'%"></b></i><strong>'+x.value+'</strong></div>').join('');p.hidden=false;
   }
-  function readSheet(){
-    const cells=[...document.querySelectorAll('[data-cell]')];if(!cells.length)return[['']];
-    let mr=0,mc=0;cells.forEach(i=>{mr=Math.max(mr,+i.dataset.r);mc=Math.max(mc,+i.dataset.c)});
-    const rows=Array.from({length:mr+1},()=>Array.from({length:mc+1},()=>''));cells.forEach(i=>rows[+i.dataset.r][+i.dataset.c]=i.value);return rows;
-  }
+  function readSheet(){return captureSheets(storedSheets())[state.sheet]?.rows||[['']]}
   function currentSheets(){return captureSheets(storedSheets())}
 
   function renderPresentation(w,slides){
