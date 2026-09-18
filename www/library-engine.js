@@ -13,7 +13,9 @@
     {id:'voice',icon:'🎙️',name:'Voice & AI Routing',desc:'Device speech input and local task routing',requires:['MSAActions']},
     {id:'ui',icon:'🎨',name:'UI & Display',desc:'Responsive display fit, Button Studio and visual effects',requires:['MSAActions']},
     {id:'helper',icon:'?',name:'Friendly Helper',desc:'Context help, Show Me guidance, examples and troubleshooting',requires:['MSAHelper']},
-    {id:'performance',icon:'⚡',name:'Performance & Reading',desc:'Adaptive frame pacing, display fit, font/icon scale and Reading View',requires:['MSAPerformance']}
+    {id:'performance',icon:'⚡',name:'Performance & Reading',desc:'Adaptive frame pacing, display fit, font/icon scale and Reading View',requires:['MSAPerformance']},
+    {id:'premium',icon:'✦',name:'Premium System',desc:'Prepared entitlement and Google Play billing gate · inactive',requires:['MSAEntitlement','MSAPremiumUI']},
+    {id:'updates',icon:'↻',name:'Version & Update Policy',desc:'Prepared minimum-version and force-update policy · inactive',requires:['MSAUpdatePolicy']}
   ];
 
   const TEMPLATES=[
@@ -83,7 +85,9 @@
     voice:{start:()=>globalThis.MSAActions?.voice()},
     ui:{studio:()=>globalThis.MSAActions?.uiStudio()},
     helper:{open:(tab='guide')=>globalThis.MSAHelper?.open(tab),troubleshoot:()=>globalThis.MSAHelper?.open('trouble'),current:()=>globalThis.MSAHelper?.current()},
-    performance:{reading:(on)=>globalThis.MSAPerformance?.toggleReading(on),mode:(m)=>globalThis.MSAPerformance?.setMode(m),font:(v)=>globalThis.MSAPerformance?.setFontScale(v),icons:(v)=>globalThis.MSAPerformance?.setIconScale(v),device:()=>globalThis.MSAPerformance?.device()}
+    performance:{reading:(on)=>globalThis.MSAPerformance?.toggleReading(on),mode:(m)=>globalThis.MSAPerformance?.setMode(m),font:(v)=>globalThis.MSAPerformance?.setFontScale(v),icons:(v)=>globalThis.MSAPerformance?.setIconScale(v),device:()=>globalThis.MSAPerformance?.device()},
+    premium:{status:()=>globalThis.MSAEntitlement?.status(),can:(cap)=>globalThis.MSAEntitlement?.can(cap),diagnostics:()=>globalThis.MSAEntitlement?.diagnostics(),open:()=>globalThis.show?.('premium')},
+    updates:{check:(opt)=>globalThis.MSAUpdatePolicy?.check(opt),evaluate:(p,v)=>globalThis.MSAUpdatePolicy?.evaluate(p,v),diagnostics:()=>globalThis.MSAUpdatePolicy?.diagnostics()}
   };
   function api(module){return API[module]||null}
   function call(module,action,...args){
@@ -132,6 +136,8 @@
       case'ui':return globalThis.show?.('me');
       case'helper':return globalThis.MSAHelper?.open();
       case'performance':return globalThis.show?.('me');
+      case'premium':return globalThis.show?.('premium');
+      case'updates':return globalThis.show?.('premium');
     }
   }
   function filter(q=''){
