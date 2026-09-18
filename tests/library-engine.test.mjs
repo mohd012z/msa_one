@@ -6,7 +6,7 @@ const L=globalThis.MSALibrary;
 assert.ok(L,'MSALibrary must be registered');
 
 const ids=L.modules.map(x=>x.id);
-for(const id of ['core','document','spreadsheet','presentation','pdf','html','files','storage','planner','media','voice','ui','helper','performance','premium','updates']){
+for(const id of ['core','document','spreadsheet','presentation','pdf','html','files','storage','planner','media','voice','ui','helper','performance','premium','updates','security']){
   assert.ok(ids.includes(id),'missing library module '+id);
 }
 assert.ok(L.templates.length>=16,'built-in template library must include at least 16 templates');
@@ -21,7 +21,7 @@ const budgetContent=typeof budget.content==='function'?budget.content():budget.c
 const parsed=JSON.parse(budgetContent);
 assert.ok(Array.isArray(parsed.sheets)&&parsed.sheets.length>=2,'budget template must be multi-sheet');
 
-for(const mod of ['core','document','spreadsheet','presentation','pdf','html','files','storage','planner','media','voice','ui','performance','premium','updates']){
+for(const mod of ['core','document','spreadsheet','presentation','pdf','html','files','storage','planner','media','voice','ui','performance','premium','updates','security']){
   assert.ok(L.api(mod),'missing API group '+mod);
 }
 assert.equal(typeof L.call,'function','library gateway must expose call()');
@@ -34,6 +34,8 @@ assert.equal(typeof L.api('performance').reading,'function');
 assert.equal(typeof L.api('performance').mode,'function');
 assert.equal(typeof L.api('premium').status,'function');
 assert.equal(typeof L.api('updates').evaluate,'function');
+assert.equal(typeof L.api('security').audit,'function');
+assert.equal(typeof L.api('security').sanitize,'function');
 
 const health=L.selfCheck();
 assert.equal(health.offline,true);
