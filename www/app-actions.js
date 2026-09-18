@@ -44,12 +44,14 @@
     picker.hidden=true;
     picker.onchange=()=>{
       const files=[...(picker.files||[])];
-      if(!files.length) return;
+      if(!files.length){picker.remove();picker=null;return}
       const box=aiBox();
       const label=files.map(f=>f.name).join(', ');
       if(box) box.value=(box.value?box.value+'\n':'')+'Attached: '+label;
       toast(files.length+' file'+(files.length===1?'':'s')+' selected');
+      picker.remove();picker=null;
     };
+    picker.oncancel=()=>{picker?.remove();picker=null};
     document.body.appendChild(picker);
     picker.click();
   }
@@ -76,7 +78,11 @@
       }
       toast('Voice captured');
     };
-    r.start();
+    try{r.start()}catch(e){
+      const message='Voice input could not start: '+(e?.message||'device error');
+      if(window.MSAHelper?.error)window.MSAHelper.error(message,[{label:'Help',run:()=>window.MSAHelper.open('trouble')}]);
+      else toast(message);
+    }
   }
 
   function routeTask(){
