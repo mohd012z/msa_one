@@ -45,15 +45,15 @@ await import('../www/library-updater.js');
 const U=globalThis.MSALibraryUpdate;
 const L=globalThis.MSALibrary;
 assert.ok(U,'Library updater must register');
-assert.equal(globalThis.MSAAppManifest.version,'49.0.0');
-assert.equal(globalThis.MSAAppManifest.buildId,'MSA-ONE-49');
+assert.equal(globalThis.MSAAppManifest.version,'50.0.0');
+assert.equal(globalThis.MSAAppManifest.buildId,'MSA-ONE-50');
 
 const synced=U.sync({quiet:true});
-assert.equal(synced.version,'49.0.0');
-assert.equal(synced.buildId,'MSA-ONE-49');
+assert.equal(synced.version,'50.0.0');
+assert.equal(synced.buildId,'MSA-ONE-50');
 assert.equal(synced.pendingUpdate,true,'upgrade must be marked new until acknowledged');
 assert.equal(synced.lastUpdate.fromBuild,'MSA-ONE-48');
-assert.equal(synced.lastUpdate.toBuild,'MSA-ONE-49');
+assert.equal(synced.lastUpdate.toBuild,'MSA-ONE-50');
 assert.deepEqual(synced.lastUpdate.addedModules,[]);
 assert.deepEqual(synced.lastUpdate.removedModules,[]);
 assert.deepEqual(synced.lastUpdate.addedTemplates,[]);
@@ -72,6 +72,6 @@ U.removeUserTemplate(added.id);
 
 const ack=U.acknowledge();
 assert.equal(ack.pendingUpdate,false,'acknowledging update must clear NEW state');
-assert.ok(ack.history.some(x=>x.fromBuild==='MSA-ONE-48'&&x.toBuild==='MSA-ONE-49'),'48→49 upgrade must remain in update history');
+assert.ok(ack.history.some(x=>x.fromBuild==='MSA-ONE-48'&&x.toBuild==='MSA-ONE-50'),'49→50 upgrade must remain in update history');
 
-console.log('Build 48 to 49 secure update migration contract passed');
+console.log('Build 49 to 50 native Office migration contract passed');
