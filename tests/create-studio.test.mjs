@@ -6,7 +6,7 @@ const css=fs.readFileSync('www/create-studio.css','utf8');
 const formulaJs=fs.readFileSync('www/formula-engine.js','utf8');
 
 for(const type of ['document','spreadsheet','presentation','pdf','html']) assert.ok(js.includes(type),'missing Create type '+type);
-for(const api of ['MSAStudio','open','close','saveDraft','importCurrent','exportCurrent','createProject']) assert.ok(js.includes(api),'missing studio API '+api);
+for(const api of ['MSAStudio','open','close','saveDraft','importCurrent','exportCurrent','createProject','undo','redo','historyStatus']) assert.ok(js.includes(api),'missing studio API '+api);
 assert.ok(js.includes('contenteditable'),'Document editor must be editable');
 assert.ok(js.includes('sandbox'),'Smart HTML preview must be sandboxed');
 assert.ok(js.includes('localStorage'),'Drafts must persist locally');
@@ -26,6 +26,12 @@ assert.ok(js.includes('MSASecurity'),'Create Studio must sanitize stored rich co
 assert.ok(js.includes('previewHTML'),'Smart HTML preview must use isolated security wrapper');
 assert.ok(js.includes('MSAProjects'),'Create Studio must use the shared project cache');
 assert.ok(js.includes('idleSave'),'autosave must support idle scheduling');
+assert.ok(js.includes('MSAEditorHistory'),'Create Studio must use the shared undo redo history adapter');
+assert.ok(js.includes('MSAEditorAdapter'),'Document formatting must use the isolated editor adapter');
+assert.ok(js.includes('data-history-undo'),'Create Studio must expose Undo control');
+assert.ok(js.includes('data-history-redo'),'Create Studio must expose Redo control');
+assert.ok(js.includes("key==='z'"),'Create Studio must support keyboard undo');
+assert.ok(!js.includes('document.execCommand'),'Create Studio must not call deprecated execCommand directly');
 assert.ok(js.includes('virtual view'),'large spreadsheets must use virtual row/column rendering');
 assert.ok(css.includes('.studio-editor img'),'document image preview must be styled');
 assert.ok(css.includes('.formula-bar'),'formula UI must be styled');
@@ -37,5 +43,6 @@ assert.ok(css.includes('min-height:44px'),'editor controls must meet standard to
 assert.ok(css.includes('.studio-pdf-viewer'),'imported PDFs must have a full viewer');
 assert.ok(css.includes('@keyframes studioOpen'),'editor must animate open');
 assert.ok(css.includes('.slide-image-preview'),'slide image preview must be styled');
+assert.ok(css.includes('.studio-history-btn:disabled'),'Undo and Redo disabled state must be visible');
 
 console.log('rich create studio media contract passed');
