@@ -69,8 +69,20 @@
   }
 
   function wordRun(text,opt={}){
-    const rp=(opt.bold?'<w:b/>':'')+(opt.italic?'<w:i/>':'')+(opt.underline?'<w:u w:val="single"/>':'')+(opt.size?'<w:sz w:val="'+opt.size+'"/><w:szCs w:val="'+opt.size+'"/>':'');
+    const rp=(opt.face?'<w:rFonts w:ascii="'+xml(opt.face)+'" w:hAnsi="'+xml(opt.face)+'" w:cs="'+xml(opt.face)+'"/>':'')+(opt.bold?'<w:b/>':'')+(opt.italic?'<w:i/>':'')+(opt.underline?'<w:u w:val="single"/>':'')+(opt.size?'<w:sz w:val="'+opt.size+'"/><w:szCs w:val="'+opt.size+'"/>':'');
     return '<w:r>'+(rp?'<w:rPr>'+rp+'</w:rPr>':'')+'<w:t xml:space="preserve">'+xml(text||' ')+'</w:t></w:r>';
+  }
+  /** Legacy execCommand('fontSize',…,'1'..'7') scale mapped to WordprocessingML half-points. */
+  const LEGACY_FONT_SIZE_HALFPT={1:16,2:20,3:24,4:28,5:32,6:40,7:48};
+  function styleFontSizeHalfPt(style=''){
+    const m=String(style).match(/font-size:\s*([\d.]+)(px|pt)/i);
+    if(!m)return 0;
+    const n=parseFloat(m[1]);
+    return Math.round((m[2].toLowerCase()==='pt'?n:n*0.75)*2);
+  }
+  function styleFontFamily(style=''){
+    const m=String(style).match(/font-family:\s*([^;]+)/i);
+    return m?m[1].split(',')[0].trim().replace(/^["']|["']$/g,''):'';
   }
   function wordImageRun(asset,rid,id){
     const cx=5200000,cy=3200000;
@@ -91,6 +103,16 @@
       if(tag==='b'||tag==='strong')next.bold=true;
       if(tag==='i'||tag==='em')next.italic=true;
       if(tag==='u')next.underline=true;
+      if(tag==='font'){
+        const face=child.getAttribute('face'),legacySize=parseInt(child.getAttribute('size')||'',10);
+        if(face)next.face=face;
+        if(LEGACY_FONT_SIZE_HALFPT[legacySize])next.size=LEGACY_FONT_SIZE_HALFPT[legacySize];
+      }
+      const style=child.getAttribute?.('style');
+      if(style){
+        const face=styleFontFamily(style);if(face)next.face=face;
+        const size=styleFontSizeHalfPt(style);if(size)next.size=size;
+      }
       if(tag==='br'){out+='<w:r><w:br/></w:r>';continue}
       if(tag==='img'){out+=addWordImage(child.getAttribute('src')||'',media);continue}
       out+=inlineRuns(child,next,media);
