@@ -51,17 +51,68 @@
 
 
   const PROJECT_KEY='msaOneProjectsV1';
+  const PROJECT_BACKUP_KEY='msaOneProjectsBackupV1';
+  const PROJECT_LAST_GOOD_KEY='msaOneProjectsLastGoodV1';
   let projectCache=null;
-  function projectAll(){
-    if(projectCache)return projectCache;
-    try{const a=JSON.parse(localStorage.getItem(PROJECT_KEY)||'[]');projectCache=Array.isArray(a)?a:[]}catch{projectCache=[]}
+
+  function projectNormalize(project){
+    if(!project||typeof project!=='object'||Array.isArray(project))return null;
+    const id=String(project.id||'').trim(),type=String(project.type||'').trim();
+    if(!id||!type)return null;
+    const safe={...project,id:id.slice(0,160),type:type.slice(0,80)};
+    if('title' in safe)safe.title=String(safe.title??'').slice(0,500);
+    return safe;
+  }
+  function projectNormalizeList(items,limit=50){
+    if(!Array.isArray(items))return null;
+    const out=[],seen=new Set();
+    for(const item of items.slice(0,limit)){
+      const safe=projectNormalize(item);
+      if(!safe||seen.has(safe.id))return null;
+      seen.add(safe.id);out.push(safe);
+    }
+    return out;
+  }
+  function projectParse(raw){
+    if(typeof raw!=='string')return null;
+    return projectNormalizeList(parseJSON(raw,null),50);
+  }
+  function projectValidateRaw(raw){return projectParse(raw)!==null}
+  function projectMirror(key,raw){try{globalThis.MSAStorage?.mirror?.(key,raw)}catch{}}
+  function projectRecover(){
+    for(const key of [PROJECT_KEY,PROJECT_LAST_GOOD_KEY,PROJECT_BACKUP_KEY]){
+      const items=projectParse(localStorage.getItem(key));
+      if(!items)continue;
+      projectCache=items;
+      if(key!==PROJECT_KEY){
+        const raw=JSON.stringify(items);
+        try{localStorage.setItem(PROJECT_KEY,raw);projectMirror(PROJECT_KEY,raw)}catch{}
+      }
+      return projectCache;
+    }
+    projectCache=[];
     return projectCache;
   }
+  function projectAll(){
+    if(projectCache)return projectCache;
+    return projectRecover();
+  }
   function projectWrite(items){
-    projectCache=Array.isArray(items)?items:[];
-    const raw=JSON.stringify(projectCache);
-    localStorage.setItem(PROJECT_KEY,raw);
-    globalThis.MSAStorage?.mirror(PROJECT_KEY,raw);
+    const next=projectNormalizeList(items,50);
+    if(!next)throw new Error('Invalid MSA One project data');
+    const raw=JSON.stringify(next),previous=projectParse(localStorage.getItem(PROJECT_KEY));
+    try{
+      if(previous){
+        const previousRaw=JSON.stringify(previous);
+        localStorage.setItem(PROJECT_BACKUP_KEY,previousRaw);
+        projectMirror(PROJECT_BACKUP_KEY,previousRaw);
+      }
+      localStorage.setItem(PROJECT_KEY,raw);
+      localStorage.setItem(PROJECT_LAST_GOOD_KEY,raw);
+    }catch(e){projectCache=null;throw e}
+    projectCache=next;
+    projectMirror(PROJECT_KEY,raw);
+    projectMirror(PROJECT_LAST_GOOD_KEY,raw);
     return projectCache;
   }
   function projectGet(id){return projectAll().find(x=>x.id===id)}
@@ -72,8 +123,24 @@
   }
   function projectRemove(id){return projectWrite(projectAll().filter(x=>x.id!==id))}
   function projectInvalidate(){projectCache=null}
+  function projectFlush(){
+    if(!projectCache)return true;
+    const raw=JSON.stringify(projectCache);
+    try{
+      localStorage.setItem(PROJECT_KEY,raw);
+      localStorage.setItem(PROJECT_LAST_GOOD_KEY,raw);
+      projectMirror(PROJECT_KEY,raw);
+      projectMirror(PROJECT_LAST_GOOD_KEY,raw);
+      return true;
+    }catch{return false}
+  }
+
+  if(typeof window!=='undefined'){
+    window.addEventListener('pagehide',projectFlush);
+    if(typeof document!=='undefined')document.addEventListener('visibilitychange',()=>{if(document.hidden)projectFlush()});
+  }
 
   globalThis.MSACore={escapeHTML,safeName,parseJSON,uid,clamp,debounce,emit,on,download,pickFile,readText,readArrayBuffer,textFromHTML};
-  globalThis.MSAProjects={all:projectAll,write:projectWrite,get:projectGet,upsert:projectUpsert,remove:projectRemove,invalidate:projectInvalidate};
+  globalThis.MSAProjects={all:projectAll,write:projectWrite,get:projectGet,upsert:projectUpsert,remove:projectRemove,invalidate:projectInvalidate,recover:projectRecover,flush:projectFlush,validateRaw:projectValidateRaw,normalizeList:projectNormalizeList};
   globalThis.MSAMedia={fileToDataURL,loadImage,resizeImage,bytesToDataURL,dataUrlAsset};
 })();
