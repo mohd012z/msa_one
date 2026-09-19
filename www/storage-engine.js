@@ -1,6 +1,6 @@
 (()=> {
   const DB='MSAOneDB', STORE='kv';
-  const KEYS=['msaOneProjectsV1','msaOnePlannerV1','msaOneProfileV1','msaButtonShape','msaButtonEffect','msaButtonIntensity','msaOneLanguage','msaHelperV1','msaPerformanceV1','msaLibraryStateV2','msaUserLibraryV1'];
+  const KEYS=['msaOneProjectsV1','msaOneProjectsBackupV1','msaOneProjectsLastGoodV1','msaOnePlannerV1','msaOneProfileV1','msaButtonShape','msaButtonEffect','msaButtonIntensity','msaOneLanguage','msaHelperV1','msaPerformanceV1','msaLibraryStateV2','msaUserLibraryV1'];
 
   function db(){
     return new Promise((resolve,reject)=>{
@@ -16,10 +16,14 @@
     try{const d=await db();const v=await new Promise((res,rej)=>{const t=d.transaction(STORE,'readonly'),r=t.objectStore(STORE).get(key);r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});d.close();return v}catch{return undefined}
   }
   async function mirror(key,value){return set(key,value)}
+  function localUsable(key,value){
+    if(key!=='msaOneProjectsV1')return true;
+    return globalThis.MSAProjects?.validateRaw?.(value)!==false;
+  }
   async function bootstrap(){
     try{
       const locals=new Map(),missing=[];
-      for(const key of KEYS){const local=localStorage.getItem(key);if(local!=null)locals.set(key,local);else missing.push(key)}
+      for(const key of KEYS){const local=localStorage.getItem(key);if(local!=null&&localUsable(key,local))locals.set(key,local);else missing.push(key)}
       const d=await db();
       if(locals.size){
         await new Promise((res,rej)=>{
@@ -39,6 +43,7 @@
       d.close();
     }catch{}
     globalThis.MSAProjects?.invalidate?.();
+    globalThis.MSAProjects?.recover?.();
   }
   function snapshot(){
     const data={schema:1,app:'MSA One',created:new Date().toISOString(),values:{}};
