@@ -87,8 +87,13 @@ public class MSAFileBridgePlugin extends Plugin {
     }
 
     private void persistReadPermission(Uri uri, Intent data) {
-        int flags = data.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION;
-        try { getContext().getContentResolver().takePersistableUriPermission(uri, flags); } catch (Exception ignored) {}
+        if ((data.getFlags() & Intent.FLAG_GRANT_READ_URI_PERMISSION) == 0) return;
+        try {
+            getContext().getContentResolver().takePersistableUriPermission(
+                uri,
+                Intent.FLAG_GRANT_READ_URI_PERMISSION
+            );
+        } catch (Exception ignored) {}
     }
 
     @PluginMethod
@@ -111,10 +116,26 @@ public class MSAFileBridgePlugin extends Plugin {
             return;
         }
         Uri treeUri = result.getData().getData();
-        final int takeFlags = result.getData().getFlags() &
-            (Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
+        final int grantedFlags = result.getData().getFlags();
+        final boolean canRead = (grantedFlags & Intent.FLAG_GRANT_READ_URI_PERMISSION) != 0;
+        final boolean canWrite = (grantedFlags & Intent.FLAG_GRANT_WRITE_URI_PERMISSION) != 0;
         try {
-            getContext().getContentResolver().takePersistableUriPermission(treeUri, takeFlags);
+            if (canRead && canWrite) {
+                getContext().getContentResolver().takePersistableUriPermission(
+                    treeUri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                );
+            } else if (canRead) {
+                getContext().getContentResolver().takePersistableUriPermission(
+                    treeUri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                );
+            } else if (canWrite) {
+                getContext().getContentResolver().takePersistableUriPermission(
+                    treeUri,
+                    Intent.FLAG_GRANT_WRITE_URI_PERMISSION
+                );
+            }
         } catch (Exception ignored) {}
         getContext().getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit().putString(FOLDER_KEY, treeUri.toString()).apply();
