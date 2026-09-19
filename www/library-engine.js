@@ -16,7 +16,9 @@
     {id:'performance',icon:'⚡',name:'Performance & Reading',desc:'Adaptive frame pacing, display fit, font/icon scale and Reading View',requires:['MSAPerformance']},
     {id:'premium',icon:'✦',name:'Premium System',desc:'Prepared entitlement and Google Play billing gate · inactive',requires:['MSAEntitlement','MSAPremiumUI']},
     {id:'updates',icon:'↻',name:'Version & Update Policy',desc:'Prepared minimum-version and force-update policy · inactive',requires:['MSAUpdatePolicy']},
-    {id:'security',icon:'🛡️',name:'Security Center',desc:'Content sanitization, backup validation, safe URLs and runtime security audit',requires:['MSASecurity']}
+    {id:'security',icon:'🛡️',name:'Security Center',desc:'Content sanitization, backup validation, safe URLs and runtime security audit',requires:['MSASecurity']},
+    {id:'quality',icon:'🩺',name:'App Diagnostics',desc:'Viewport, accessibility, storage recovery and security checks',requires:['MSAMobileQuality']},
+    {id:'pdf-readiness',icon:'📋',name:'PDF Readiness',desc:'Local PDF page readiness tracking · OCR not built in',requires:['MSAPDFReadiness']}
   ];
 
   const TEMPLATES=[
@@ -89,7 +91,9 @@
     performance:{reading:(on)=>globalThis.MSAPerformance?.toggleReading(on),mode:(m)=>globalThis.MSAPerformance?.setMode(m),font:(v)=>globalThis.MSAPerformance?.setFontScale(v),icons:(v)=>globalThis.MSAPerformance?.setIconScale(v),device:()=>globalThis.MSAPerformance?.device()},
     premium:{status:()=>globalThis.MSAEntitlement?.status(),can:(cap)=>globalThis.MSAEntitlement?.can(cap),diagnostics:()=>globalThis.MSAEntitlement?.diagnostics(),open:()=>globalThis.show?.('premium')},
     updates:{check:(opt)=>globalThis.MSAUpdatePolicy?.check(opt),evaluate:(p,v)=>globalThis.MSAUpdatePolicy?.evaluate(p,v),diagnostics:()=>globalThis.MSAUpdatePolicy?.diagnostics()},
-    security:{audit:()=>globalThis.MSASecurity?.audit(),sanitize:(html)=>globalThis.MSASecurity?.sanitizeRichHTML(html),safeURL:(url)=>globalThis.MSASecurity?.isHTTPS(url)}
+    security:{audit:()=>globalThis.MSASecurity?.audit(),sanitize:(html)=>globalThis.MSASecurity?.sanitizeRichHTML(html),safeURL:(url)=>globalThis.MSASecurity?.isHTTPS(url)},
+    quality:{diagnostics:()=>globalThis.MSAMobileQuality?.diagnostics(),summary:()=>globalThis.MSAMobileQuality?.summary()},
+    pdfReadiness:{summary:()=>globalThis.MSAPDFReadiness?.summary(),setPage:(page,info)=>globalThis.MSAPDFReadiness?.setPageReadiness(page,info),capabilities:()=>globalThis.MSAPDFReadiness?.capabilities()}
   };
   function api(module){return API[module]||null}
   function call(module,action,...args){
@@ -140,7 +144,7 @@
       case'performance':return globalThis.show?.('me');
       case'premium':return globalThis.show?.('premium');
       case'updates':return globalThis.show?.('premium');
-      case'security':globalThis.show?.('me');return globalThis.MSAHelper?.notify?.('Security Center is active · content, backup and URL validation enabled.','success');
+      case'security':globalThis.show?.('me');return globalThis.MSAHelper?.notify?.('Security Center is active · content, backup and URL validation enabled.','success');case'quality':return globalThis.MSAHelper?.notify?.(globalThis.MSAMobileQuality?.summary?.()||'Diagnostics unavailable','info');case'pdf-readiness':globalThis.MSAStudio?.open?.('pdf');return globalThis.MSAHelper?.notify?.('PDF readiness tracking is available. Built-in OCR is not enabled.','info');
     }
   }
   function filter(q=''){
