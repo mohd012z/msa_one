@@ -1,29 +1,45 @@
 (()=>{'use strict';
   const TEXT_READY='TEXT_READY',SCANNED='SCANNED',PARTIAL='PARTIAL',UNKNOWN='UNKNOWN';
   const KEY='msaPdfReadinessV1';
-  let state={projectId:null,title:'',pageCount:0,pages:{},updatedAt:null};
+  let db={schema:1,activeId:null,projects:{}};
 
   function clone(v){return JSON.parse(JSON.stringify(v))}
   function load(){
-    try{const v=JSON.parse(localStorage.getItem(KEY)||'null');if(v&&typeof v==='object')state={...state,...v,pages:v.pages||{}}}catch{}
-    return clone(state);
+    try{
+      const value=JSON.parse(localStorage.getItem(KEY)||'null');
+      if(value?.schema===1&&value.projects&&typeof value.projects==='object')db={schema:1,activeId:value.activeId||null,projects:value.projects};
+    }catch{}
+    return clone(db);
   }
-  function save(){
-    state.updatedAt=new Date().toISOString();
-    try{localStorage.setItem(KEY,JSON.stringify(state));globalThis.MSAStorage?.mirror?.(KEY,JSON.stringify(state))}catch{}
-    return clone(state);
+  function persist(){
+    try{
+      const raw=JSON.stringify(db);
+      localStorage.setItem(KEY,raw);
+      globalThis.MSAStorage?.mirror?.(KEY,raw);
+    }catch{}
+    return clone(db);
   }
+  function active(){return db.activeId?db.projects[db.activeId]||null:null}
+  function ensure(project={}){
+    const id=String(project.id||project.projectId||db.activeId||'').trim();
+    if(!id)return null;
+    if(!db.projects[id])db.projects[id]={projectId:id,title:String(project.title||'PDF'),pageCount:Math.max(0,Math.floor(Number(project.pageCount)||0)),pages:{},updatedAt:null};
+    const rec=db.projects[id];
+    if(project.title)rec.title=String(project.title);
+    if(Number(project.pageCount)>0)rec.pageCount=Math.max(rec.pageCount,Math.floor(Number(project.pageCount)));
+    db.activeId=id;
+    return rec;
+  }
+  function touch(rec){if(rec)rec.updatedAt=new Date().toISOString();persist();return rec?clone(rec):null}
   function openProject(project={}){
-    const id=String(project.id||project.projectId||'').trim();
-    if(!id)return clone(state);
-    const previous=load();
-    if(previous.projectId===id){state={...previous,title:String(project.title||previous.title||'PDF')};return save()}
-    state={projectId:id,title:String(project.title||'PDF'),pageCount:Number(project.pageCount)||0,pages:{},updatedAt:null};
-    return save();
+    load();
+    return touch(ensure(project));
   }
   function setPageCount(count){
-    state.pageCount=Math.max(0,Math.floor(Number(count)||0));
-    return save();
+    const rec=ensure();
+    if(!rec)return null;
+    rec.pageCount=Math.max(0,Math.floor(Number(count)||0));
+    return touch(rec);
   }
   function detect(info={}){
     if(info.status&&[TEXT_READY,SCANNED,PARTIAL,UNKNOWN].includes(info.status))return info.status;
@@ -34,25 +50,36 @@
     return UNKNOWN;
   }
   function setPageReadiness(page,info={}){
+    const rec=ensure();
+    if(!rec)return null;
     const p=Math.max(1,Math.floor(Number(page)||1));
-    state.pages[p]={status:detect(info),textCoverage:Number(info.textCoverage)||0,checkedAt:new Date().toISOString()};
-    if(p>state.pageCount)state.pageCount=p;
-    save();return clone(state.pages[p]);
+    rec.pages[p]={status:detect(info),textCoverage:Math.max(0,Math.min(1,Number(info.textCoverage)||0)),checkedAt:new Date().toISOString()};
+    if(p>rec.pageCount)rec.pageCount=p;
+    touch(rec);return clone(rec.pages[p]);
   }
-  function pageStatus(page){return state.pages[Math.max(1,Math.floor(Number(page)||1))]?.status||UNKNOWN}
-  function documentStatus(){
-    const pages=Object.values(state.pages);
-    if(!pages.length)return UNKNOWN;
-    const statuses=pages.map(x=>x.status);
-    if(statuses.every(x=>x===TEXT_READY))return TEXT_READY;
-    if(statuses.every(x=>x===SCANNED))return SCANNED;
-    if(statuses.some(x=>x===SCANNED||x===PARTIAL)&&statuses.some(x=>x===TEXT_READY))return PARTIAL;
-    if(statuses.some(x=>x===PARTIAL))return PARTIAL;
-    return UNKNOWN;
+  function pageStatus(page,projectId=db.activeId){
+    const rec=projectId?db.projects[projectId]:null;
+    return rec?.pages?.[Math.max(1,Math.floor(Number(page)||1))]?.status||UNKNOWN;
   }
-  function needsOCR(){
-    const status=documentStatus();
-    return status===SCANNED||status===PARTIAL;
+  function statuses(rec=active()){
+    if(!rec)return[];
+    const count=Math.max(rec.pageCount,Object.keys(rec.pages||{}).length);
+    if(!count)return[];
+    return Array.from({length:count},(_,i)=>pageStatus(i+1,rec.projectId));
+  }
+  function documentStatus(projectId=db.activeId){
+    const rec=projectId?db.projects[projectId]:null,values=statuses(rec);
+    if(!values.length)return UNKNOWN;
+    if(values.every(x=>x===TEXT_READY))return TEXT_READY;
+    if(values.every(x=>x===SCANNED))return SCANNED;
+    const known=values.filter(x=>x!==UNKNOWN);
+    if(!known.length)return UNKNOWN;
+    return PARTIAL;
+  }
+  function needsOCR(projectId=db.activeId){
+    const rec=projectId?db.projects[projectId]:null;
+    if(!rec)return false;
+    return statuses(rec).some(x=>x===SCANNED||x===PARTIAL);
   }
   function capabilities(){
     return{
@@ -64,11 +91,26 @@
       searchableTextExtraction:false
     };
   }
-  function summary(){
+  function summary(projectId=db.activeId){
+    const rec=projectId?db.projects[projectId]:null;
     const counts={[TEXT_READY]:0,[SCANNED]:0,[PARTIAL]:0,[UNKNOWN]:0};
-    for(let p=1;p<=state.pageCount;p++)counts[pageStatus(p)]++;
-    return{...clone(state),documentStatus:documentStatus(),needsOCR:needsOCR(),counts,capabilities:capabilities()};
+    if(rec)for(const status of statuses(rec))counts[status]++;
+    return{
+      project:rec?clone(rec):null,
+      documentStatus:documentStatus(projectId),
+      needsOCR:needsOCR(projectId),
+      counts,
+      capabilities:capabilities()
+    };
   }
+  function list(){return Object.values(db.projects).map(clone)}
+  function remove(projectId){
+    if(!projectId||!db.projects[projectId])return false;
+    delete db.projects[projectId];
+    if(db.activeId===projectId)db.activeId=Object.keys(db.projects)[0]||null;
+    persist();return true;
+  }
+
   load();
-  globalThis.MSAPDFReadiness={TEXT_READY,SCANNED,PARTIAL,UNKNOWN,openProject,setPageCount,detect,setPageReadiness,pageStatus,documentStatus,needsOCR,capabilities,summary,load,save};
+  globalThis.MSAPDFReadiness={TEXT_READY,SCANNED,PARTIAL,UNKNOWN,openProject,setPageCount,detect,setPageReadiness,pageStatus,documentStatus,needsOCR,capabilities,summary,list,remove,load,persist};
 })();
