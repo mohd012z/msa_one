@@ -41,4 +41,11 @@ assert.ok(/\.office-fullpage \.studio-editor\{[^}]*width:100%/.test(css),'docume
 assert.ok(/\.office-fullpage \.studio-pdf-text\{[^}]*width:100%/.test(css),'editable PDF text view must fill the full page width');
 assert.ok(/\.office-fullpage \.studio-editor\{[^}]*box-shadow:none/.test(css),'full-page document editor must not look like a floating card');
 
+// The fixed ribbon toolbar must not overlap document content, and must not leave a dead gap
+// above it either — studio-body's top padding must reserve exactly the ribbon's real height.
+assert.ok(css.includes('--office-ribbon-h'),'ribbon height must be a named constant, not a magic number scattered across rules');
+assert.ok(/\.studio-overlay\.office-mobile \.studio-body\{padding:var\(--office-ribbon-h\)/.test(css),'studio-body must reserve exactly the ribbon\'s height so content starts right below it, with no gap or overlap');
+assert.ok(!/\.office-fullpage \.studio-body\{[^}]*padding-top:0/.test(css),'full-page mode must not zero out the ribbon-clearance padding again');
+assert.ok(css.includes('--office-chrome'),'editor height calculations must derive from the same chrome constants instead of independent magic numbers');
+
 console.log('office ribbon real-action + present mode + zoom/notification placement + full-page editor contract passed');
