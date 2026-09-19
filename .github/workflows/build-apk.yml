@@ -231,6 +231,10 @@ jobs:
           ! grep -q 'com.android.billingclient:billing' android/app/build.gradle
           test ! -f android/app/src/main/java/com/msa/one/displayfit37/PremiumBillingPlugin.java
 
+      - name: Android lint
+        working-directory: android
+        run: ./gradlew lintDebug
+
       - name: Build debug APK
         working-directory: android
         run: ./gradlew assembleDebug
