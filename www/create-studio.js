@@ -67,9 +67,30 @@
       const content=p?.content||'MSA One PDF\n\nType or paste content here. Export creates a real PDF file locally.';
       const nativePdf=String(content).startsWith('native-pdf:');
       if(/^blob:/.test(content)||nativePdf){
-        w.innerHTML='<div class="studio-tools"><span class="studio-status" data-pdf-status>PDF viewer · imported file</span><button class="studio-tool" data-pdf-new>New editable PDF</button></div><iframe class="studio-pdf-viewer" data-pdf-viewer title="PDF document"></iframe>';
-        const frame=w.querySelector('[data-pdf-viewer]'),status=w.querySelector('[data-pdf-status]');
-        if(nativePdf){
+        const canNative=!!window.MSANativeFiles?.isNative?.();
+        // Android WebView has no built-in PDF plugin, so a blob: URL in an <iframe> renders
+        // blank on-device even though it works in a desktop browser. When running natively,
+        // open the PDF in the real android.graphics.pdf.PdfRenderer-based viewer instead.
+        w.innerHTML='<div class="studio-tools"><span class="studio-status" data-pdf-status>PDF viewer · imported file</span>'+(canNative?'<button class="studio-tool" data-pdf-open-native>Open PDF</button>':'')+'<button class="studio-tool" data-pdf-new>New editable PDF</button></div>'+(canNative?'<p class="studio-pdf-native-note">Tap "Open PDF" to view it — Android cannot preview PDFs inline.</p>':'<iframe class="studio-pdf-viewer" data-pdf-viewer title="PDF document"></iframe>');
+        const frame=w.querySelector('[data-pdf-viewer]'),status=w.querySelector('[data-pdf-status]'),openBtn=w.querySelector('[data-pdf-open-native]');
+        async function resolveNativeUri(){
+          if(nativePdf)return decodeURIComponent(String(content).slice('native-pdf:'.length));
+          const blob=await(await fetch(content)).blob();
+          const saved=await window.MSANativeFiles.saveBlob((document.querySelector('[data-title]')?.value||'MSA One')+'.pdf',blob,'application/pdf');
+          if(!saved?.uri)throw new Error('Could not prepare this PDF for the native viewer.');
+          return saved.uri;
+        }
+        if(openBtn){
+          openBtn.onclick=async()=>{
+            status.textContent='Opening…';
+            try{
+              const uri=await resolveNativeUri();
+              const opened=await window.MSANativeFiles.openPdfViewer(uri);
+              status.textContent=opened?'PDF viewer · opened natively':'PDF viewer · native viewer unavailable';
+            }catch(e){status.textContent='PDF source unavailable';friendlyError('PDF could not be opened: '+e.message)}
+          };
+          openBtn.click();
+        }else if(nativePdf){
           const uri=decodeURIComponent(String(content).slice('native-pdf:'.length));
           status.textContent='PDF viewer · reconnecting native file…';
           window.MSANativeFiles?.readDescriptor?.({uri}).then(file=>{

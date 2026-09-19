@@ -23,6 +23,7 @@
 .studio-type{min-height:58px;padding:6px!important;display:grid;place-items:center}
 .studio-editor{min-height:calc(100dvh - 235px);border-radius:16px}
 .studio-pdf-viewer{display:block;width:100%;height:calc(100dvh - 220px);min-height:520px;border:0;border-radius:14px;background:#fff}
+.studio-pdf-native-note{padding:40px 20px;text-align:center;color:#9fc3d3;border:1px dashed #72dbe83b;border-radius:16px}
 .studio-bottom{position:fixed;left:0;right:0;bottom:0;z-index:75;height:calc(60px + env(safe-area-inset-bottom));padding:5px 8px env(safe-area-inset-bottom);display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:#071522f5;border-top:1px solid #70dff02b;backdrop-filter:blur(18px)}
 .studio-bottom button{min-width:0;min-height:48px;border:0;border-radius:12px;background:transparent;color:#dff9ff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;font-size:17px;font-weight:800;transition:transform .12s ease,background .18s ease}
 .studio-bottom button span{font-size:9px}.studio-bottom button:active{transform:scale(.92);background:#6ee8dc22}

@@ -71,6 +71,10 @@ fs.copyFileSync(
   path.join(root,'native-prep','android','MSAFileBridgePlugin.java'),
   path.join(pkgDir,'MSAFileBridgePlugin.java')
 );
+fs.copyFileSync(
+  path.join(root,'native-prep','android','MSAPdfViewerActivity.java'),
+  path.join(pkgDir,'MSAPdfViewerActivity.java')
+);
 
 const resDir=path.join(android,'app','src','main','res','xml');
 fs.mkdirSync(resDir,{recursive:true});
@@ -86,6 +90,8 @@ function setApplicationAttribute(xml,name,value){
 m=setApplicationAttribute(m,'usesCleartextTraffic','false');
 m=setApplicationAttribute(m,'networkSecurityConfig','@xml/network_security_config');
 m=setApplicationAttribute(m,'allowBackup','false');
+const pdfViewerActivity='<activity android:name=".MSAPdfViewerActivity" android:exported="false" />';
+if(!m.includes('MSAPdfViewerActivity'))m=m.replace(/<\/application>/,pdfViewerActivity+'\n    </application>');
 fs.writeFileSync(manifest,m);
 
 console.log('Applied Android WebView/network security hardening.');
