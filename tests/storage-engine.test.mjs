@@ -4,7 +4,7 @@ import assert from 'node:assert/strict';
 const js=fs.readFileSync('www/storage-engine.js','utf8');
 const security=fs.readFileSync('www/security-engine.js','utf8');
 for(const api of ['MSAStorage','indexedDB','bootstrap','mirror','snapshot','downloadBackup','importBackup']) assert.ok(js.includes(api),'missing storage capability '+api);
-for(const key of ['msaOneProjectsV1','msaOneProjectsBackupV1','msaOneProjectsLastGoodV1','msaOnePlannerV1','msaOneProfileV1','msaHelperV1','msaPerformanceV1','msaLibraryStateV2','msaUserLibraryV1']) assert.ok(js.includes(key),'missing mirrored key '+key);
+for(const key of ['msaOneProjectsV1','msaOneProjectsBackupV1','msaOneProjectsLastGoodV1','msaPdfReadinessV1','msaOnePlannerV1','msaOneProfileV1','msaHelperV1','msaPerformanceV1','msaLibraryStateV2','msaUserLibraryV1']) assert.ok(js.includes(key),'missing mirrored key '+key);
 assert.ok(js.includes('application/json'),'workspace backup must be JSON');
 assert.ok(js.includes('parseBackupText'),'restore must use central security validation');
 assert.ok(js.includes('24*1024*1024'),'restore must reject oversized backup files');
