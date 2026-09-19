@@ -16,6 +16,7 @@ assert.ok(files.includes('DEVICE'),'Storage must separate device and folder acce
 
 assert.ok(officeJs.includes('bindSheetDrag'),'More Options must support drag gesture');
 assert.ok(officeJs.includes('hideMore'),'More Options must have animated dismiss path');
+assert.ok(officeJs.includes('bodyStart')&&officeJs.includes('el.scrollTop<=0'),'More Options must support swiping down from anywhere in the sheet once scrolled to the top, not only its tiny grab handle');
 assert.ok(officeCss.includes('.office-more-sheet.dragging'),'More Options drag state must be styled');
 assert.ok(officeCss.includes('.office-more-sheet.dismissing'),'More Options dismiss animation must be styled');
 assert.ok(officeCss.includes('max-height:70dvh'),'More Options must leave more document visible');

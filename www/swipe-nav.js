@@ -7,7 +7,11 @@
   function currentPage(){return document.querySelector('.page.on')}
   function currentIndex(){const p=currentPage();return p?ORDER.indexOf(p.id):-1}
   function interactiveTarget(t){
-    return!!t.closest('input,textarea,select,[contenteditable="true"],.studio-overlay,#lens,.nav,iframe,.helper-sheet,.action-sheet,.drawer,[data-swipe-ignore]');
+    // .office-more-sheet, .office-tab-menu, .ai-reader-overlay and .office-present-overlay are
+    // appended directly to document.body (siblings of .studio-overlay, not children of it), so
+    // the .studio-overlay check alone missed them — this global page-swipe handler was fighting
+    // their own drag-to-dismiss/scroll gestures instead of staying out of the way.
+    return!!t.closest('input,textarea,select,[contenteditable="true"],.studio-overlay,#lens,.nav,iframe,.helper-sheet,.action-sheet,.drawer,.office-more-sheet,.office-tab-menu,.ai-reader-overlay,.office-present-overlay,[data-swipe-ignore]');
   }
   function atTop(page){return page.scrollTop<=1}
   function atBottom(page){return page.scrollTop+page.clientHeight>=page.scrollHeight-1}

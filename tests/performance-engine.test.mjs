@@ -22,3 +22,11 @@ for(const feature of ['content-visibility:auto','contain-intrinsic-size','data-p
 }
 
 console.log('adaptive performance and Reading View contract passed');
+
+// Reading View hides the normal header (.studio-top, which carries the real status-bar
+// safe-area padding) but must not then use a flat top padding with zero safe-area
+// awareness — that regressed into exactly the same status-bar overlap bug this app has
+// hit repeatedly elsewhere.
+assert.ok(/\.msa-reading \.studio-overlay\.on \.studio-body\{padding-top:calc\(14px \+ var\(--safe-top,0px\)\)/.test(css),'Reading View must reserve the real Android status-bar inset when it hides the normal header, not a flat padding guess');
+
+console.log('performance engine safe-area (Reading View) contract passed');
