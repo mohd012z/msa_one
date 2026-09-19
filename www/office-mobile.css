@@ -1,7 +1,7 @@
 /* Build 52 · mobile Office-style full-page workspace */
 :root{--office-zoom:1}
 .office-mobile-shell{position:fixed;inset:0;z-index:79;pointer-events:none}
-.office-ribbon,.office-mobile-sheet,.office-more-sheet,.office-zoom-hud{pointer-events:auto}
+.office-ribbon,.office-mobile-sheet,.office-more-sheet{pointer-events:auto}
 .studio-overlay.office-mobile .studio-mode{display:none}
 .studio-overlay.office-mobile .studio-top{background:#151719f5;border-bottom-color:#ffffff12}
 .studio-overlay.office-mobile .studio-body{padding:0 0 calc(68px + env(safe-area-inset-bottom));background:#111315}
@@ -19,14 +19,22 @@
 .office-more-sheet{position:fixed;z-index:100;inset:auto 0 0;background:#242628;border-radius:30px 30px 0 0;box-shadow:0 -20px 70px #0009;max-height:82dvh;overflow:auto;padding:14px 16px calc(22px + env(safe-area-inset-bottom));color:#f5f5f5}
 .office-sheet-grab{width:42px;height:5px;border-radius:999px;background:#8c8d90;margin:0 auto 12px}.office-sheet-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}.office-sheet-title h2{margin:0;font-size:20px}.office-sheet-title button{width:44px;height:44px;border-radius:50%;border:1px solid #ffffff18;background:#4a4c4f;color:white;font-size:22px}
 .office-action-card{background:#343638;border-radius:22px;margin:10px 0;overflow:hidden}.office-action{width:100%;min-height:58px;border:0;border-bottom:1px solid #ffffff12;background:transparent;color:white;display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;text-align:left;padding:10px 16px}.office-action:last-child{border-bottom:0}.office-action i{font-style:normal;font-size:20px}.office-action small{color:#b9bbbf}
-.office-zoom-hud{position:fixed;z-index:92;right:12px;bottom:calc(72px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:4px;padding:5px;border-radius:16px;background:#202326e8;border:1px solid #ffffff16;backdrop-filter:blur(14px)}
-.office-zoom-hud button{width:42px;height:42px;border:0;border-radius:12px;background:#ffffff0c;color:white;font-size:19px}.office-zoom-hud output{min-width:48px;text-align:center;color:#d9dbde;font-size:11px;font-weight:850}
 .office-fullpage .studio-editor{margin:18px auto;min-height:calc(100dvh - 205px);width:min(92vw,794px);border-radius:2px;background:#fff;color:#111;padding:clamp(24px,6vw,72px);box-shadow:0 8px 28px #0006}
 .office-fullpage .sheet-wrap{border-radius:0;max-height:none;height:calc(100dvh - 210px);background:#fff}.office-fullpage .sheet-grid input{background:#fff;color:#111}.office-fullpage .sheet-grid th,.office-fullpage .sheet-grid tbody th{background:#eceff1;color:#333}.office-fullpage .formula-bar{margin:0;border-radius:0;background:#f4f5f6;color:#222;border-color:#d8dadd}
 .office-fullpage .studio-pdf-viewer{height:calc(100dvh - 178px);min-height:0;border-radius:0}
 .office-fullpage .studio-pdf-text{display:block;margin:18px auto;width:min(92vw,794px);min-height:calc(100dvh - 220px);border-radius:2px;background:#fff;color:#111;padding:clamp(24px,6vw,72px)}
 .office-fullpage .studio-tools{display:none}
 .office-fullpage .sheet-tabs,.office-fullpage .sheet-pager{margin:0;border-radius:0}
+.office-present-overlay{position:fixed;inset:0;z-index:150;background:#0a0c0e;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:calc(20px + env(safe-area-inset-top)) 24px calc(20px + env(safe-area-inset-bottom))}
+.office-present-close{position:absolute;top:calc(14px + env(safe-area-inset-top));right:16px;width:44px;height:44px;border-radius:50%;border:1px solid #ffffff2a;background:#ffffff10;color:#fff;font-size:20px}
+.office-present-slide{max-width:820px;text-align:center}
+.office-present-slide h1{font-size:clamp(24px,5vw,44px);margin-bottom:18px}
+.office-present-slide img{max-width:100%;max-height:40vh;border-radius:14px;margin-bottom:18px}
+.office-present-slide p{font-size:clamp(15px,2.4vw,22px);line-height:1.6;color:#d8dbe0;white-space:pre-line}
+.office-present-nav{position:absolute;bottom:calc(20px + env(safe-area-inset-bottom));display:flex;align-items:center;gap:16px}
+.office-present-nav button{border:1px solid #ffffff2a;background:#ffffff10;color:#fff;border-radius:12px;padding:10px 16px;min-height:44px}
+.office-present-nav button:disabled{opacity:.35}
+.office-present-nav span{font-size:12px;color:#aeb4bd;min-width:60px;text-align:center}
 .office-zoom-target{zoom:var(--office-zoom)}
 @supports not (zoom:1){.office-zoom-target{transform:scale(var(--office-zoom));transform-origin:top left;width:calc(100% / var(--office-zoom))}}
 @media(min-width:760px){.office-more-sheet{left:50%;right:auto;width:min(620px,92vw);transform:translateX(-50%)}.office-tab-menu{left:calc(50% - 440px)}}

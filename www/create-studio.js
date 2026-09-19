@@ -370,6 +370,6 @@
     }catch(e){friendlyError('Export failed: '+e.message)}
   }
 
-  window.MSAStudio={open,close,saveDraft,importCurrent,exportCurrent,openProject,createProject,evalFormula,pickDocumentImage};
+  window.MSAStudio={open,close,saveDraft,importCurrent,exportCurrent,openProject,createProject,evalFormula,pickDocumentImage,currentSlides};
   document.addEventListener('DOMContentLoaded',mount);setTimeout(mount,400);
 })();
