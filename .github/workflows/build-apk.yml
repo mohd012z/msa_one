@@ -68,6 +68,10 @@ jobs:
           grep -q 'version-policy.js' www/index.html
           grep -q 'premium-ui.js' www/index.html
           grep -q 'security-engine.js' www/index.html
+          grep -q 'mobile-quality.js' www/index.html
+          grep -q 'pdf-readiness.js' www/index.html
+          grep -q 'MSAMobileQuality' www/mobile-quality.js
+          grep -q 'builtInOCR:false' www/pdf-readiness.js
           grep -q 'native-file-bridge.js' www/index.html
           grep -q 'office-mobile.js' www/index.html
           grep -q 'office-mobile.css' www/index.html
@@ -195,6 +199,8 @@ jobs:
           test -f android/app/src/main/assets/public/version-policy.js
           test -f android/app/src/main/assets/public/premium-ui.js
           test -f android/app/src/main/assets/public/security-engine.js
+          test -f android/app/src/main/assets/public/mobile-quality.js
+          test -f android/app/src/main/assets/public/pdf-readiness.js
           test -f android/app/src/main/assets/public/native-file-bridge.js
           test -f android/app/src/main/assets/public/office-mobile.js
           test -f android/app/src/main/assets/public/office-mobile.css
