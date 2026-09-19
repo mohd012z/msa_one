@@ -26,5 +26,8 @@ assert.ok(android.includes('registerPlugin(MSAFileBridgePlugin.class)'),'Capacit
 assert.ok(android.includes('applySystemBarInsets'),'Android system bars must be handled natively');
 assert.ok(android.includes('setAllowFileAccess(false)'),'TechTrace methods must retain hardened WebView file access');
 assert.ok(android.includes('MIXED_CONTENT_NEVER_ALLOW'),'TechTrace methods must retain hardened mixed-content policy');
+assert.ok(!native.includes('takePersistableUriPermission(uri, flags)'),'persisted file permission must not pass an untyped computed flags variable');
+assert.ok(!native.includes('takePersistableUriPermission(treeUri, takeFlags)'),'persisted folder permission must not pass an untyped computed flags variable');
+assert.ok(native.includes('Intent.FLAG_GRANT_READ_URI_PERMISSION | Intent.FLAG_GRANT_WRITE_URI_PERMISSION'),'folder permission must request only explicit supported grant constants');
 
 console.log('TechTrace-derived native file/folder method contract passed');
