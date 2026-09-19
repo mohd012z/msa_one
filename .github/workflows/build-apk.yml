@@ -100,6 +100,9 @@ jobs:
           grep -q 'ACTION_OPEN_DOCUMENT_TREE' native-prep/android/MSAFileBridgePlugin.java
           grep -q 'takePersistableUriPermission' native-prep/android/MSAFileBridgePlugin.java
           grep -q 'MediaStore.Downloads' native-prep/android/MSAFileBridgePlugin.java
+          grep -q 'openPdfViewer' native-prep/android/MSAFileBridgePlugin.java
+          test -f native-prep/android/MSAPdfViewerActivity.java
+          grep -q 'PdfRenderer' native-prep/android/MSAPdfViewerActivity.java
           grep -q 'MSASecurity' www/security-engine.js
           grep -q 'Content-Security-Policy' www/index.html
           grep -q "object-src 'none'" www/index.html
@@ -224,6 +227,9 @@ jobs:
           grep -q -- '--native-safe-top' android/app/src/main/java/com/msa/one/displayfit37/MainActivity.java
           grep -q 'ACTION_OPEN_DOCUMENT_TREE' android/app/src/main/java/com/msa/one/displayfit37/MSAFileBridgePlugin.java
           grep -q 'MediaStore.Downloads' android/app/src/main/java/com/msa/one/displayfit37/MSAFileBridgePlugin.java
+          test -f android/app/src/main/java/com/msa/one/displayfit37/MSAPdfViewerActivity.java
+          grep -q 'PdfRenderer' android/app/src/main/java/com/msa/one/displayfit37/MSAPdfViewerActivity.java
+          grep -q 'MSAPdfViewerActivity' android/app/src/main/AndroidManifest.xml
           test -f android/app/src/main/assets/public/library-updater.js
           test -f android/app/src/main/assets/public/core-library.js
           test -f android/app/src/main/assets/public/library-engine.js

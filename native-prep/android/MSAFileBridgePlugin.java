@@ -204,6 +204,38 @@ public class MSAFileBridgePlugin extends Plugin {
     }
 
     @PluginMethod
+    public void openPdfViewer(PluginCall call) {
+        String uriText = call.getString("uri", "");
+        if (uriText.isEmpty()) {
+            call.reject("URI_REQUIRED");
+            return;
+        }
+        Activity activity = getActivity();
+        if (activity == null) {
+            call.reject("NO_ACTIVITY");
+            return;
+        }
+        try {
+            Uri uri = Uri.parse(uriText);
+            try {
+                getContext().getContentResolver().takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                );
+            } catch (Exception ignored) {
+                // Some URIs (e.g. already-granted MediaStore/Downloads content) do not support
+                // persistable grants; PdfRenderer can still open them for this launch.
+            }
+            Intent intent = new Intent(activity, MSAPdfViewerActivity.class);
+            intent.putExtra("pdf_source", uriText);
+            activity.startActivity(intent);
+            call.resolve();
+        } catch (Exception e) {
+            call.reject("OPEN_FAILED", e.getMessage());
+        }
+    }
+
+    @PluginMethod
     public void saveFile(PluginCall call) {
         String name = sanitizeFileName(call.getString("name", "MSA-One-file.bin"));
         String mime = call.getString("mimeType", inferMime(name));

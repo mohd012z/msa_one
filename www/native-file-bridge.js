@@ -71,5 +71,16 @@
     const p=plugin();if(!p?.clearFolder)return false;
     await p.clearFolder();return true;
   }
-  globalThis.MSANativeFiles={MAX_IMPORT_BYTES,isNative,status,pickFiles,pickFolder,rescanFolder,readDescriptor,materializeFolder,saveBlob,clearFolder,supported};
+  /**
+   * Opens a PDF in the native page-renderer Activity (android.graphics.pdf.PdfRenderer)
+   * instead of trying to display it inside the WebView. Android WebView has no built-in PDF
+   * plugin, so a blob: URL in an <iframe> renders blank on-device — this is the real, reliable
+   * path. Returns true if the native viewer was launched, false if unavailable (e.g. browser
+   * dev mode), so callers can fall back to the iframe there.
+   */
+  async function openPdfViewer(uri){
+    const p=plugin();if(!p?.openPdfViewer||!uri)return false;
+    try{await p.openPdfViewer({uri});return true}catch{return false}
+  }
+  globalThis.MSANativeFiles={MAX_IMPORT_BYTES,isNative,status,pickFiles,pickFolder,rescanFolder,readDescriptor,materializeFolder,saveBlob,clearFolder,supported,openPdfViewer};
 })();
