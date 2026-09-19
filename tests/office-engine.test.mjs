@@ -18,4 +18,6 @@ for(const multi of ['xlsxSheetXml','cleanSheetName','sheetNodes','worksheets/she
 for(const media of ['dataUrlAsset','ppt/media/','image/png','image/jpeg']) assert.ok(js.includes(media),'PPTX image support missing '+media);
 for(const layout of ['image-right','image-full']) assert.ok(js.includes(layout),'PPTX layout missing '+layout);
 
+for(const fontSupport of ['w:rFonts','LEGACY_FONT_SIZE_HALFPT',"tag==='font'",'styleFontFamily','styleFontSizeHalfPt']) assert.ok(js.includes(fontSupport),'DOCX export must carry editor font-family/font-size formatting: missing '+fontSupport);
+
 console.log('rich Office media engine contract passed');

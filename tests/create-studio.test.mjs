@@ -13,8 +13,11 @@ assert.ok(js.includes('localStorage'),'Drafts must persist locally');
 assert.ok(css.includes('safe-area-inset-bottom'),'Studio must respect mobile safe area');
 
 for(const feature of ['friendlyError','friendlySuccess','normalizeSheets','replaceSheets','currentSheets','readSheet','renderSheet','renderPresentation','currentSlides','data-pdf-text','evalFormula','toggleChart','pickSlideImage','resizeImage','pickDocumentImage','parseCSV','parseCSVAsync','runBusy','sheetPageSize','sheetColPageSize','sanitizeHTML','importCurrent']) assert.ok(js.includes(feature),'missing working editor feature '+feature);
-for(const formula of ['SUM','AVERAGE','MIN','MAX']) assert.ok(formulaJs.includes(formula),'missing local formula '+formula);
-for(const control of ['data-save','data-bottom-save','studio-bottom','studio-pdf-viewer','data-table','data-doc-image','data-block="H1"','data-chart','data-slide-layout','data-slide-image','data-import','data-row-next','data-col-next']) assert.ok(js.includes(control),'missing rich editor control '+control);
+for(const formula of ['SUM','AVERAGE','MIN','MAX','COUNT','COUNTA','MEDIAN','PRODUCT','ROUND','ABS','SQRT','POWER','MOD','TRUNC']) assert.ok(formulaJs.includes(formula),'missing local formula '+formula);
+for(const control of ['data-save','data-bottom-save','studio-bottom','studio-pdf-viewer','data-table','data-doc-image','data-block="H1"','data-chart','data-slide-layout','data-slide-image','data-import','data-row-next','data-col-next','data-font-name','data-font-size']) assert.ok(js.includes(control),'missing rich editor control '+control);
+for(const font of ['DOC_FONTS','DOC_FONT_SIZES',"execCommand('fontName'","execCommand('fontSize'"]) assert.ok(js.includes(font),'document editor must support adjustable font family/size: missing '+font);
+assert.ok(DOC_FONTS_count(js)>=6,'document editor should offer a real choice of fonts, not just one or two');
+function DOC_FONTS_count(source){const m=source.match(/DOC_FONTS=\[([^\]]+)\]/);return m?m[1].split(',').length:0}
 for(const ext of ['.docx','.xlsx','.pptx','.pdf','.csv']) assert.ok(js.includes(ext),'missing export '+ext);
 assert.ok(js.includes('MSAOffice'),'Create Studio must use the offline Office engine');
 assert.ok(js.includes('MSAImport'),'Create Studio must use the Office import engine');

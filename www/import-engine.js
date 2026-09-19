@@ -41,11 +41,117 @@
     const dir=String(base).split('/').slice(0,-1).join('/');
     return norm(dir+'/'+target);
   }
-  async function inflateRaw(bytes){
-    if(typeof DecompressionStream==='undefined')throw new Error('This WebView cannot decompress standard Office ZIP files.');
-    const ds=new DecompressionStream('deflate-raw');
-    const stream=new Blob([bytes]).stream().pipeThrough(ds);
-    return new Uint8Array(await new Response(stream).arrayBuffer());
+  const LBASE=[3,4,5,6,7,8,9,10,11,13,15,17,19,23,27,31,35,43,51,59,67,83,99,115,131,163,195,227,258];
+  const LEXT=[0,0,0,0,0,0,0,0,1,1,1,1,2,2,2,2,3,3,3,3,4,4,4,4,5,5,5,5,0];
+  const DBASE=[1,2,3,4,5,7,9,13,17,25,33,49,65,97,129,193,257,385,513,769,1025,1537,2049,3073,4097,6145,8193,12289,16385,24577];
+  const DEXT=[0,0,0,0,1,1,2,2,3,3,4,4,5,5,6,6,7,7,8,8,9,9,10,10,11,11,12,12,13,13];
+  const CLORDER=[16,17,18,0,8,7,9,6,10,5,11,4,12,3,13,2,14,1,15];
+  let fixedLit=null,fixedDist=null;
+  function huffConstruct(lens,n){
+    const counts=new Int32Array(16);
+    for(let i=0;i<n;i++)counts[lens[i]]++;
+    counts[0]=0;
+    const offs=new Int32Array(17);
+    for(let len=1;len<16;len++)offs[len+1]=offs[len]+counts[len];
+    const symbols=new Int32Array(n),cursor=offs.slice();
+    for(let i=0;i<n;i++)if(lens[i])symbols[cursor[lens[i]]++]=i;
+    return{counts,symbols};
+  }
+  function fixedTrees(){
+    if(fixedLit)return;
+    const litLens=new Uint8Array(288);
+    for(let i=0;i<144;i++)litLens[i]=8;
+    for(let i=144;i<256;i++)litLens[i]=9;
+    for(let i=256;i<280;i++)litLens[i]=7;
+    for(let i=280;i<288;i++)litLens[i]=8;
+    fixedLit=huffConstruct(litLens,288);
+    fixedDist=huffConstruct(new Uint8Array(30).fill(5),30);
+  }
+  /** Pure-JS raw DEFLATE (RFC 1951) decoder — fallback for WebViews without DecompressionStream('deflate-raw'). */
+  function inflateRawJS(data,outSize){
+    const out=new Uint8Array(outSize);
+    let outPos=0,inPos=0,bitbuf=0,bitcnt=0;
+    function bits(n){
+      let val=bitbuf;
+      while(bitcnt<n){val|=(data[inPos++]||0)<<bitcnt;bitcnt+=8}
+      bitbuf=val>>>n;bitcnt-=n;
+      return val&((1<<n)-1);
+    }
+    function decodeSym(h){
+      let code=0,first=0,index=0;
+      for(let len=1;len<=15;len++){
+        code|=bits(1);
+        const count=h.counts[len];
+        if(code-first<count)return h.symbols[index+(code-first)];
+        index+=count;first+=count;first<<=1;code<<=1;
+      }
+      throw new Error('Invalid compressed Office data (bad code).');
+    }
+    function block(litTree,distTree){
+      for(;;){
+        const sym=decodeSym(litTree);
+        if(sym<256){if(outPos>=outSize)throw new Error('Decompressed Office data exceeded expected size.');out[outPos++]=sym}
+        else if(sym===256)return;
+        else{
+          const li=sym-257;
+          if(li>=LBASE.length)throw new Error('Invalid Office ZIP length code.');
+          let len=LBASE[li]+bits(LEXT[li]);
+          const dsym=decodeSym(distTree);
+          if(dsym>=DBASE.length)throw new Error('Invalid Office ZIP distance code.');
+          const dist=DBASE[dsym]+bits(DEXT[dsym]);
+          let from=outPos-dist;
+          if(from<0)throw new Error('Invalid Office ZIP back-reference.');
+          if(outPos+len>outSize)throw new Error('Decompressed Office data exceeded expected size.');
+          while(len-->0){out[outPos++]=out[from++]}
+        }
+      }
+    }
+    function dynamicTrees(){
+      const hlit=bits(5)+257,hdist=bits(5)+1,hclen=bits(4)+4;
+      const clLens=new Uint8Array(19);
+      for(let i=0;i<hclen;i++)clLens[CLORDER[i]]=bits(3);
+      const clTree=huffConstruct(clLens,19);
+      const lens=new Uint8Array(hlit+hdist);
+      let i=0;
+      while(i<hlit+hdist){
+        const sym=decodeSym(clTree);
+        if(sym<16)lens[i++]=sym;
+        else if(sym===16){if(!i)throw new Error('Invalid Office ZIP repeat code.');const prev=lens[i-1];let rep=bits(2)+3;while(rep-->0&&i<lens.length)lens[i++]=prev}
+        else if(sym===17){let rep=bits(3)+3;while(rep-->0&&i<lens.length)lens[i++]=0}
+        else{let rep=bits(7)+11;while(rep-->0&&i<lens.length)lens[i++]=0}
+      }
+      return{lit:huffConstruct(lens.subarray(0,hlit),hlit),dist:huffConstruct(lens.subarray(hlit),hdist)};
+    }
+    let final=0;
+    do{
+      final=bits(1);
+      const type=bits(2);
+      if(type===0){
+        bitbuf=0;bitcnt=0;
+        if(inPos+4>data.length)throw new Error('Truncated stored ZIP block.');
+        const len=data[inPos]|(data[inPos+1]<<8),nlen=data[inPos+2]|(data[inPos+3]<<8);
+        inPos+=4;
+        if((len^nlen)!==0xFFFF)throw new Error('Invalid stored ZIP block length.');
+        if(inPos+len>data.length||outPos+len>outSize)throw new Error('Truncated stored ZIP block data.');
+        out.set(data.subarray(inPos,inPos+len),outPos);
+        outPos+=len;inPos+=len;
+      }else if(type===1){
+        fixedTrees();block(fixedLit,fixedDist);
+      }else if(type===2){
+        const trees=dynamicTrees();block(trees.lit,trees.dist);
+      }else throw new Error('Invalid DEFLATE block type in Office ZIP.');
+    }while(!final);
+    return out.subarray(0,outPos);
+  }
+  async function inflateRaw(bytes,expectedSize){
+    if(typeof DecompressionStream!=='undefined'){
+      try{
+        const ds=new DecompressionStream('deflate-raw');
+        const stream=new Blob([bytes]).stream().pipeThrough(ds);
+        return new Uint8Array(await new Response(stream).arrayBuffer());
+      }catch(e){/* older/partial WebView implementation — fall back to the JS decoder below */}
+    }
+    return inflateRawJS(bytes,Math.max(0,Math.floor(Number(expectedSize)||0)));
   }
   async function unzip(input,progress){
     const v=input instanceof Uint8Array?input:new Uint8Array(input);
@@ -70,7 +176,7 @@
       const compressed=v.subarray(dataStart,dataStart+compSize);
       let out;
       if(method===0)out=new Uint8Array(compressed);
-      else if(method===8)out=await inflateRaw(compressed);
+      else if(method===8)out=await inflateRaw(compressed,rawSize);
       else throw new Error('Unsupported ZIP compression method '+method+' in '+name);
       if(out.length>MAX_ENTRY_BYTES)throw new Error('An Office file part expanded beyond the safe import limit.');
       files[norm(name)]=out;
@@ -250,5 +356,5 @@
     throw new Error('Unsupported Office file: .'+ext);
   }
 
-  globalThis.MSAImport={unzip,docx,xlsx,pptx,pdf,readFile};
+  globalThis.MSAImport={unzip,docx,xlsx,pptx,pdf,readFile,inflateRawJS};
 })();

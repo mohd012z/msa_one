@@ -2,20 +2,19 @@
  let root=null,menu=null,sheet=null,zoom=1,startDist=0,startZoom=1;
  const configs={
   document:{accent:'#6b93ef',tabs:['Home','Insert','Draw','Layout','Review','View'],tools:[['B','Bold','bold'],['𝘐','Italic','italic'],['U','Underline','underline'],['☷','Bullets','insertUnorderedList'],['≡','Align','justifyLeft'],['⌕','Find','find']]},
-  spreadsheet:{accent:'#76bd91',tabs:['Home','Insert','Draw','Formulas','Data','Review','View'],tools:[['B','Bold','bold'],['𝘐','Italic','italic'],['U','Underline','underline'],['▦','Borders','noop'],['↔','Merge','noop'],['Σ','AutoSum','sum'],['⌕','Search','find']]},
-  pdf:{accent:'#e76069',tabs:['Home','Annotate','Fill & Sign','Convert','View'],tools:[['＋','Create','newpdf'],['✎','Edit','noop'],['⌕','Find','find'],['↥','Share','share'],['⋯','More','more']]},
-  presentation:{accent:'#df8b62',tabs:['Home','Insert','Draw','Design','Transitions','Review','View'],tools:[['B','Bold','noop'],['＋','Slide','slide'],['▣','Layout','noop'],['✎','Draw','noop'],['▶','Present','noop']]},
-  html:{accent:'#61c8d4',tabs:['Home','Insert','Preview','View'],tools:[['</>','Code','noop'],['◉','Preview','noop'],['⌕','Find','find']]}
+  spreadsheet:{accent:'#76bd91',tabs:['Home','Insert','Draw','Formulas','Data','Review','View'],tools:[['B','Bold','bold'],['𝘐','Italic','italic'],['U','Underline','underline'],['Σ','AutoSum','sum'],['⌕','Search','find']]},
+  pdf:{accent:'#e76069',tabs:['Home','Annotate','Fill & Sign','Convert','View'],tools:[['＋','Create','newpdf'],['✎','Edit','pdfedit'],['⌕','Find','find'],['↥','Share','share'],['⋯','More','more']]},
+  presentation:{accent:'#df8b62',tabs:['Home','Insert','Draw','Design','Transitions','Review','View'],tools:[['＋','Slide','slide'],['▣','Layout','layout'],['▶','Present','present']]},
+  html:{accent:'#61c8d4',tabs:['Home','Insert','Preview','View'],tools:[['</>','Code','code'],['◉','Preview','preview'],['⌕','Find','find']]}
  };
  function studio(){return document.querySelector('.studio-overlay.on')}
  function type(){const s=studio();return s?.querySelector('.studio-type.on')?.dataset.type||'document'}
  function ensure(){
   if(root)return;
-  root=document.createElement('div');root.className='office-mobile-shell';root.innerHTML='<div class="office-ribbon" data-ribbon><div class="office-ribbon-head"><button class="office-home-btn" data-tabs>Home⌄</button><span style="flex:1"></span><button class="office-icon-btn" data-undo>↶</button><button class="office-icon-btn" data-redo>↷</button><button class="office-icon-btn" data-more>⋯</button></div><div class="office-ribbon-tools" data-tools></div></div><div class="office-zoom-hud"><button data-zout>−</button><output data-zlabel>100%</output><button data-zin>＋</button><button data-zreset>1:1</button></div>';
+  root=document.createElement('div');root.className='office-mobile-shell';root.innerHTML='<div class="office-ribbon" data-ribbon><div class="office-ribbon-head"><button class="office-home-btn" data-tabs>Home⌄</button><span style="flex:1"></span><button class="office-icon-btn" data-undo>↶</button><button class="office-icon-btn" data-redo>↷</button><button class="office-icon-btn" data-more>⋯</button></div><div class="office-ribbon-tools" data-tools></div></div>';
   document.body.appendChild(root);
   root.querySelector('[data-tabs]').onclick=toggleTabs;root.querySelector('[data-more]').onclick=showMore;
   root.querySelector('[data-undo]').onclick=()=>document.execCommand('undo');root.querySelector('[data-redo]').onclick=()=>document.execCommand('redo');
-  root.querySelector('[data-zout]').onclick=()=>setZoom(zoom-.1);root.querySelector('[data-zin]').onclick=()=>setZoom(zoom+.1);root.querySelector('[data-zreset]').onclick=()=>setZoom(1);
   root.style.display='none';
   document.addEventListener('touchstart',pinchStart,{passive:true});document.addEventListener('touchmove',pinchMove,{passive:false});document.addEventListener('touchend',()=>{startDist=0},{passive:true});
   document.addEventListener('wheel',e=>{if(!studio()||!e.ctrlKey)return;e.preventDefault();setZoom(zoom+(e.deltaY<0?.1:-.1))},{passive:false});
@@ -23,7 +22,7 @@
  function distance(t){const a=t[0],b=t[1];return Math.hypot(a.clientX-b.clientX,a.clientY-b.clientY)}
  function pinchStart(e){if(!studio()||e.touches.length!==2||!e.target.closest('[data-work]'))return;startDist=distance(e.touches);startZoom=zoom}
  function pinchMove(e){if(!startDist||e.touches.length!==2)return;e.preventDefault();setZoom(startZoom*distance(e.touches)/startDist)}
- function setZoom(v){zoom=Math.max(.55,Math.min(2.5,Math.round(v*20)/20));document.documentElement.style.setProperty('--office-zoom',zoom);root?.querySelector('[data-zlabel]')&&(root.querySelector('[data-zlabel]').value=Math.round(zoom*100)+'%')}
+ function setZoom(v){zoom=Math.max(.55,Math.min(2.5,Math.round(v*20)/20));document.documentElement.style.setProperty('--office-zoom',zoom)}
  function refresh(){
   ensure();const s=studio();if(!s){root.style.display='none';return}
   root.style.display='block';s.classList.add('office-mobile','office-fullpage');const c=configs[type()]||configs.document;document.documentElement.style.setProperty('--office-accent',c.accent);
@@ -37,11 +36,40 @@
   if(['bold','italic','underline','insertUnorderedList','justifyLeft'].includes(a)){const ed=s?.querySelector('[data-doc]');ed?.focus();document.execCommand(a,false,null);ed?.dispatchEvent(new Event('input',{bubbles:true}));return}
   if(a==='sum'&&t==='spreadsheet'){const cell=s?.querySelector('[data-cell]:focus')||s?.querySelector('[data-cell]');if(cell){cell.value='=SUM(A1:A10)';cell.dispatchEvent(new Event('input',{bubbles:true}));cell.focus()}return}
   if(a==='slide'){s?.querySelector('[data-add-slide]')?.click();return}
+  if(a==='layout'){const sel=s?.querySelector('[data-slide-layout]');if(sel){sel.focus();sel.scrollIntoView({behavior:'smooth',block:'center'})}return}
+  if(a==='present'){presentSlides();return}
   if(a==='newpdf'){s?.querySelector('[data-pdf-new]')?.click();return}
+  if(a==='pdfedit'){
+    const ta=s?.querySelector('[data-pdf-text]');
+    if(ta){ta.focus();ta.scrollIntoView({behavior:'smooth',block:'center'})}
+    else window.MSAHelper?.notify?.('This PDF was imported/linked as a viewer file and has no editable text layer.','info');
+    return;
+  }
+  if(a==='code'){const ta=s?.querySelector('[data-code]');if(ta){ta.focus();ta.scrollIntoView({behavior:'smooth',block:'center'})}return}
+  if(a==='preview'){const fr=s?.querySelector('[data-preview]');fr?.scrollIntoView({behavior:'smooth',block:'center'});return}
   if(a==='more'){showMore();return}
   if(a==='find'){const q=prompt('Find');if(q)window.find?.(q);return}
   if(a==='share'){showMore();return}
  }
+ let presenter=null;
+ function presentSlides(){
+  const slides=window.MSAStudio?.currentSlides?.();
+  if(!slides?.length){window.MSAHelper?.notify?.('Add at least one slide before presenting.','info');return}
+  let i=0;
+  presenter=document.createElement('div');presenter.className='office-present-overlay';
+  document.body.appendChild(presenter);
+  const draw=()=>{
+   const sl=slides[i]||{};
+   presenter.innerHTML='<button class="office-present-close" data-x>✕</button>'+
+    '<div class="office-present-slide"><h1>'+escapeHtml(sl.title||'')+'</h1>'+(sl.image?'<img src="'+sl.image+'" alt="">':'')+'<p>'+escapeHtml(sl.body||'').replace(/\n/g,'<br>')+'</p></div>'+
+    '<div class="office-present-nav"><button data-prev'+(i===0?' disabled':'')+'>‹ Prev</button><span>'+(i+1)+' / '+slides.length+'</span><button data-next'+(i===slides.length-1?' disabled':'')+'>Next ›</button></div>';
+   presenter.querySelector('[data-x]').onclick=closePresent;
+   presenter.querySelector('[data-prev]').onclick=()=>{if(i>0){i--;draw()}};
+   presenter.querySelector('[data-next]').onclick=()=>{if(i<slides.length-1){i++;draw()}};
+  };
+  draw();
+ }
+ function closePresent(){presenter?.remove();presenter=null}
  function toggleTabs(){
   if(menu){menu.remove();menu=null;return}const c=configs[type()]||configs.document;
   menu=document.createElement('div');menu.className='office-tab-menu';menu.innerHTML=c.tabs.map((x,i)=>'<button class="'+(!i?'on':'')+'">'+x+'</button>').join('');

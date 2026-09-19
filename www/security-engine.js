@@ -10,7 +10,7 @@
     htmlSource:12*1024*1024
   };
   const SAFE_TAGS=new Set([
-    'A','B','BR','BLOCKQUOTE','CODE','DIV','EM','H1','H2','H3','H4','H5','H6','HR','I','IMG',
+    'A','B','BR','BLOCKQUOTE','CODE','DIV','EM','FONT','H1','H2','H3','H4','H5','H6','HR','I','IMG',
     'LI','OL','P','PRE','S','SMALL','SPAN','STRONG','SUB','SUP','TABLE','TBODY','TD','TFOOT',
     'TH','THEAD','TR','U','UL'
   ]);
@@ -19,8 +19,11 @@
     A:new Set(['href','title']),
     IMG:new Set(['src','alt','width','height','title']),
     TD:new Set(['colspan','rowspan']),
-    TH:new Set(['colspan','rowspan'])
+    TH:new Set(['colspan','rowspan']),
+    FONT:new Set(['face','size'])
   };
+  const SAFE_FONT_FACE=/^[A-Za-z][A-Za-z0-9 \-]{0,39}$/;
+  const SAFE_FONT_SIZE=/^[1-7]$/;
 
   function esc(s=''){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
   function textLimit(value,max,label='value'){
@@ -55,8 +58,12 @@
       return html
         .replace(/<\s*(script|style|iframe|object|embed|link|meta|base|form|svg|math|template)\b[^>]*>[\s\S]*?<\s*\/\s*\1\s*>/gi,'')
         .replace(/\son\w+\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi,'')
-        .replace(/\s(?:srcdoc|formaction|ping)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi,'')
-        .replace(/javascript\s*:/gi,'');
+        .replace(/\s(?:srcdoc|formaction|ping|style)\s*=\s*(?:"[^"]*"|'[^']*'|[^\s>]+)/gi,'')
+        .replace(/javascript\s*:/gi,'')
+        .replace(/(<font\b[^>]*)\sface\s*=\s*"([^"]*)"/gi,(m,pre,v)=>SAFE_FONT_FACE.test(v)?m:pre)
+        .replace(/(<font\b[^>]*)\sface\s*=\s*'([^']*)'/gi,(m,pre,v)=>SAFE_FONT_FACE.test(v)?m:pre)
+        .replace(/(<font\b[^>]*)\ssize\s*=\s*"([^"]*)"/gi,(m,pre,v)=>SAFE_FONT_SIZE.test(v)?m:pre)
+        .replace(/(<font\b[^>]*)\ssize\s*=\s*'([^']*)'/gi,(m,pre,v)=>SAFE_FONT_SIZE.test(v)?m:pre);
     }
     const root=document.createElement('div');root.innerHTML=html;
     root.querySelectorAll([...DROP_TAGS].map(x=>x.toLowerCase()).join(',')).forEach(el=>el.remove());
@@ -80,6 +87,8 @@
         }
         if((n==='width'||n==='height')&&!/^\d{1,4}$/.test(a.value))el.removeAttribute(a.name);
         if((n==='colspan'||n==='rowspan')&&!/^\d{1,2}$/.test(a.value))el.removeAttribute(a.name);
+        if(el.tagName==='FONT'&&n==='face'&&!SAFE_FONT_FACE.test(a.value))el.removeAttribute('face');
+        if(el.tagName==='FONT'&&n==='size'&&!SAFE_FONT_SIZE.test(a.value))el.removeAttribute('size');
       }
       if(el.tagName==='A'&&el.hasAttribute('href'))el.setAttribute('rel','noopener noreferrer');
     });

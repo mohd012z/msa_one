@@ -1,6 +1,8 @@
 (()=> {
   const KEY='msaOneProjectsV1';
   const TYPES={document:['📄','Document'],spreadsheet:['📊','Spreadsheet'],presentation:['📽️','Presentation'],pdf:['📕','PDF'],html:['🌐','Smart HTML']};
+  const DOC_FONTS=['Arial','Calibri','Georgia','Times New Roman','Verdana','Courier New','Tahoma','Trebuchet MS'];
+  const DOC_FONT_SIZES=[['1','Small · 8pt'],['2','10pt'],['3','Normal · 12pt'],['4','14pt'],['5','Large · 16pt'],['6','20pt'],['7','Huge · 24pt']];
   let state={type:'document',id:null,timer:null,idleSave:null,slide:0,sheet:0,rowStart:0,colStart:0,pdfObjectUrl:null};
 
   function all(){if(window.MSAProjects)return window.MSAProjects.all();try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}}
@@ -42,10 +44,14 @@
 
     if(state.type==='document'){
       const safeDoc=sanitizeHTML(p?.content||'<h2>Start writing</h2><p>Your document keeps rich headings, bold, italic, underline, lists and simple tables when exported to DOCX.</p>');
-      w.innerHTML='<div class="studio-tools"><button class="studio-tool" data-cmd="bold"><b>B</b></button><button class="studio-tool" data-cmd="italic"><i>I</i></button><button class="studio-tool" data-cmd="underline"><u>U</u></button><button class="studio-tool" data-block="H1">H1</button><button class="studio-tool" data-block="H2">H2</button><button class="studio-tool" data-block="P">P</button><button class="studio-tool" data-cmd="insertUnorderedList">☷ List</button><button class="studio-tool" data-table>▦ Table</button><button class="studio-tool" data-doc-image>🖼 Image</button><button class="studio-tool" data-doc-pdf>PDF</button></div><article class="studio-editor" contenteditable="true" data-doc>'+safeDoc+'</article>';
+      const fontOptions=DOC_FONTS.map(f=>'<option value="'+f+'">'+f+'</option>').join('');
+      const sizeOptions=DOC_FONT_SIZES.map(([v,label])=>'<option value="'+v+'">'+label+'</option>').join('');
+      w.innerHTML='<div class="studio-tools"><select class="studio-tool" data-font-name aria-label="Font"><option value="">Font</option>'+fontOptions+'</select><select class="studio-tool" data-font-size aria-label="Font size"><option value="">Size</option>'+sizeOptions+'</select><button class="studio-tool" data-cmd="bold"><b>B</b></button><button class="studio-tool" data-cmd="italic"><i>I</i></button><button class="studio-tool" data-cmd="underline"><u>U</u></button><button class="studio-tool" data-block="H1">H1</button><button class="studio-tool" data-block="H2">H2</button><button class="studio-tool" data-block="P">P</button><button class="studio-tool" data-cmd="insertUnorderedList">☷ List</button><button class="studio-tool" data-table>▦ Table</button><button class="studio-tool" data-doc-image>🖼 Image</button><button class="studio-tool" data-doc-pdf>PDF</button></div><article class="studio-editor" contenteditable="true" data-doc>'+safeDoc+'</article>';
       const ed=w.querySelector('[data-doc]');ed.oninput=queueSave;
       w.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>{ed.focus();document.execCommand(b.dataset.cmd,false,null);queueSave()});
       w.querySelectorAll('[data-block]').forEach(b=>b.onclick=()=>{ed.focus();document.execCommand('formatBlock',false,b.dataset.block);queueSave()});
+      w.querySelector('[data-font-name]').onchange=e=>{if(!e.target.value)return;ed.focus();document.execCommand('fontName',false,e.target.value);queueSave();e.target.value=''};
+      w.querySelector('[data-font-size]').onchange=e=>{if(!e.target.value)return;ed.focus();document.execCommand('fontSize',false,e.target.value);queueSave();e.target.value=''};
       w.querySelector('[data-table]').onclick=()=>{ed.focus();document.execCommand('insertHTML',false,'<table><tr><th>Header 1</th><th>Header 2</th></tr><tr><td>Value</td><td>Value</td></tr></table><p><br></p>');queueSave()};
       w.querySelector('[data-doc-image]').onclick=()=>pickDocumentImage(ed);
       w.querySelector('[data-doc-pdf]').onclick=()=>exportPDF(window.MSAOffice?.plain(currentContent())||'');
@@ -364,6 +370,6 @@
     }catch(e){friendlyError('Export failed: '+e.message)}
   }
 
-  window.MSAStudio={open,close,saveDraft,importCurrent,exportCurrent,openProject,createProject,evalFormula,pickDocumentImage};
+  window.MSAStudio={open,close,saveDraft,importCurrent,exportCurrent,openProject,createProject,evalFormula,pickDocumentImage,currentSlides};
   document.addEventListener('DOMContentLoaded',mount);setTimeout(mount,400);
 })();
