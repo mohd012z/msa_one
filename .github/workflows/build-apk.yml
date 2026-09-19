@@ -14,6 +14,18 @@ on:
       - 'security-prep/**'
       - 'native-prep/**'
       - 'scripts/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'www/**'
+      - 'tests/**'
+      - 'package.json'
+      - 'capacitor.config.json'
+      - '.github/workflows/build-apk.yml'
+      - 'premium-prep/**'
+      - 'security-prep/**'
+      - 'native-prep/**'
+      - 'scripts/**'
 
 concurrency:
   group: msa-one-apk-${{ github.ref }}
