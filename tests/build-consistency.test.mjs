@@ -59,6 +59,9 @@ assert.ok(pkg.scripts['check:syntax'].includes('www/ai-tools.js'),'AI Tools brow
 assert.ok(pkg.scripts['check:syntax'].includes('scripts/apply-android-security.mjs'),'Android security script must be syntax checked');
 assert.ok(pkg.scripts['check:syntax'].includes('scripts/activate-premium-android.mjs'),'Activation script must be syntax checked');
 assert.ok(workflow.includes('cancel-in-progress: true'),'workflow must cancel superseded APK builds');
+assert.ok(workflow.includes('pull_request:'),'workflow must validate pull requests before merge');
+assert.ok(workflow.includes('./gradlew lintDebug'),'workflow must run Android lint before APK packaging');
+assert.ok(workflow.indexOf('./gradlew lintDebug')<workflow.indexOf('./gradlew assembleDebug'),'Android lint must run before APK build');
 assert.ok(workflow.includes("! grep -q 'com.android.billingclient:billing'"),'normal APK build must prove Billing dependency is absent');
 assert.ok(workflow.includes('PremiumBillingPlugin.java'),'normal APK build must prove native Premium plugin is absent');
 assert.ok(workflow.includes('Apply Android security hardening'),'workflow must apply Android hardening');

@@ -1,5 +1,6 @@
 (()=> {
   const KEY='msaVersionPolicyV1';
+  let mounted=false;
 
   function config(){return globalThis.MSAPremiumConfig?.updatePolicy||{enabled:false,enforce:false,failMode:'open'}}
   function current(){return globalThis.MSAAppManifest?.version||'0.0.0'}
@@ -107,9 +108,11 @@
   }
   function diagnostics(){
     const c=config();
-    return {prepared:true,enabled:!!c.enabled,enforce:!!c.enforce,checkOnLaunch:!!c.checkOnLaunch,failMode:c.failMode,currentVersion:current(),cached:cached()};
+    return {prepared:true,enabled:!!c.enabled,enforce:!!c.enforce,checkOnLaunch:!!c.checkOnLaunch,failMode:c.failMode,currentVersion:current(),mounted,cached:cached()};
   }
   function mount(){
+    if(mounted)return diagnostics();
+    mounted=true;
     const c=config();
     if(c.enabled&&c.checkOnLaunch){
       check({show:true});

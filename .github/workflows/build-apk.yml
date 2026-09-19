@@ -14,6 +14,18 @@ on:
       - 'security-prep/**'
       - 'native-prep/**'
       - 'scripts/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'www/**'
+      - 'tests/**'
+      - 'package.json'
+      - 'capacitor.config.json'
+      - '.github/workflows/build-apk.yml'
+      - 'premium-prep/**'
+      - 'security-prep/**'
+      - 'native-prep/**'
+      - 'scripts/**'
 
 concurrency:
   group: msa-one-apk-${{ github.ref }}
@@ -230,6 +242,10 @@ jobs:
           grep -q 'setSafeBrowsingEnabled(true)' android/app/src/main/java/com/msa/one/displayfit37/MainActivity.java
           ! grep -q 'com.android.billingclient:billing' android/app/build.gradle
           test ! -f android/app/src/main/java/com/msa/one/displayfit37/PremiumBillingPlugin.java
+
+      - name: Android lint
+        working-directory: android
+        run: ./gradlew lintDebug
 
       - name: Build debug APK
         working-directory: android
