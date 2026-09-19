@@ -1,6 +1,6 @@
 .ai-reader-overlay{position:fixed;inset:0;z-index:85;background:radial-gradient(circle at 90% 0,#244e7440,transparent 34%),linear-gradient(180deg,#081523,#0a1321);color:#eaf6ff;display:none;overflow:auto}
 .ai-reader-overlay.on{display:block}
-.ai-reader-sheet{max-width:640px;margin:auto;padding:max(16px,env(safe-area-inset-top)) 18px calc(24px + env(safe-area-inset-bottom))}
+.ai-reader-sheet{max-width:640px;margin:auto;padding:max(16px,var(--safe-top,0px)) 18px calc(24px + env(safe-area-inset-bottom))}
 .ai-reader-sheet header{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .ai-reader-sheet header b{flex:1;font-size:18px}
 .ai-reader-sheet header button{border:1px solid #77dce533;background:#102b42;color:#eafaff;border-radius:12px;width:40px;height:40px}
