@@ -79,10 +79,22 @@ Do not merge. Current Build 54 already has `template-catalog.js`, `template-cent
 
 PR #1 should remain unmerged. It is useful as a historical source for individual ideas, but merging it wholesale would overwrite newer Build 54 behavior and reintroduce stale capability assumptions.
 
+## Additional salvage completed
+
+### Editor adapter + undo/redo
+The useful history ideas from the old production-engine modules were migrated without importing their parallel document models.
+
+Build 54 now uses:
+- `www/editor-history.js` for bounded, coalesced, session undo/redo
+- `www/editor-adapter.js` to isolate legacy `execCommand` formatting behind one replaceable adapter
+- Create Studio Undo/Redo controls inside the existing horizontally scrollable editor toolbar
+- Ctrl/Cmd+Z, Ctrl/Cmd+Shift+Z and Ctrl/Cmd+Y shortcuts
+
+The current Document, Spreadsheet, Presentation, PDF and Smart HTML project formats remain unchanged.
+
 ## Next salvage candidates
 
-1. Add editor adapter + undo/redo without replacing Create Studio.
-2. Expand PDF readiness into real local PDF text detection only after a working engine exists.
-3. Add runtime accessibility regression tests at narrow Android viewports.
-4. Add a Diagnostics page/card using `MSAMobileQuality`.
-5. Add schema-versioned project migrations once the data model changes.
+1. Expand PDF readiness into real local PDF text detection only after a working engine exists.
+2. Add runtime accessibility regression tests at narrow Android viewports.
+3. Add a dedicated Diagnostics page/card using `MSAMobileQuality`.
+4. Add schema-versioned project migrations once the data model changes.
