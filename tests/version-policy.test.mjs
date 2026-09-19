@@ -1,3 +1,4 @@
+import fs from 'node:fs';
 import assert from 'node:assert/strict';
 
 await import('../www/app-manifest.js');
@@ -55,6 +56,9 @@ assert.equal(r.reason,'exact-version-required');
 assert.equal(U.validPolicy({appId:'wrong.app',latestVersion:'49.0.0'}),false);
 assert.equal(U.diagnostics().enabled,true);
 assert.equal(U.diagnostics().enforce,true);
+const source=fs.readFileSync('www/version-policy.js','utf8');
+assert.ok(source.includes('if(mounted)return diagnostics()'),'update policy mount must be idempotent');
+assert.ok(source.includes('let mounted=false'),'update policy must track mount state');
 
 assert.equal(typeof U.showNotice,'function');
 assert.equal(U.validPolicy({appId:'com.msa.one.displayfit37',latestVersion:'49.0.0',minSupportedVersion:'50.0.0'}),false);
