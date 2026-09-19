@@ -31,6 +31,7 @@ assert.ok(js.includes('MSAEditorAdapter'),'Document formatting must use the isol
 assert.ok(js.includes('data-history-undo'),'Create Studio must expose Undo control');
 assert.ok(js.includes('data-history-redo'),'Create Studio must expose Redo control');
 assert.ok(js.includes("key==='z'"),'Create Studio must support keyboard undo');
+assert.ok(js.includes("state.id=id||(window.MSACore?.uid?.('p')"),'new editor sessions must receive a stable project identity before first save');
 assert.ok(!js.includes('document.execCommand'),'Create Studio must not call deprecated execCommand directly');
 assert.ok(js.includes('virtual view'),'large spreadsheets must use virtual row/column rendering');
 assert.ok(css.includes('.studio-editor img'),'document image preview must be styled');
