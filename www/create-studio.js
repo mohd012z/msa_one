@@ -234,7 +234,7 @@
       else saveDraft();
     },480);
   }
-  function open(type='document',id=null){mount();state.type=TYPES[type]?type:'document';state.id=id;state.slide=0;state.sheet=0;state.rowStart=0;state.colStart=0;document.body.classList.add('studio-open');const overlay=document.querySelector('.studio-overlay');overlay.classList.add('on','studio-opening');setTimeout(()=>overlay.classList.remove('studio-opening'),260);render();requestAnimationFrame(()=>{window.MSAHelper?.refresh?.();window.MSAPerformance?.mount?.()})}
+  function open(type='document',id=null){mount();state.type=TYPES[type]?type:'document';state.id=id;state.slide=0;state.sheet=0;state.rowStart=0;state.colStart=0;if(state.type==='pdf'&&state.id){const project=get(state.id);window.MSAPDFReadiness?.openProject?.(project||{id:state.id,title:'PDF'})}document.body.classList.add('studio-open');const overlay=document.querySelector('.studio-overlay');overlay.classList.add('on','studio-opening');setTimeout(()=>overlay.classList.remove('studio-opening'),260);render();requestAnimationFrame(()=>{window.MSAHelper?.refresh?.();window.MSAPerformance?.mount?.()})}
   function close(){
     clearTimeout(state.timer);if(state.idleSave!=null){window.MSAPerformance?.cancelIdle?.(state.idleSave);state.idleSave=null}
     saveDraft();if(state.pdfObjectUrl){URL.revokeObjectURL(state.pdfObjectUrl);state.pdfObjectUrl=null}document.body.classList.remove('studio-open');document.querySelector('.studio-overlay')?.classList.remove('on');requestAnimationFrame(()=>window.MSAHelper?.refresh?.());
