@@ -54,7 +54,7 @@ assert.equal(synced.buildId,'MSA-ONE-54');
 assert.equal(synced.pendingUpdate,true,'upgrade must be marked new until acknowledged');
 assert.equal(synced.lastUpdate.fromBuild,'MSA-ONE-53');
 assert.equal(synced.lastUpdate.toBuild,'MSA-ONE-54');
-assert.deepEqual(synced.lastUpdate.addedModules,[]);
+assert.deepEqual(synced.lastUpdate.addedModules,['quality','pdf-readiness']);
 assert.deepEqual(synced.lastUpdate.removedModules,[]);
 assert.deepEqual(synced.lastUpdate.addedTemplates,[]);
 assert.deepEqual(synced.lastUpdate.removedTemplates,[]);
@@ -74,4 +74,4 @@ const ack=U.acknowledge();
 assert.equal(ack.pendingUpdate,false,'acknowledging update must clear NEW state');
 assert.ok(ack.history.some(x=>x.fromBuild==='MSA-ONE-53'&&x.toBuild==='MSA-ONE-54'),'53→54 upgrade must remain in update history');
 
-console.log('Build 53 to 54 Safe UI migration contract passed');
+console.log('Build 53 to 54 Safe UI + salvaged module migration contract passed');
