@@ -42,10 +42,18 @@ assert.ok(/\.office-fullpage \.studio-pdf-text\{[^}]*width:100%/.test(css),'edit
 assert.ok(/\.office-fullpage \.studio-editor\{[^}]*box-shadow:none/.test(css),'full-page document editor must not look like a floating card');
 
 // The fixed ribbon toolbar must not overlap document content, and must not leave a dead gap
-// above it either — studio-body's top padding must reserve exactly the ribbon's real height.
+// above it either — studio-body's top padding must reserve exactly the ribbon's real height,
+// and that must be declared exactly once (this file previously had THREE separate rules
+// setting the same property, with the last one silently winning — a real, fragile bug).
 assert.ok(css.includes('--office-ribbon-h'),'ribbon height must be a named constant, not a magic number scattered across rules');
-assert.ok(/\.studio-overlay\.office-mobile \.studio-body\{padding:var\(--office-ribbon-h\)/.test(css),'studio-body must reserve exactly the ribbon\'s height so content starts right below it, with no gap or overlap');
-assert.ok(!/\.office-fullpage \.studio-body\{[^}]*padding-top:0/.test(css),'full-page mode must not zero out the ribbon-clearance padding again');
+const bodyPaddingRules=[...css.matchAll(/\.studio-overlay\.office-mobile \.studio-body\{[^}]*padding[^}]*\}/g)];
+assert.equal(bodyPaddingRules.length,1,'studio-body padding must be declared in exactly one place, not duplicated/overridden across the file');
+assert.ok(/padding:calc\(116px \+ max\(var\(--safe-top,0px\),var\(--native-safe-top,0px\)\)\)/.test(bodyPaddingRules[0][0]),'studio-body must reserve the ribbon\'s real height using the native-safe-area-aware value, not a bare env() that Android WebView often reports as 0');
 assert.ok(css.includes('--office-chrome'),'editor height calculations must derive from the same chrome constants instead of independent magic numbers');
+
+// Every raw env(safe-area-inset-top) in this file must be gone — Android WebView frequently
+// reports 0 for it, which is exactly why headers were overlapping the status bar. All top-inset
+// reads must go through var(--safe-top,...) which falls back to the native Android bridge value.
+assert.ok(!css.includes('env(safe-area-inset-top)'),'office-mobile.css must not read the bare (Android-unreliable) safe-area-inset-top directly');
 
 console.log('office ribbon real-action + present mode + zoom/notification placement + full-page editor contract passed');
