@@ -34,4 +34,11 @@ assert.ok(js.includes('pinchStart')&&js.includes('pinchMove'),'pinch-to-zoom mus
 assert.ok(!/\.helper-notice\{[^}]*\btop:/.test(helperCss),'helper-notice must not be pinned to the top of the screen');
 assert.ok(/\.helper-notice\{[^}]*bottom:/.test(helperCss),'helper-notice must be anchored to the bottom like the rest of the app\'s toasts');
 
-console.log('office ribbon real-action + present mode + zoom/notification placement contract passed');
+// Document/PDF editors must fill the full screen width like Word/Excel mobile apps,
+// not sit inside a narrow floating "card" with side gutters and a drop shadow.
+assert.ok(!css.includes('width:min(92vw,794px)'),'document/PDF editor must not be boxed into a narrow floating card');
+assert.ok(/\.office-fullpage \.studio-editor\{[^}]*width:100%/.test(css),'document editor must fill the full page width');
+assert.ok(/\.office-fullpage \.studio-pdf-text\{[^}]*width:100%/.test(css),'editable PDF text view must fill the full page width');
+assert.ok(/\.office-fullpage \.studio-editor\{[^}]*box-shadow:none/.test(css),'full-page document editor must not look like a floating card');
+
+console.log('office ribbon real-action + present mode + zoom/notification placement + full-page editor contract passed');
