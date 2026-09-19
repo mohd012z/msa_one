@@ -1,7 +1,7 @@
 (()=> {
   const KEY='msaOneProjectsV1';
   const TYPES={document:['📄','Document'],spreadsheet:['📊','Spreadsheet'],presentation:['📽️','Presentation'],pdf:['📕','PDF'],html:['🌐','Smart HTML']};
-  let state={type:'document',id:null,timer:null,idleSave:null,slide:0,sheet:0,rowStart:0,colStart:0,pdfObjectUrl:null};
+  let state={type:'document',id:null,timer:null,idleSave:null,slide:0,sheet:0,rowStart:0,colStart:0,pdfObjectUrl:null,historyKey:null,dirty:false};
 
   function all(){if(window.MSAProjects)return window.MSAProjects.all();try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch{return[]}}
   function put(p){
@@ -20,6 +20,61 @@
   }
   function defaultSlides(){return [{title:'Presentation title',body:'Add your key message here.',layout:'title-body',image:''},{title:'Visual slide',body:'Add supporting points here.',layout:'image-right',image:''}]}
 
+  function historyKey(){return state.historyKey||(state.historyKey=(state.id?'project:'+state.id:'draft:'+state.type+':'+(window.MSACore?.uid?.('history')||Date.now().toString(36))))}
+  function studioSnapshot(){
+    return {id:state.id||null,type:state.type,title:document.querySelector('[data-title]')?.value||('Untitled '+TYPES[state.type][1]),content:currentContent(),slide:state.slide,sheet:state.sheet};
+  }
+  function updateHistoryButtons(){
+    const st=window.MSAEditorHistory?.status?.(historyKey())||{canUndo:false,canRedo:false};
+    const undo=document.querySelector('[data-history-undo]'),redo=document.querySelector('[data-history-redo]');
+    if(undo){undo.disabled=!st.canUndo;undo.setAttribute('aria-disabled',String(!st.canUndo))}
+    if(redo){redo.disabled=!st.canRedo;redo.setAttribute('aria-disabled',String(!st.canRedo))}
+  }
+  function beginHistory(){window.MSAEditorHistory?.begin?.(historyKey(),studioSnapshot());updateHistoryButtons()}
+  function scheduleHistory(){window.MSAEditorHistory?.schedule?.(historyKey(),studioSnapshot,560);updateHistoryButtons()}
+  function checkpointHistory(){window.MSAEditorHistory?.checkpoint?.(historyKey(),studioSnapshot);updateHistoryButtons()}
+  function recordHistory(){window.MSAEditorHistory?.record?.(historyKey(),studioSnapshot());updateHistoryButtons()}
+  function cancelSaveTimer(){
+    clearTimeout(state.timer);
+    if(state.idleSave!=null){window.MSAPerformance?.cancelIdle?.(state.idleSave);state.idleSave=null}
+  }
+  function applyHistorySnapshot(snapshot,label){
+    if(!snapshot)return false;
+    cancelSaveTimer();
+    state.type=TYPES[snapshot.type]?snapshot.type:state.type;
+    state.id=snapshot.id||state.id||(window.MSACore?.uid?.('p')||('p_'+Date.now().toString(36)));
+    state.slide=Math.max(0,Number(snapshot.slide)||0);state.sheet=Math.max(0,Number(snapshot.sheet)||0);
+    put({id:state.id,type:state.type,title:snapshot.title||('Untitled '+TYPES[state.type][1]),content:snapshot.content??'',updated:Date.now()});
+    state.dirty=false;render();
+    const status=document.querySelector('.studio-status');if(status)status.textContent=label+' · saved locally';
+    updateHistoryButtons();return true;
+  }
+  function undoStudio(){
+    const snap=window.MSAEditorHistory?.undo?.(historyKey(),studioSnapshot());
+    if(!snap){window.MSAHelper?.notify?.('Nothing to undo.','info');updateHistoryButtons();return false}
+    return applyHistorySnapshot(snap,'Undo');
+  }
+  function redoStudio(){
+    const snap=window.MSAEditorHistory?.redo?.(historyKey(),studioSnapshot());
+    if(!snap){window.MSAHelper?.notify?.('Nothing to redo.','info');updateHistoryButtons();return false}
+    return applyHistorySnapshot(snap,'Redo');
+  }
+  function wireHistoryControls(work){
+    if(!work)return;
+    let tools=work.querySelector('.studio-tools');
+    if(!tools){tools=document.createElement('div');tools.className='studio-tools studio-history-only';work.prepend(tools)}
+    if(!tools.querySelector('[data-history-undo]'))tools.insertAdjacentHTML('afterbegin','<button class="studio-tool studio-history-btn" data-history-undo aria-label="Undo" title="Undo">↶ Undo</button><button class="studio-tool studio-history-btn" data-history-redo aria-label="Redo" title="Redo">↷ Redo</button>');
+    tools.querySelector('[data-history-undo]').onclick=undoStudio;
+    tools.querySelector('[data-history-redo]').onclick=redoStudio;
+    updateHistoryButtons();
+  }
+  function historyKeydown(e){
+    if(!document.body.classList.contains('studio-open')||!(e.ctrlKey||e.metaKey)||e.altKey)return;
+    const key=String(e.key||'').toLowerCase();
+    if(key==='z'){e.preventDefault();e.shiftKey?redoStudio():undoStudio()}
+    else if(key==='y'){e.preventDefault();redoStudio()}
+  }
+
   function wireTiles(){
     document.querySelectorAll('#create .tile,#home .tile,#ai .tile').forEach(b=>{
       const t=(b.querySelector('strong')?.textContent||'').toLowerCase();
@@ -32,7 +87,7 @@
     if(document.querySelector('.studio-overlay')){wireTiles();return}
     const x=document.createElement('section');x.className='studio-overlay';
     x.innerHTML='<header class="studio-top"><button class="studio-icon-btn" data-close aria-label="Close">‹</button><div class="studio-title"><input data-title value="Untitled"><div class="studio-status">Ready · autosaves on this device</div></div><button class="studio-tool" data-import>Import</button><button class="studio-primary" data-save>Save</button><button class="studio-tool" data-export>Export</button></header><div class="studio-body"><div class="studio-mode">'+Object.entries(TYPES).map(([k,v])=>'<button class="studio-type" data-type="'+k+'">'+v[0]+'<br>'+v[1]+'</button>').join('')+'</div><div data-work></div><div class="studio-recents" data-recents></div></div><footer class="studio-bottom"><button data-bottom-save>💾<span>Save</span></button><button data-bottom-import>↥<span>Import</span></button><button data-bottom-export>↧<span>Export</span></button><button data-bottom-files>▤<span>Files</span></button></footer>';
-    document.body.appendChild(x);x.querySelector('[data-close]').onclick=close;x.querySelector('[data-import]').onclick=importCurrent;x.querySelector('[data-save]').onclick=()=>saveDraft(true);x.querySelector('[data-export]').onclick=exportCurrent;x.querySelector('[data-bottom-save]').onclick=()=>saveDraft(true);x.querySelector('[data-bottom-import]').onclick=importCurrent;x.querySelector('[data-bottom-export]').onclick=exportCurrent;x.querySelector('[data-bottom-files]').onclick=()=>{close();window.show?.('files')};x.querySelector('[data-title]').oninput=queueSave;
+    document.body.appendChild(x);document.addEventListener('keydown',historyKeydown);x.querySelector('[data-close]').onclick=close;x.querySelector('[data-import]').onclick=importCurrent;x.querySelector('[data-save]').onclick=()=>saveDraft(true);x.querySelector('[data-export]').onclick=exportCurrent;x.querySelector('[data-bottom-save]').onclick=()=>saveDraft(true);x.querySelector('[data-bottom-import]').onclick=importCurrent;x.querySelector('[data-bottom-export]').onclick=exportCurrent;x.querySelector('[data-bottom-files]').onclick=()=>{close();window.show?.('files')};x.querySelector('[data-title]').oninput=queueSave;
     x.querySelectorAll('[data-type]').forEach(b=>b.onclick=()=>open(b.dataset.type));wireTiles();renderRecents();
   }
 
@@ -44,9 +99,9 @@
       const safeDoc=sanitizeHTML(p?.content||'<h2>Start writing</h2><p>Your document keeps rich headings, bold, italic, underline, lists and simple tables when exported to DOCX.</p>');
       w.innerHTML='<div class="studio-tools"><button class="studio-tool" data-cmd="bold"><b>B</b></button><button class="studio-tool" data-cmd="italic"><i>I</i></button><button class="studio-tool" data-cmd="underline"><u>U</u></button><button class="studio-tool" data-block="H1">H1</button><button class="studio-tool" data-block="H2">H2</button><button class="studio-tool" data-block="P">P</button><button class="studio-tool" data-cmd="insertUnorderedList">☷ List</button><button class="studio-tool" data-table>▦ Table</button><button class="studio-tool" data-doc-image>🖼 Image</button><button class="studio-tool" data-doc-pdf>PDF</button></div><article class="studio-editor" contenteditable="true" data-doc>'+safeDoc+'</article>';
       const ed=w.querySelector('[data-doc]');ed.oninput=queueSave;
-      w.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>{ed.focus();document.execCommand(b.dataset.cmd,false,null);queueSave()});
-      w.querySelectorAll('[data-block]').forEach(b=>b.onclick=()=>{ed.focus();document.execCommand('formatBlock',false,b.dataset.block);queueSave()});
-      w.querySelector('[data-table]').onclick=()=>{ed.focus();document.execCommand('insertHTML',false,'<table><tr><th>Header 1</th><th>Header 2</th></tr><tr><td>Value</td><td>Value</td></tr></table><p><br></p>');queueSave()};
+      w.querySelectorAll('[data-cmd]').forEach(b=>b.onclick=()=>{ed.focus();window.MSAEditorAdapter?.command?.(b.dataset.cmd,null,ed);queueSave()});
+      w.querySelectorAll('[data-block]').forEach(b=>b.onclick=()=>{ed.focus();window.MSAEditorAdapter?.formatBlock?.(b.dataset.block,ed);queueSave()});
+      w.querySelector('[data-table]').onclick=()=>{ed.focus();window.MSAEditorAdapter?.insertHTML?.('<table><tr><th>Header 1</th><th>Header 2</th></tr><tr><td>Value</td><td>Value</td></tr></table><p><br></p>',ed);queueSave()};
       w.querySelector('[data-doc-image]').onclick=()=>pickDocumentImage(ed);
       w.querySelector('[data-doc-pdf]').onclick=()=>exportPDF(window.MSAOffice?.plain(currentContent())||'');
     }else if(state.type==='html'){
@@ -77,7 +132,7 @@
         const ta=w.querySelector('[data-pdf-text]');ta.value=content;ta.oninput=queueSave;
       }
     }
-    renderRecents();
+    wireHistoryControls(w);renderRecents();updateHistoryButtons();
   }
 
   function colName(n){return window.MSAFormula?.colName(n)||String.fromCharCode(65+n)}
@@ -113,7 +168,7 @@
     state.sheet=Math.max(0,Math.min(next,sheets.length-1));
     if(changed){state.rowStart=0;state.colStart=0}
     const p={id:state.id||('p_'+Date.now().toString(36)),type:'spreadsheet',title:document.querySelector('[data-title]')?.value||'Untitled Spreadsheet',content:JSON.stringify({sheets,activeSheet:state.sheet}),updated:Date.now()};
-    state.id=p.id;put(p);render();
+    state.id=p.id;put(p);state.dirty=false;render();recordHistory();
   }
   function sheetPageSize(){
     const p=window.MSAPerformance?.profile?.()||'balanced';
@@ -194,7 +249,7 @@
   }
   function pickDocumentImage(editor){
     const input=document.createElement('input');input.type='file';input.accept='image/*';input.hidden=true;
-    input.onchange=async()=>{const file=input.files?.[0];if(!file)return;try{const data=await resizeImage(file);editor.focus();document.execCommand('insertHTML',false,'<p><img src="'+data+'" alt="'+esc(file.name)+'"></p><p><br></p>');queueSave()}catch(e){friendlyError(e.message)}finally{input.remove()}};
+    input.onchange=async()=>{const file=input.files?.[0];if(!file)return;try{const data=await resizeImage(file);editor.focus();window.MSAEditorAdapter?.insertHTML?.('<p><img src="'+data+'" alt="'+esc(file.name)+'"></p><p><br></p>',editor);queueSave()}catch(e){friendlyError(e.message)}finally{input.remove()}};
     document.body.appendChild(input);input.click();
   }
   function resizeImage(file){
@@ -207,7 +262,7 @@
     document.body.appendChild(input);input.click();
   }
   function replaceSlides(slides){
-    const p={id:state.id||('p_'+Date.now().toString(36)),type:'presentation',title:document.querySelector('[data-title]')?.value||'Untitled Presentation',content:JSON.stringify({slides}),updated:Date.now()};state.id=p.id;put(p);render();
+    const p={id:state.id||('p_'+Date.now().toString(36)),type:'presentation',title:document.querySelector('[data-title]')?.value||'Untitled Presentation',content:JSON.stringify({slides}),updated:Date.now()};state.id=p.id;put(p);state.dirty=false;render();recordHistory();
   }
   function currentSlides(){
     const p=state.id&&get(state.id),data=json(p?.content,{slides:defaultSlides()}),base=Array.isArray(data)?data:(data.slides||defaultSlides());return readSlides(base);
@@ -222,21 +277,21 @@
     if(state.type==='pdf'){const ta=document.querySelector('[data-pdf-text]');return ta?ta.value:(get(state.id)?.content||'')}return'';
   }
   function saveDraft(manual=false){
-    if(!TYPES[state.type])return;const title=document.querySelector('[data-title]')?.value.trim()||'Untitled '+TYPES[state.type][1];if(!state.id)state.id='p_'+Date.now().toString(36);
+    if(!TYPES[state.type])return;if(manual)checkpointHistory();const title=document.querySelector('[data-title]')?.value.trim()||'Untitled '+TYPES[state.type][1];if(!state.id)state.id='p_'+Date.now().toString(36);
     try{put({id:state.id,type:state.type,title,content:currentContent(),updated:Date.now()})}catch(e){friendlyError('This draft is too large for local storage. Remove a large image, export the file, or back up the workspace first.');return}
-    const s=document.querySelector('.studio-status');if(s)s.textContent='Saved locally · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});if(manual)friendlySuccess('Saved in MSA One › Files on this device.');renderRecents();
+    state.dirty=false;const s=document.querySelector('.studio-status');if(s)s.textContent='Saved locally · '+new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});if(manual)friendlySuccess('Saved in MSA One › Files on this device.');renderRecents();
   }
   function queueSave(){
-    clearTimeout(state.timer);
+    state.dirty=true;scheduleHistory();clearTimeout(state.timer);
     if(state.idleSave!=null){window.MSAPerformance?.cancelIdle?.(state.idleSave);state.idleSave=null}
     state.timer=setTimeout(()=>{
       if(window.MSAPerformance?.idle)state.idleSave=window.MSAPerformance.idle(()=>{state.idleSave=null;saveDraft()},900);
       else saveDraft();
     },480);
   }
-  function open(type='document',id=null){mount();state.type=TYPES[type]?type:'document';state.id=id;state.slide=0;state.sheet=0;state.rowStart=0;state.colStart=0;if(state.type==='pdf'&&state.id){const project=get(state.id);window.MSAPDFReadiness?.openProject?.(project||{id:state.id,title:'PDF'})}document.body.classList.add('studio-open');const overlay=document.querySelector('.studio-overlay');overlay.classList.add('on','studio-opening');setTimeout(()=>overlay.classList.remove('studio-opening'),260);render();requestAnimationFrame(()=>{window.MSAHelper?.refresh?.();window.MSAPerformance?.mount?.()})}
+  function open(type='document',id=null){mount();if(state.historyKey)window.MSAEditorHistory?.cancel?.(state.historyKey);if(state.dirty)saveDraft();state.type=TYPES[type]?type:'document';state.id=id||(window.MSACore?.uid?.('p')||('p_'+Date.now().toString(36)));state.historyKey='project:'+state.id;state.dirty=false;state.slide=0;state.sheet=0;state.rowStart=0;state.colStart=0;if(state.type==='pdf'&&id){const project=get(state.id);window.MSAPDFReadiness?.openProject?.(project||{id:state.id,title:'PDF'})}document.body.classList.add('studio-open');const overlay=document.querySelector('.studio-overlay');overlay.classList.add('on','studio-opening');setTimeout(()=>overlay.classList.remove('studio-opening'),260);render();beginHistory();requestAnimationFrame(()=>{window.MSAHelper?.refresh?.();window.MSAPerformance?.mount?.()})}
   function close(){
-    clearTimeout(state.timer);if(state.idleSave!=null){window.MSAPerformance?.cancelIdle?.(state.idleSave);state.idleSave=null}
+    checkpointHistory();cancelSaveTimer();
     saveDraft();if(state.pdfObjectUrl){URL.revokeObjectURL(state.pdfObjectUrl);state.pdfObjectUrl=null}document.body.classList.remove('studio-open');document.querySelector('.studio-overlay')?.classList.remove('on');requestAnimationFrame(()=>window.MSAHelper?.refresh?.());
   }
   function openProject(id){const p=get(id);if(p)open(p.type,p.id)}
@@ -364,6 +419,6 @@
     }catch(e){friendlyError('Export failed: '+e.message)}
   }
 
-  window.MSAStudio={open,close,saveDraft,importCurrent,exportCurrent,openProject,createProject,evalFormula,pickDocumentImage};
+  window.MSAStudio={open,close,saveDraft,importCurrent,exportCurrent,openProject,createProject,evalFormula,pickDocumentImage,undo:undoStudio,redo:redoStudio,historyStatus:()=>window.MSAEditorHistory?.status?.(historyKey())};
   document.addEventListener('DOMContentLoaded',mount);setTimeout(mount,400);
 })();
