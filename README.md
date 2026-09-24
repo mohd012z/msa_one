@@ -97,6 +97,19 @@ The native bridge supports:
 
 The generated Android project is created during CI and is intentionally not committed.
 
+
+## MyAI and Lola companion workflow
+
+Build 54 now treats MyAI and Lola as **manual local companions** for MSA One / MSA Patcher:
+
+- **MyAI** and **desktop Lola** are reached through a local JSON/Markdown handoff in the AI workspace and Files actions.
+- **Local template**, **Model-assisted**, **Desktop Lola**, **Unsupported**, and **Offline** labels are shown inside the companion workflow.
+- MSA One exports a bounded Release 1 handoff manifest with project metadata and selected-file metadata only.
+- MSA One never uploads local files automatically and does not claim that desktop Lola runs inside Android.
+- Trusted Release 1 result JSON files can be imported back into the selected local MSA project as companion evidence with provenance, warnings, artifacts, status, provider, and timestamps.
+
+See [`integration-contract.md`](integration-contract.md) for the exact Release 1 schema, limits, trust model, and manual workflow.
+
 ## Build and test
 
 Run locally:

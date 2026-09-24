@@ -14,7 +14,7 @@ const drawer=fs.readFileSync('www/drawer.js','utf8');
 const css=fs.readFileSync('www/workspace-v2.css','utf8');
 
 for(const asset of [
-  'workspace-v2.css','tools-catalog.js','template-catalog.js','assistant-catalog.js',
+  'workspace-v2.css','tools-catalog.js','template-catalog.js','assistant-catalog.js','companion-integration.js',
   'action-sheet.js','drawer.js','search-center.js','home-v2.js','files-v2.js',
   'tools-center.js','template-center.js','ai-tools.js','create-v2.js','app-shell.js'
 ]) assert.ok(html.includes(asset),'index must load '+asset);
@@ -48,6 +48,7 @@ assert.ok(templates.includes('MSAProjects?.write'),'starter templates must creat
 assert.ok(templates.includes('MSAStudio?.open'),'templates must open in the real editor');
 
 assert.ok(ai.includes('MSAAssistantCatalog'),'AI browser must be catalog driven');
+assert.ok(ai.includes('MSACompanion'),'AI browser must wire the companion workflow');
 assert.ok(ai.includes('MSAActions?.openPicker'),'AI file attachment must use existing picker');
 assert.ok(ai.includes("document.querySelector('#ai textarea')"),'AI assistants must route into current composer');
 

@@ -61,6 +61,8 @@
     if(!id||!type)return null;
     const safe={...project,id:id.slice(0,160),type:type.slice(0,80)};
     if('title' in safe)safe.title=String(safe.title??'').slice(0,500);
+    const companion=globalThis.MSACompanion?.sanitizeStoredProjectCompanion?.(safe.companion,{strict:false});
+    if(companion)safe.companion=companion;else delete safe.companion;
     return safe;
   }
   function projectNormalizeList(items,limit=50){

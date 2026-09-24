@@ -11,6 +11,7 @@
 {id:'backup',icon:'💾',name:'Workspace Backup',category:'office',desc:'Export an MSA One workspace backup.',action:'backup'},
 {id:'reader',icon:'🎙',name:'Read Aloud',category:'read',desc:'Open the AI reading and presenter workflow.',action:'reader'},
 {id:'technical',icon:'🧭',name:'Technical Navigator',category:'technical',desc:'Use the AI workspace with technical documents.',action:'technical'},
+{id:'companion',icon:'🧩',name:'MyAI ↔ Lola Companion',category:'technical',desc:'Export safe local handoffs and import trusted MyAI or Lola results.',action:'companion'},
 {id:'diagnostics',icon:'🩺',name:'App Diagnostics',category:'technical',desc:'Check viewport, touch targets, storage recovery and security contracts.',action:'diagnostics'},
 {id:'pdf-readiness',icon:'📋',name:'PDF Readiness',category:'pdf',desc:'Track text-ready or scanned pages. Built-in OCR is not claimed.',action:'pdf-readiness'}
 ];})();

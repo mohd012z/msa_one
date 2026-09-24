@@ -107,7 +107,10 @@
     const out={...p,id:String(p.id||'').slice(0,120),type,title:textLimit(p.title||'Untitled',LIMITS.title,'Project title'),updated:Number(p.updated)||Date.now()};
     let content=textLimit(p.content??'',type==='html'?LIMITS.htmlSource:LIMITS.richHTML,'Project content');
     if(type==='document')content=sanitizeRichHTML(content);
-    out.content=content;return out;
+    out.content=content;
+    const companion=globalThis.MSACompanion?.sanitizeStoredProjectCompanion?.(p.companion,{strict:false});
+    if(companion)out.companion=companion;else delete out.companion;
+    return out;
   }
   function sanitizeProjects(raw){
     const a=typeof raw==='string'?JSON.parse(raw):raw;
