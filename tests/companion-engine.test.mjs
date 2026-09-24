@@ -12,7 +12,7 @@ const mirrored=[];
 globalThis.MSAStorage={mirror:(key,value)=>mirrored.push([key,String(value)])};
 globalThis.MSAAppManifest={buildId:'MSA-ONE-54',version:'54.0.0'};
 globalThis.MSACore={safeName:value=>String(value||'').trim().toLowerCase().replace(/[^\w-]+/g,'-').replace(/^-+|-+$/g,'')||'msa-patcher-handoff'};
-globalThis.MSASecurity={sanitizeProject:project=>project.type==='document'?{...project,content:String(project.content||'').replace(/<script[\s\S]*?<\/script>/gi,'')}:project};
+globalThis.MSASecurity={sanitizeProject:project=>project};
 
 const projectStore=[
   {id:'doc1',type:'document',title:'Authorized Project',content:'<p>Base document</p>',updated:1},
