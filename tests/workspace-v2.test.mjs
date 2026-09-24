@@ -16,7 +16,7 @@ const css=fs.readFileSync('www/workspace-v2.css','utf8');
 for(const asset of [
   'workspace-v2.css','tools-catalog.js','template-catalog.js','assistant-catalog.js',
   'action-sheet.js','drawer.js','search-center.js','home-v2.js','files-v2.js',
-  'tools-center.js','template-center.js','ai-tools.js','create-v2.js','app-shell.js'
+  'tools-center.js','template-center.js','ai-tools.js','companion-engine.js','create-v2.js','app-shell.js'
 ]) assert.ok(html.includes(asset),'index must load '+asset);
 
 for(const page of ['home','files','create','tools','ai'])assert.ok(shell.includes("'"+page+"'")||shell.includes('"'+page+'"'),'workspace shell missing '+page);
@@ -42,6 +42,7 @@ assert.ok(create.includes('MSAFiles?.importFolder'),'Create V2 must reuse folder
 assert.ok(tools.includes('MSAToolsCatalog'),'Tools Center must be catalog driven');
 assert.ok(tools.includes('MSAStorage?.downloadBackup'),'Tools Center must expose real workspace backup');
 assert.ok(tools.includes('MSAFiles?.importFolder'),'Tools Center must expose real folder import');
+assert.ok(tools.includes('MSACompanion?.open'),'Tools Center must expose the local in_ai/Lola companion workflow');
 
 assert.ok(templates.includes('MSALibrary?.allTemplates'),'Template Center must merge Built-in Library templates');
 assert.ok(templates.includes('MSAProjects?.write'),'starter templates must create real saved projects');
@@ -50,6 +51,7 @@ assert.ok(templates.includes('MSAStudio?.open'),'templates must open in the real
 assert.ok(ai.includes('MSAAssistantCatalog'),'AI browser must be catalog driven');
 assert.ok(ai.includes('MSAActions?.openPicker'),'AI file attachment must use existing picker');
 assert.ok(ai.includes("document.querySelector('#ai textarea')"),'AI assistants must route into current composer');
+assert.ok(ai.includes('MSACompanion?.open'),'AI browser must expose the local in_ai/Lola companion workflow');
 
 for(const route of ['MSAPlanner','MSAStorage','MSALibrary','MSASettingsV2'])assert.ok(drawer.includes(route),'drawer missing existing engine '+route);
 

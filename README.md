@@ -1,6 +1,6 @@
 # MSA One
 
-MSA One is a mobile-first, local-first office and productivity workspace packaged for Android with Capacitor.
+MSA One is the user's **MSA Patcher** Android app: a mobile-first, local-first office and productivity workspace packaged with Capacitor.
 
 ## Current build — MSA One 54
 
@@ -41,8 +41,65 @@ Core work should remain usable without paid APIs or paid cloud services:
 - planner/calendar
 - built-in tools, templates and library
 - deterministic offline helpers
+- manual `in_ai` / Lola handoff export and validated result import
 
 Premium infrastructure is prepared but billing is deliberately disabled in Build 54.
+
+## `in_ai` and Lola companion workflow
+
+MSA One treats this repository as the **MSA Patcher** app and integrates with:
+
+- `mohd012z/in_ai` for everyday AI workbench handoffs
+- `mohd012z/lola` for companion workflows that stay **desktop-only**
+
+The Android app is intentionally local-first:
+
+- it exports a manual handoff manifest as **JSON** or **Markdown**
+- it imports only bounded, schema-validated JSON results
+- it renders imported content as escaped text / structured data
+- it does **not** auto-upload files, scan the device, expose secrets, or call undocumented services
+
+Only analyze projects you are authorized to inspect.
+
+### Exact manual workflow
+
+1. Open **AI → MSA Patcher companion** or **Tools → in_ai + Lola Companion**.
+2. Choose a task kind: `coding`, `office`, `apk-creator`, `development`, or `deep-dive`.
+3. Optionally choose one existing MSA project and tick only the metadata you want to share.
+4. Paste only the user-selected summary and text excerpts you authorize for transfer.
+5. Export either:
+   - `*.json` for machine-readable handoff, or
+   - `*.md` for a manual desktop/workbench handoff
+6. In `mohd012z/in_ai` or `mohd012z/lola`, manually import/paste the manifest and add any separately authorized files yourself.
+7. Run the work outside MSA One:
+   - `in_ai` may produce **model-assisted** results
+   - Lola operations remain **desktop-only**
+8. Save the returned companion result as JSON using the interoperability contract in `docs/lola-companion-schema.md`.
+9. Back in MSA One, open the companion workflow and choose **Import result JSON**.
+10. Import into:
+    - an existing document / Smart HTML project, or
+    - the local **MSA Patcher Companion Evidence** area
+
+### What is integrated vs desktop-only / planned
+
+Integrated now:
+
+- local manifest creation
+- JSON + Markdown export
+- bounded validated result import
+- safe text/structured rendering
+- local evidence persistence and backup/recovery
+
+Desktop-only:
+
+- Lola execution and any desktop companion actions
+
+Planned / intentionally not bundled:
+
+- automatic cloud upload
+- hidden device scanning
+- undocumented services
+- DRM bypass or third-party APK patching
 
 ## Premium state
 
@@ -133,6 +190,7 @@ Do not fabricate a lockfile manually.
 ## Repository structure
 
 - `www/` — packaged application UI and engines
+- `docs/lola-companion-schema.md` — `in_ai` / Lola interoperability contract
 - `tests/` — Node regression/contracts
 - `native-prep/android/` — native Android bridge source injected during build
 - `security-prep/android/` — Android security resources

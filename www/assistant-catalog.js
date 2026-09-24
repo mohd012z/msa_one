@@ -10,6 +10,7 @@
 {group:'Technical Intelligence',kicker:'Technical work',items:[
 {id:'trouble',icon:'🧭',name:'Troubleshooting Assistant',prompt:'Help me troubleshoot this technical problem: '},
 {id:'manual',icon:'📚',name:'Manual Reading Assistant',prompt:'Help me understand this technical document: '},
+{id:'companion',icon:'🤝',name:'MSA Patcher Companion Handoff',prompt:'Prepare an MSA Patcher handoff manifest for in_ai or Lola: '},
 {id:'ojt',icon:'🎓',name:'Training Material Builder',prompt:'Create structured training material for: '}]},
 {group:'Document Intelligence',kicker:'Document creation',items:[
 {id:'report',icon:'📄',name:'Report Improver',prompt:'Improve this report structure and wording: '},
