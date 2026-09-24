@@ -23,7 +23,7 @@ assert.ok(premium.includes('enforce:true'),'force update must be active in Build
 assert.ok(premium.includes("libraryVersion:'9.1.0'"),'prepared billing version must be 9.1.0');
 
 assert.ok(html.includes('data-build-id="MSA-ONE-54"'),'source UI build ID must match build');
-for(const asset of ['library.css','helper.css','performance.css','premium.css','app-manifest.js','core-library.js','performance-engine.js','storage-engine.js','premium-config.js','entitlement-engine.js','version-policy.js','office-engine.js','import-engine.js','formula-engine.js','library-engine.js','library-updater.js','helper-engine.js','premium-ui.js','security-engine.js','mobile-quality.js','pdf-readiness.js','native-file-bridge.js','workspace-v2.css','tools-catalog.js','template-catalog.js','assistant-catalog.js','action-sheet.js','drawer.js','search-center.js','home-v2.js','files-v2.js','tools-center.js','template-center.js','ai-tools.js','create-v2.js','app-shell.js']){
+for(const asset of ['library.css','helper.css','performance.css','premium.css','app-manifest.js','core-library.js','performance-engine.js','storage-engine.js','premium-config.js','entitlement-engine.js','version-policy.js','office-engine.js','import-engine.js','formula-engine.js','library-engine.js','library-updater.js','helper-engine.js','premium-ui.js','security-engine.js','mobile-quality.js','pdf-readiness.js','native-file-bridge.js','workspace-v2.css','tools-catalog.js','template-catalog.js','assistant-catalog.js','action-sheet.js','drawer.js','search-center.js','home-v2.js','files-v2.js','tools-center.js','template-center.js','ai-tools.js','companion-engine.js','create-v2.js','app-shell.js']){
   assert.ok(html.includes(asset),'source must load '+asset);
 }
 assert.ok(html.indexOf('core-library.js')<html.indexOf('office-engine.js'),'Core SDK must load before Office engine');
@@ -38,7 +38,7 @@ assert.ok(html.indexOf('security-engine.js')<html.indexOf('storage-engine.js'),'
 assert.ok(workflow.includes('versionCode 54'),'Android versionCode must match build');
 assert.ok(workflow.includes('versionName "54.0"'),'Android versionName must match build');
 assert.ok(workflow.includes('MSA-One-54-APK'),'artifact name must match build');
-for(const asset of ['app-manifest.js','core-library.js','library-engine.js','library-updater.js','library.css','helper-engine.js','helper.css','performance.css','performance-engine.js','premium.css','premium-config.js','entitlement-engine.js','version-policy.js','premium-ui.js','security-engine.js','mobile-quality.js','pdf-readiness.js','native-file-bridge.js']){
+for(const asset of ['app-manifest.js','core-library.js','library-engine.js','library-updater.js','library.css','helper-engine.js','helper.css','performance.css','performance-engine.js','premium.css','premium-config.js','entitlement-engine.js','version-policy.js','premium-ui.js','security-engine.js','mobile-quality.js','pdf-readiness.js','native-file-bridge.js','companion-engine.js']){
   assert.ok(workflow.includes(asset),'workflow must verify packaged UX asset '+asset);
 }
 assert.ok(pkg.scripts['check:syntax'].includes('www/helper-engine.js'),'Helper engine must be syntax checked');
@@ -58,6 +58,7 @@ assert.ok(pkg.scripts['check:syntax'].includes('www/search-center.js'),'Universa
 assert.ok(pkg.scripts['check:syntax'].includes('www/tools-center.js'),'Tools Center must be syntax checked');
 assert.ok(pkg.scripts['check:syntax'].includes('www/template-center.js'),'Template Center must be syntax checked');
 assert.ok(pkg.scripts['check:syntax'].includes('www/ai-tools.js'),'AI Tools browser must be syntax checked');
+assert.ok(pkg.scripts['check:syntax'].includes('www/companion-engine.js'),'Companion workflow must be syntax checked');
 assert.ok(pkg.scripts['check:syntax'].includes('scripts/apply-android-security.mjs'),'Android security script must be syntax checked');
 assert.ok(pkg.scripts['check:syntax'].includes('scripts/activate-premium-android.mjs'),'Activation script must be syntax checked');
 assert.ok(workflow.includes('cancel-in-progress: true'),'workflow must cancel superseded APK builds');

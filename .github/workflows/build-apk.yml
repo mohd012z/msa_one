@@ -83,6 +83,7 @@ jobs:
           grep -q 'tools-center.js' www/index.html
           grep -q 'template-center.js' www/index.html
           grep -q 'ai-tools.js' www/index.html
+          grep -q 'companion-engine.js' www/index.html
           grep -q 'create-v2.js' www/index.html
           grep -q 'drawer.js' www/index.html
           grep -q 'action-sheet.js' www/index.html
@@ -94,6 +95,7 @@ jobs:
           grep -q 'MSAToolsCenter' www/tools-center.js
           grep -q 'MSATemplateCenter' www/template-center.js
           grep -q 'MSAAIWorkspace' www/ai-tools.js
+          grep -q 'MSACompanion' www/companion-engine.js
           grep -q 'pinchStart' www/office-mobile.js
           grep -q 'MSANativeFiles' www/native-file-bridge.js
           test -f native-prep/android/MSAFileBridgePlugin.java
@@ -215,6 +217,7 @@ jobs:
           test -f android/app/src/main/assets/public/tools-center.js
           test -f android/app/src/main/assets/public/template-center.js
           test -f android/app/src/main/assets/public/ai-tools.js
+          test -f android/app/src/main/assets/public/companion-engine.js
           test -f android/app/src/main/assets/public/create-v2.js
           test -f android/app/src/main/assets/public/drawer.js
           test -f android/app/src/main/assets/public/action-sheet.js
