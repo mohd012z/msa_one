@@ -26,14 +26,19 @@ const project={id:'p1',type:'document',title:'Test',content:'<p onclick="x()">Sa
 const backup={
   schema:1,app:'MSA One',values:{
     msaOneProjectsV1:JSON.stringify([project]),
-    msaUserLibraryV1:JSON.stringify({schema:1,favorites:[],recent:[],templates:[{id:'u1',type:'document',name:'T',content:'<img src=x onerror=evil()>'}]})
+    msaUserLibraryV1:JSON.stringify({schema:1,favorites:[],recent:[],templates:[{id:'u1',type:'document',name:'T',content:'<img src=x onerror=evil()>'}]}),
+    msaLolaStateV1:JSON.stringify({draft:{profile:'source-security-scan',notes:'<b>desktop only</b>',options:{semgrepRules:true,dependencyInventory:true,changedFilesOnly:false}},reports:[{id:'r1',importedAt:'2026-09-24T00:00:00.000Z',projectId:'p1',report:{schema:'msa.lola.result.v1',profile:'source-security-scan',summary:{headline:'<img src=x onerror=1>',verdict:'review'},findings:[{title:'<script>x()</script>',message:'Check this'}],evidence:[{label:'scan',detail:'ran'}]}}]})
   }
 };
-const restored=S.parseBackupText(JSON.stringify(backup),['msaOneProjectsV1','msaUserLibraryV1']);
+const restored=S.parseBackupText(JSON.stringify(backup),['msaOneProjectsV1','msaUserLibraryV1','msaLolaStateV1']);
 const projects=JSON.parse(restored.values.msaOneProjectsV1);
 assert.ok(!/onclick|script/i.test(projects[0].content),'restored document must be sanitized');
 const lib=JSON.parse(restored.values.msaUserLibraryV1);
 assert.ok(!/onerror/i.test(lib.templates[0].content),'restored personal template must be sanitized');
+const lola=JSON.parse(restored.values.msaLolaStateV1);
+assert.equal(lola.draft.profile,'source-security-scan');
+assert.equal(lola.reports[0].report.schema,'msa.lola.result.v1');
+assert.equal(lola.reports[0].report.findings.length,1);
 
 assert.throws(()=>S.parseBackupText('{"app":"Other","values":{"x":"1"}}',['x']));
 assert.throws(()=>S.sanitizeProject({type:'unknown',content:''}));

@@ -5,9 +5,15 @@
     valueChars:14*1024*1024,
     projects:100,
     templates:120,
+    lolaReports:24,
+    lolaFindings:200,
+    lolaEvidence:200,
     title:240,
     richHTML:8*1024*1024,
-    htmlSource:12*1024*1024
+    htmlSource:12*1024*1024,
+    lolaState:512*1024,
+    lolaText:2000,
+    lolaSnippet:4000
   };
   const SAFE_TAGS=new Set([
     'A','B','BR','BLOCKQUOTE','CODE','DIV','EM','FONT','H1','H2','H3','H4','H5','H6','HR','I','IMG',
@@ -133,6 +139,152 @@
       })
     };
   }
+  function lolaText(value,max=LIMITS.lolaText,label='Lola value'){
+    return textLimit(String(value??''),max,label);
+  }
+  function sanitizeLolaOptions(profile,raw){
+    const profiles={
+      'source-security-scan':['semgrepRules','dependencyInventory','changedFilesOnly'],
+      'apk-inspection':['manifestSummary','permissionReview','signingOverview']
+    };
+    const safe={},allowed=profiles[profile]||[];
+    for(const key of allowed)safe[key]=!!raw?.[key];
+    return safe;
+  }
+  function sanitizeLolaManifest(value){
+    if(!value||typeof value!=='object')throw new Error('Lola manifest is invalid');
+    const profile=value?.job?.profile||value?.job?.type;
+    if(!['source-security-scan','apk-inspection'].includes(profile))throw new Error('Lola manifest profile is invalid');
+    const out={
+      schema:lolaText(value.schema||'',80,'Lola manifest schema'),
+      manifestVersion:Number(value.manifestVersion)||1,
+      createdAt:lolaText(value.createdAt||'',80,'Lola manifest createdAt'),
+      sourceApp:{
+        name:lolaText(value.sourceApp?.name||'',80,'Lola source app'),
+        project:lolaText(value.sourceApp?.project||'',80,'Lola source project')
+      },
+      companion:{
+        name:lolaText(value.companion?.name||'',80,'Lola companion name'),
+        repository:isHTTPS(value.companion?.repository)?String(value.companion.repository).slice(0,4096):'',
+        execution:lolaText(value.companion?.execution||'',120,'Lola execution')
+      },
+      job:{
+        id:lolaText(value.job?.id||'',160,'Lola job id'),
+        type:profile,
+        profile,
+        options:sanitizeLolaOptions(profile,value.job?.options)
+      },
+      context:{},
+      provenance:{
+        generatedBy:lolaText(value.provenance?.generatedBy||'',160,'Lola generatedBy'),
+        transfer:lolaText(value.provenance?.transfer||'',160,'Lola transfer'),
+        localOnly:!!value.provenance?.localOnly
+      },
+      limitations:(Array.isArray(value.limitations)?value.limitations:[]).slice(0,12).map(v=>lolaText(v,240,'Lola limitation'))
+    };
+    if(value.context?.project&&typeof value.context.project==='object')out.context.project={
+      id:lolaText(value.context.project.id||'',160,'Lola project id'),
+      title:lolaText(value.context.project.title||'',160,'Lola project title'),
+      type:lolaText(value.context.project.type||'',80,'Lola project type')
+    };
+    if(value.context?.input&&typeof value.context.input==='object')out.context.input={
+      kind:lolaText(value.context.input.kind||'',80,'Lola input kind'),
+      label:lolaText(value.context.input.label||'',160,'Lola input label')
+    };
+    if('packageName' in (value.context||{}))out.context.packageName=lolaText(value.context.packageName||'',160,'Lola package name');
+    if('notes' in (value.context||{}))out.context.notes=lolaText(value.context.notes||'',1200,'Lola notes');
+    return out;
+  }
+  function sanitizeLolaFinding(item){
+    if(!item||typeof item!=='object')throw new Error('Lola finding is invalid');
+    return {
+      id:lolaText(item.id||'',120,'Lola finding id'),
+      title:lolaText(item.title||'Finding',160,'Lola finding title'),
+      severity:lolaText(item.severity||'info',40,'Lola finding severity'),
+      confidence:lolaText(item.confidence||'',40,'Lola finding confidence'),
+      message:lolaText(item.message||'',1200,'Lola finding message'),
+      path:lolaText(item.path||'',240,'Lola finding path'),
+      line:Number(item.line)||0,
+      snippet:lolaText(item.snippet||'',LIMITS.lolaSnippet,'Lola finding snippet'),
+      tags:(Array.isArray(item.tags)?item.tags:[]).slice(0,12).map(v=>lolaText(v,60,'Lola finding tag'))
+    };
+  }
+  function sanitizeLolaEvidence(item){
+    if(!item||typeof item!=='object')throw new Error('Lola evidence is invalid');
+    return {
+      kind:lolaText(item.kind||'note',60,'Lola evidence kind'),
+      label:lolaText(item.label||'Evidence',160,'Lola evidence label'),
+      detail:lolaText(item.detail||'',1200,'Lola evidence detail'),
+      path:lolaText(item.path||'',240,'Lola evidence path'),
+      digest:lolaText(item.digest||'',160,'Lola evidence digest'),
+      command:lolaText(item.command||'',240,'Lola evidence command'),
+      sizeBytes:Math.max(0,Number(item.sizeBytes)||0)
+    };
+  }
+  function sanitizeLolaReport(value){
+    if(!value||typeof value!=='object')throw new Error('Lola report is invalid');
+    const profile=lolaText(value.profile||'',80,'Lola report profile');
+    if(!['source-security-scan','apk-inspection'].includes(profile))throw new Error('Lola report profile is invalid');
+    const findings=(Array.isArray(value.findings)?value.findings:[]);
+    const evidence=(Array.isArray(value.evidence)?value.evidence:[]);
+    if(findings.length>LIMITS.lolaFindings)throw new Error('Lola report contains too many findings');
+    if(evidence.length>LIMITS.lolaEvidence)throw new Error('Lola report contains too many evidence entries');
+    return {
+      schema:lolaText(value.schema||'',80,'Lola report schema'),
+      resultVersion:Number(value.resultVersion)||1,
+      manifestVersion:Number(value.manifestVersion)||1,
+      manifestId:lolaText(value.manifestId||'',160,'Lola manifest id'),
+      profile,
+      generator:{
+        tool:lolaText(value.generator?.tool||'',120,'Lola generator tool'),
+        version:lolaText(value.generator?.version||'',80,'Lola generator version'),
+        repository:isHTTPS(value.generator?.repository)?String(value.generator.repository).slice(0,4096):''
+      },
+      provenance:{
+        generatedAt:lolaText(value.provenance?.generatedAt||'',80,'Lola generatedAt'),
+        sourceHost:lolaText(value.provenance?.sourceHost||'',120,'Lola source host'),
+        sourcePath:lolaText(value.provenance?.sourcePath||'',240,'Lola source path')
+      },
+      association:{
+        projectId:lolaText(value.association?.projectId||'',160,'Lola project association'),
+        projectTitle:lolaText(value.association?.projectTitle||'',160,'Lola project title')
+      },
+      summary:{
+        headline:lolaText(value.summary?.headline||'',160,'Lola summary headline'),
+        verdict:lolaText(value.summary?.verdict||'review',40,'Lola summary verdict'),
+        findingCount:Math.max(0,Number(value.summary?.findingCount)||findings.length),
+        evidenceCount:Math.max(0,Number(value.summary?.evidenceCount)||evidence.length)
+      },
+      findings:findings.map(sanitizeLolaFinding),
+      evidence:evidence.map(sanitizeLolaEvidence),
+      limitations:(Array.isArray(value.limitations)?value.limitations:[]).slice(0,12).map(v=>lolaText(v,240,'Lola report limitation'))
+    };
+  }
+  function sanitizeLolaState(raw){
+    const value=typeof raw==='string'?JSON.parse(raw):raw;
+    if(!value||typeof value!=='object')throw new Error('Lola state is invalid');
+    const reports=(Array.isArray(value.reports)?value.reports:[]);
+    if(reports.length>LIMITS.lolaReports)throw new Error('Too many Lola reports were stored');
+    const out={
+      schema:1,
+      draft:{
+        projectId:lolaText(value.draft?.projectId||'',160,'Lola draft project'),
+        profile:['source-security-scan','apk-inspection'].includes(value.draft?.profile)?value.draft.profile:'source-security-scan',
+        contextLabel:lolaText(value.draft?.contextLabel||'',160,'Lola draft label'),
+        packageName:lolaText(value.draft?.packageName||'',160,'Lola draft package'),
+        notes:lolaText(value.draft?.notes||'',1200,'Lola draft notes'),
+        options:sanitizeLolaOptions(['source-security-scan','apk-inspection'].includes(value.draft?.profile)?value.draft.profile:'source-security-scan',value.draft?.options)
+      },
+      reports:reports.map(report=>({
+        id:lolaText(report.id||'',160,'Lola stored report id'),
+        importedAt:lolaText(report.importedAt||'',80,'Lola importedAt'),
+        projectId:lolaText(report.projectId||'',160,'Lola stored project id'),
+        report:sanitizeLolaReport(report.report)
+      }))
+    };
+    if(value.lastManifest)out.lastManifest=sanitizeLolaManifest(value.lastManifest);
+    return out;
+  }
   function parseBackupText(text,allowedKeys=[]){
     text=textLimit(text,LIMITS.backupBytes,'Backup file');
     let data;try{data=JSON.parse(text)}catch{throw new Error('Backup JSON is invalid')}
@@ -145,6 +297,7 @@
       const raw=textLimit(v,LIMITS.valueChars,'Backup value '+k);
       if(k==='msaOneProjectsV1')values[k]=JSON.stringify(sanitizeProjects(raw));
       else if(k==='msaUserLibraryV1')values[k]=JSON.stringify(sanitizeUserLibrary(raw));
+      else if(k==='msaLolaStateV1'){if(raw.length>LIMITS.lolaState)throw new Error('Lola state is too large');values[k]=JSON.stringify(sanitizeLolaState(raw))}
       else values[k]=raw;
     }
     if(!Object.keys(values).length)throw new Error('No compatible MSA One data was found');
@@ -176,5 +329,5 @@
     };
   }
 
-  globalThis.MSASecurity={VERSION,LIMITS,isHTTPS,safeHref,safeImage,sanitizeRichHTML,previewHTML,sanitizeProject,sanitizeProjects,sanitizeUserLibrary,parseBackupText,sanitizeTemplate,safeExternalOpen,audit};
+  globalThis.MSASecurity={VERSION,LIMITS,isHTTPS,safeHref,safeImage,sanitizeRichHTML,previewHTML,sanitizeProject,sanitizeProjects,sanitizeUserLibrary,sanitizeLolaState,parseBackupText,sanitizeTemplate,safeExternalOpen,audit};
 })();
