@@ -204,6 +204,7 @@
       case 'backup': window.MSAStorage?.downloadBackup(); toast('Workspace backup prepared'); break;
       case 'restore': window.MSAStorage?.importBackup(); break;
       case 'advanced-ai': openAI('Help me with: '); break;
+      case 'companion': globalThis.MSACompanion?.open?.(); break;
       case 'presenter': window.MSAAIReader?.open?.(); break;
       case 'templates': window.MSALibrary?.open(); break;
       case 'dashboard-template': window.MSALibrary?.openTemplate('html-dashboard'); break;
