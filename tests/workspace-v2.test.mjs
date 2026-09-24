@@ -7,6 +7,7 @@ const search=fs.readFileSync('www/search-center.js','utf8');
 const home=fs.readFileSync('www/home-v2.js','utf8');
 const files=fs.readFileSync('www/files-v2.js','utf8');
 const create=fs.readFileSync('www/create-v2.js','utf8');
+const lola=fs.readFileSync('www/lola-companion.js','utf8');
 const tools=fs.readFileSync('www/tools-center.js','utf8');
 const templates=fs.readFileSync('www/template-center.js','utf8');
 const ai=fs.readFileSync('www/ai-tools.js','utf8');
@@ -16,7 +17,7 @@ const css=fs.readFileSync('www/workspace-v2.css','utf8');
 for(const asset of [
   'workspace-v2.css','tools-catalog.js','template-catalog.js','assistant-catalog.js',
   'action-sheet.js','drawer.js','search-center.js','home-v2.js','files-v2.js',
-  'tools-center.js','template-center.js','ai-tools.js','create-v2.js','app-shell.js'
+  'lola-companion.js','tools-center.js','template-center.js','ai-tools.js','create-v2.js','app-shell.js'
 ]) assert.ok(html.includes(asset),'index must load '+asset);
 
 for(const page of ['home','files','create','tools','ai'])assert.ok(shell.includes("'"+page+"'")||shell.includes('"'+page+'"'),'workspace shell missing '+page);
@@ -42,6 +43,9 @@ assert.ok(create.includes('MSAFiles?.importFolder'),'Create V2 must reuse folder
 assert.ok(tools.includes('MSAToolsCatalog'),'Tools Center must be catalog driven');
 assert.ok(tools.includes('MSAStorage?.downloadBackup'),'Tools Center must expose real workspace backup');
 assert.ok(tools.includes('MSAFiles?.importFolder'),'Tools Center must expose real folder import');
+assert.ok(tools.includes('MSALolaCompanion'),'Tools Center must integrate Lola Companion into the existing tools workflow');
+
+for(const contract of ['msa.lola.manifest.v1','msa.lola.result.v1','desktop-only'])assert.ok(lola.includes(contract),'Lola Companion must document the manifest/result contract and desktop-only execution model');
 
 assert.ok(templates.includes('MSALibrary?.allTemplates'),'Template Center must merge Built-in Library templates');
 assert.ok(templates.includes('MSAProjects?.write'),'starter templates must create real saved projects');

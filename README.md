@@ -97,6 +97,26 @@ The native bridge supports:
 
 The generated Android project is created during CI and is intentionally not committed.
 
+## Lola Companion
+
+MSA One now includes a **Lola Companion** area inside **Tools** for a truthful local workflow with the sibling desktop repository `mohd012z/lola`.
+
+- Android/Capacitor prepares a portable JSON handoff manifest only.
+- Lola analysis still runs on a desktop environment; the app does **not** execute Python, PowerShell, Semgrep, apktool, Frida, or arbitrary patching inside Android.
+- Imported Lola JSON reports are validated, stored locally, and rendered as safe text.
+
+### Local workflow
+
+1. Open **Tools → Lola Companion** in MSA One.
+2. Optionally link an existing local MSA project and enter the local file/APK label you plan to move to desktop.
+3. Choose `Source / security scan` or `APK inspection`, then export `msa-one-lola-manifest.json`.
+4. Move the authorized source tree or APK to your desktop environment manually.
+5. Run the matching Lola desktop workflow from <https://github.com/mohd012z/lola> (for example, its existing `scan-security.ps1`, `scan-apk.ps1`, or `analyze-apk.py` entry points via a small manifest adapter).
+6. Produce a JSON report matching `docs/lola-companion-schema.md`.
+7. Import that JSON report back into **Tools → Lola Companion** for local viewing and association with the linked MSA project.
+
+Only analyze applications or source code that you own or are explicitly authorized to assess. This app does not add DRM bypassing, hidden activity, third-party APK modification, or remote exfiltration features.
+
 ## Build and test
 
 Run locally:
