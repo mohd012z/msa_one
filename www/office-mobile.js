@@ -86,11 +86,22 @@
   if(!sheet)return;const current=sheet;sheet=null;current.classList.add('dismissing');setTimeout(()=>current.remove(),230);
  }
  function bindSheetDrag(el){
-  const handle=el.querySelector('.office-sheet-grab'),title=el.querySelector('.office-sheet-title');let active=false,startY=0,lastY=0;
+  const handle=el.querySelector('.office-sheet-grab'),title=el.querySelector('.office-sheet-title');
+  let active=false,tracking=false,startY=0,lastY=0;
   const start=e=>{active=true;startY=(e.touches?.[0]?.clientY??e.clientY);lastY=startY;el.classList.add('dragging')};
   const move=e=>{if(!active)return;const y=(e.touches?.[0]?.clientY??e.clientY),dy=Math.max(0,y-startY);lastY=y;el.style.transform='translateY('+dy+'px)'};
   const end=()=>{if(!active)return;active=false;el.classList.remove('dragging');const dy=Math.max(0,lastY-startY);if(dy>90){hideMore();return}el.style.transform='';};
+  // The grab handle and title always start a drag. The rest of the sheet only starts one when
+  // it's already scrolled to the top — otherwise a downward swipe should scroll its content
+  // up first, matching a normal bottom sheet, instead of silently doing nothing either way.
+  const bodyStart=e=>{tracking=el.scrollTop<=0;if(tracking)start(e)};
+  const bodyMove=e=>{if(tracking)move(e)};
+  const bodyEnd=()=>{if(tracking){tracking=false;end()}};
   [handle,title].filter(Boolean).forEach(target=>{target.addEventListener('touchstart',start,{passive:true});target.addEventListener('touchmove',move,{passive:true});target.addEventListener('touchend',end,{passive:true});target.addEventListener('pointerdown',start);target.addEventListener('pointermove',move);target.addEventListener('pointerup',end);target.addEventListener('pointercancel',end)});
+  el.addEventListener('touchstart',bodyStart,{passive:true});
+  el.addEventListener('touchmove',bodyMove,{passive:true});
+  el.addEventListener('touchend',bodyEnd,{passive:true});
+  el.addEventListener('touchcancel',bodyEnd,{passive:true});
  }
  
  function escapeHtml(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}

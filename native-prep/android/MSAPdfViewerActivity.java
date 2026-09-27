@@ -5,11 +5,16 @@ import android.graphics.Bitmap;
 import android.graphics.Color;
 import android.graphics.pdf.PdfRenderer;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
+import android.util.DisplayMetrics;
 import android.view.Gravity;
+import android.view.View;
+import android.view.WindowInsets;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.HorizontalScrollView;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
@@ -26,17 +31,21 @@ import android.widget.Toast;
  * MSAFileBridgePlugin.openPdfViewer({uri}) -> MSANativeFiles.openPdfViewer(uri).
  */
 public class MSAPdfViewerActivity extends Activity {
+    private static final int MAX_BITMAP_DIMENSION = 4096;
     private PdfRenderer renderer;
     private PdfRenderer.Page currentPage;
     private ParcelFileDescriptor descriptor;
     private ImageView image;
     private TextView pageLabel;
+    private LinearLayout bar;
     private int pageIndex = 0;
     private float zoom = 1f;
+    private float density = 1f;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        density = getResources().getDisplayMetrics().density;
         buildUi();
         String source = getIntent().getStringExtra("pdf_source");
         if (source == null || source.isEmpty()) {
@@ -57,14 +66,37 @@ public class MSAPdfViewerActivity extends Activity {
         }
     }
 
+    private int dp(int value) {
+        return Math.round(value * density);
+    }
+
+    /** Mirrors MainActivity's own status/navigation-bar inset handling so the toolbar clears the real system bars on every device instead of guessing a fixed padding. */
+    private void applySystemBarInsets(View root, View toolbar) {
+        root.setOnApplyWindowInsetsListener((v, insets) -> {
+            int top;
+            int bottom;
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                top = insets.getInsets(WindowInsets.Type.statusBars() | WindowInsets.Type.displayCutout()).top;
+                bottom = insets.getInsets(WindowInsets.Type.navigationBars()).bottom;
+            } else {
+                top = insets.getSystemWindowInsetTop();
+                bottom = insets.getSystemWindowInsetBottom();
+            }
+            toolbar.setPadding(toolbar.getPaddingLeft(), top + dp(8), toolbar.getPaddingRight(), dp(8));
+            v.setPadding(v.getPaddingLeft(), 0, v.getPaddingRight(), bottom);
+            return insets;
+        });
+        root.requestApplyInsets();
+    }
+
     private void buildUi() {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(Color.rgb(8, 16, 29));
 
-        LinearLayout bar = new LinearLayout(this);
+        bar = new LinearLayout(this);
         bar.setGravity(Gravity.CENTER_VERTICAL);
-        bar.setPadding(12, 12, 12, 12);
+        bar.setPadding(dp(8), dp(8), dp(8), dp(8));
         bar.setBackgroundColor(Color.rgb(9, 18, 32));
 
         Button close = button("Close");
@@ -74,7 +106,9 @@ public class MSAPdfViewerActivity extends Activity {
         Button plus = button("+");
         pageLabel = new TextView(this);
         pageLabel.setTextColor(Color.rgb(234, 246, 255));
-        pageLabel.setPadding(20, 0, 20, 0);
+        pageLabel.setGravity(Gravity.CENTER);
+        pageLabel.setPadding(dp(8), 0, dp(8), 0);
+        pageLabel.setSingleLine(true);
         LinearLayout.LayoutParams grow = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
 
         close.setOnClickListener(v -> finish());
@@ -95,19 +129,29 @@ public class MSAPdfViewerActivity extends Activity {
         image.setAdjustViewBounds(true);
         image.setBackgroundColor(Color.WHITE);
 
+        // Centers the page instead of letting it hug the top-left corner when it's
+        // narrower than the screen, and lets both scroll directions work for zoomed pages.
+        FrameLayout imageFrame = new FrameLayout(this);
+        FrameLayout.LayoutParams imageParams = new FrameLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        imageParams.gravity = Gravity.CENTER;
+        imageFrame.addView(image, imageParams);
+
         HorizontalScrollView horizontal = new HorizontalScrollView(this);
         ScrollView vertical = new ScrollView(this);
-        horizontal.addView(image, new HorizontalScrollView.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-        vertical.addView(horizontal, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        horizontal.addView(imageFrame, new HorizontalScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
+        vertical.addView(horizontal, new ScrollView.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
         root.addView(vertical, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 0, 1f));
 
         setContentView(root);
+        applySystemBarInsets(root, bar);
     }
 
     private Button button(String text) {
         Button b = new Button(this);
         b.setText(text);
         b.setAllCaps(false);
+        b.setMinWidth(dp(44));
+        b.setMinHeight(dp(44));
         return b;
     }
 
@@ -115,8 +159,16 @@ public class MSAPdfViewerActivity extends Activity {
         if (renderer == null || renderer.getPageCount() == 0) return;
         if (currentPage != null) currentPage.close();
         currentPage = renderer.openPage(pageIndex);
-        int w = Math.max(1, (int) (currentPage.getWidth() * zoom));
-        int h = Math.max(1, (int) (currentPage.getHeight() * zoom));
+
+        // PdfRenderer reports page size in PDF points (1/72in), not device pixels, so
+        // rendering at that raw size makes the page look tiny on a modern high-density
+        // screen. Scale it to fill the screen width first, then apply the user's zoom.
+        DisplayMetrics metrics = getResources().getDisplayMetrics();
+        float fitScale = metrics.widthPixels / (float) currentPage.getWidth();
+        float scale = fitScale * zoom;
+
+        int w = Math.min(MAX_BITMAP_DIMENSION, Math.max(1, Math.round(currentPage.getWidth() * scale)));
+        int h = Math.min(MAX_BITMAP_DIMENSION, Math.max(1, Math.round(currentPage.getHeight() * scale)));
         Bitmap bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         bitmap.eraseColor(Color.WHITE);
         currentPage.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);

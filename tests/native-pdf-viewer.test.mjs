@@ -13,6 +13,11 @@ assert.ok(activity.includes('import android.graphics.pdf.PdfRenderer;'),'must us
 assert.ok(activity.includes('extends Activity'),'must be a real Activity, launchable via Intent');
 assert.ok(activity.includes('renderer.openPage'),'must actually render PDF pages, not just show metadata');
 assert.ok(activity.includes('onDestroy')&&activity.includes('renderer.close()'),'must release the PdfRenderer/ParcelFileDescriptor to avoid leaking native resources');
+assert.ok(activity.includes('setOnApplyWindowInsetsListener'),'the viewer\'s toolbar must clear the real status bar via window insets, not a fixed padding guess — otherwise it overlaps the status bar exactly like the old bug');
+assert.ok(!/setPadding\(12, ?12, ?12, ?12\)/.test(activity),'toolbar padding must not be a raw un-scaled pixel guess independent of the status bar inset');
+assert.ok(activity.includes('metrics.widthPixels')&&activity.includes('fitScale'),'PdfRenderer reports page size in PDF points, not device pixels — pages must be scaled to the real screen width or they render tiny in a corner');
+assert.ok(activity.includes('MAX_BITMAP_DIMENSION'),'zoomed bitmap dimensions must be capped to avoid an oversized-bitmap crash at high zoom');
+assert.ok(activity.includes('Gravity.CENTER')&&activity.includes('FrameLayout'),'the rendered page must be centered in the viewport, not left pinned to the top-left corner');
 
 const plugin=fs.readFileSync('native-prep/android/MSAFileBridgePlugin.java','utf8');
 assert.ok(plugin.includes('public void openPdfViewer(PluginCall call)'),'Capacitor plugin must expose openPdfViewer');

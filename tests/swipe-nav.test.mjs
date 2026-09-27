@@ -26,4 +26,11 @@ for(const guard of ['studio-overlay','contenteditable','textarea','input','ifram
   assert.ok(src.includes(guard),'swipe navigation must guard against interfering with '+guard);
 }
 
+// office-more-sheet and friends are appended to document.body as siblings of .studio-overlay,
+// not children of it, so the .studio-overlay guard alone misses them — this global page-swipe
+// handler was fighting their own drag-to-dismiss gestures (reported as "panel won't swipe").
+for(const overlay of ['.office-more-sheet','.office-tab-menu','.ai-reader-overlay','.office-present-overlay']) {
+  assert.ok(src.includes(overlay),'swipe navigation must not hijack touches inside '+overlay);
+}
+
 console.log('Swipe up/down page navigation contract passed');
