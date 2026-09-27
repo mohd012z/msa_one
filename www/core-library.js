@@ -101,18 +101,26 @@
     const next=projectNormalizeList(items,50);
     if(!next)throw new Error('Invalid MSA One project data');
     const raw=JSON.stringify(next),previous=projectParse(localStorage.getItem(PROJECT_KEY));
+    // The current project list is the only value that must succeed — the backup/last-good
+    // copies are purely advisory and must never block a real save (e.g. a just-imported
+    // PDF/Word/Excel file) from landing just because storage is near its quota.
     try{
-      if(previous){
+      localStorage.setItem(PROJECT_KEY,raw);
+    }catch(e){
+      // Reclaim space from the redundant backup copy and retry once before giving up.
+      try{localStorage.removeItem(PROJECT_BACKUP_KEY)}catch{}
+      try{localStorage.setItem(PROJECT_KEY,raw)}catch(e2){projectCache=null;throw e2}
+    }
+    projectCache=next;
+    projectMirror(PROJECT_KEY,raw);
+    try{localStorage.setItem(PROJECT_LAST_GOOD_KEY,raw);projectMirror(PROJECT_LAST_GOOD_KEY,raw)}catch{}
+    if(previous){
+      try{
         const previousRaw=JSON.stringify(previous);
         localStorage.setItem(PROJECT_BACKUP_KEY,previousRaw);
         projectMirror(PROJECT_BACKUP_KEY,previousRaw);
-      }
-      localStorage.setItem(PROJECT_KEY,raw);
-      localStorage.setItem(PROJECT_LAST_GOOD_KEY,raw);
-    }catch(e){projectCache=null;throw e}
-    projectCache=next;
-    projectMirror(PROJECT_KEY,raw);
-    projectMirror(PROJECT_LAST_GOOD_KEY,raw);
+      }catch{/* backup rotation is best-effort */}
+    }
     return projectCache;
   }
   function projectGet(id){return projectAll().find(x=>x.id===id)}

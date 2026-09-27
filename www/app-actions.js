@@ -1,6 +1,7 @@
 (()=> {
   const STORAGE_PROFILE='msaOneProfileV1';
   let picker=null;
+  let attachedContext=null;
 
   function page(id){
     if(typeof window.show==='function') window.show(id);
@@ -42,14 +43,30 @@
     picker.accept=accept;
     if(capture) picker.setAttribute('capture',capture);
     picker.hidden=true;
-    picker.onchange=()=>{
+    picker.onchange=async()=>{
       const files=[...(picker.files||[])];
       if(!files.length){picker.remove();picker=null;return}
       const box=aiBox();
       const label=files.map(f=>f.name).join(', ');
-      if(box) box.value=(box.value?box.value+'\n':'')+'Attached: '+label;
-      toast(files.length+' file'+(files.length===1?'':'s')+' selected');
       picker.remove();picker=null;
+      const docLike=files.filter(f=>!/^image\//.test(f.type)&&!/\.(png|jpe?g|gif|webp)$/i.test(f.name));
+      if(!docLike.length||!window.MSAAIEngine){
+        if(box) box.value=(box.value?box.value+'\n':'')+'Attached: '+label;
+        toast(files.length+' file'+(files.length===1?'':'s')+' selected');
+        return;
+      }
+      toast('Reading '+label+'…');
+      const parts=[];
+      for(const file of docLike){
+        try{
+          const{text,pdfTextUnavailable}=await window.MSAAIEngine.extractFileText(file);
+          if(pdfTextUnavailable){toast(file.name+': scanned PDF has no offline text layer');continue}
+          if(text.trim())parts.push('--- '+file.name+' ---\n'+text);
+        }catch(e){toast(file.name+' could not be read: '+e.message)}
+      }
+      attachedContext=parts.length?{label,text:parts.join('\n\n')}:null;
+      if(box) box.value=(box.value?box.value+'\n':'')+(attachedContext?'📎 Attached and read: '+label+' — ask a question or type "summarize".':'Attached: '+label+' (no readable text found)');
+      toast(attachedContext?label+' ready — MSA One AI can read it offline':label+' selected');
     };
     picker.oncancel=()=>{picker?.remove();picker=null};
     document.body.appendChild(picker);
@@ -85,6 +102,17 @@
     }
   }
 
+  function showAIResult(html){
+    let out=document.querySelector('#ai [data-ai-result]');
+    if(!out){
+      out=document.createElement('div');
+      out.className='ai-result';
+      out.setAttribute('data-ai-result','');
+      document.querySelector('#ai [data-ai-composer]')?.insertAdjacentElement('afterend',out)||document.querySelector('#ai .wrap')?.appendChild(out);
+    }
+    out.innerHTML=html;
+  }
+
   function routeTask(){
     const box=aiBox();
     const q=(box?.value||'').trim();
@@ -94,6 +122,22 @@
       return;
     }
     const s=q.toLowerCase();
+
+    if(attachedContext?.text&&window.MSAAIEngine){
+      const question=q.replace(/^📎.*?—\s*/,'').trim();
+      const asksSummary=/^summar(y|ize|ise)\b/i.test(question)||!question;
+      const esc=v=>String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+      if(asksSummary){
+        const summary=window.MSAAIEngine.summarize(attachedContext.text,5);
+        const kws=window.MSAAIEngine.keywords(attachedContext.text,8);
+        showAIResult('<b>Offline summary of '+esc(attachedContext.label)+'</b><p>'+esc(summary)+'</p>'+(kws.length?'<div class="ai-result-kw">'+kws.map(k=>'<span>'+esc(k)+'</span>').join('')+'</div>':''));
+      }else{
+        const result=window.MSAAIEngine.ask(question,attachedContext.text);
+        showAIResult('<b>From '+esc(attachedContext.label)+'</b><p>'+(result.matches.length?result.matches.map(esc).join('<br>'):esc(result.message||'No matching content found.'))+'</p>'+(result.message&&result.matches.length?'<small class="muted">'+esc(result.message)+'</small>':''));
+      }
+      toast('Answered offline from '+attachedContext.label);
+      return;
+    }
 
     if(/calendar|planner|diary|schedule|appointment|daily program/.test(s)){
       window.MSAPlanner?.open();
@@ -147,7 +191,7 @@
 
   function runAction(action){
     switch(action){
-      case 'reader': openAI('Read and present the selected file or pasted text.'); break;
+      case 'reader': window.MSAAIReader?.open?.(); break;
       case 'converter': page('create'); toast('Offline Office export is ready: DOCX, XLSX, PPTX, PDF, CSV and HTML.'); break;
       case 'automation': openAI('Create an automation for: '); break;
       case 'files': page('files'); break;
@@ -160,7 +204,7 @@
       case 'backup': window.MSAStorage?.downloadBackup(); toast('Workspace backup prepared'); break;
       case 'restore': window.MSAStorage?.importBackup(); break;
       case 'advanced-ai': openAI('Help me with: '); break;
-      case 'presenter': openAI('Prepare presenter notes in Bahasa Melayu for: '); break;
+      case 'presenter': window.MSAAIReader?.open?.(); break;
       case 'templates': window.MSALibrary?.open(); break;
       case 'dashboard-template': window.MSALibrary?.openTemplate('html-dashboard'); break;
       case 'library': window.MSALibrary?.open(); break;

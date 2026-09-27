@@ -38,4 +38,13 @@ assert.ok(!/onerror/i.test(lib.templates[0].content),'restored personal template
 assert.throws(()=>S.parseBackupText('{"app":"Other","values":{"x":"1"}}',['x']));
 assert.throws(()=>S.sanitizeProject({type:'unknown',content:''}));
 
+// Document editor font-family/font-size controls (execCommand fontName/fontSize output)
+const fontHTML='<p><font face="Georgia" size="5">Styled text</font><font face="bad;name">x</font><font size="9">y</font></p>';
+const fontClean=S.sanitizeRichHTML(fontHTML);
+assert.ok(fontClean.includes('face="Georgia"'),'legitimate font face must survive sanitization');
+assert.ok(fontClean.includes('size="5"'),'legitimate font size must survive sanitization');
+assert.ok(!/face="bad;name"/.test(fontClean),'font face with unsafe characters must be stripped');
+assert.ok(!/size="9"/.test(fontClean),'font size outside the 1-7 legacy scale must be stripped');
+assert.ok(!/<style\b|style="/i.test(S.sanitizeRichHTML('<p style="background:url(javascript:alert(1))">x</p>')),'raw style attribute must remain fully blocked');
+
 console.log('central content/backup security contract passed');
