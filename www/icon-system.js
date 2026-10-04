@@ -23,10 +23,7 @@ const PATHS={
   voice:'<rect x="9" y="3" width="6" height="12" rx="3"/><path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6"/>'
 };
 function esc(v=''){return String(v).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function svg(id,{label='',className='msa-icon'}={}){
- const body=PATHS[id]||PATHS.more;
- const a11y=label?' role="img" aria-label="'+esc(label)+'"':' aria-hidden="true"';
- return '<svg class="'+esc(className)+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'+a11y+'>'+body+'</svg>';
-}
+function svg(id,{label='',className='msa-icon'}={}){const body=PATHS[id]||PATHS.more;const a11y=label?' role="img" aria-label="'+esc(label)+'"':' aria-hidden="true"';return '<svg class="'+esc(className)+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'+a11y+'>'+body+'</svg>'}
 globalThis.MSAIcons={svg,has:id=>Object.hasOwn(PATHS,id),ids:Object.freeze(Object.keys(PATHS))};
+if(typeof document!=='undefined')document.dispatchEvent(new CustomEvent('msa:icons-ready'));
 })();
