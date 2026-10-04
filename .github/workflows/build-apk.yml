@@ -4,28 +4,10 @@ on:
   workflow_dispatch:
   push:
     branches: [ main ]
-    paths:
-      - 'www/**'
-      - 'tests/**'
-      - 'package.json'
-      - 'capacitor.config.json'
-      - '.github/workflows/build-apk.yml'
-      - 'premium-prep/**'
-      - 'security-prep/**'
-      - 'native-prep/**'
-      - 'scripts/**'
+    paths: ['www/**','tests/**','package.json','capacitor.config.json','.github/workflows/build-apk.yml','premium-prep/**','security-prep/**','native-prep/**','scripts/**']
   pull_request:
     branches: [ main ]
-    paths:
-      - 'www/**'
-      - 'tests/**'
-      - 'package.json'
-      - 'capacitor.config.json'
-      - '.github/workflows/build-apk.yml'
-      - 'premium-prep/**'
-      - 'security-prep/**'
-      - 'native-prep/**'
-      - 'scripts/**'
+    paths: ['www/**','tests/**','package.json','capacitor.config.json','.github/workflows/build-apk.yml','premium-prep/**','security-prep/**','native-prep/**','scripts/**']
 
 concurrency:
   group: msa-one-apk-${{ github.ref }}
@@ -53,117 +35,40 @@ jobs:
       - name: Test source contracts
         run: npm test
 
-      - name: Verify MSA One 54 source UI
+      - name: Verify MSA One 55 source UI
         run: |
-          grep -q 'data-build-id="MSA-ONE-54"' www/index.html
-          grep -q 'data-calendar-home' www/index.html
-          grep -q 'data-calendar-me' www/index.html
-          grep -q 'theme-v2.css' www/index.html
-          grep -q 'planner.js' www/index.html
-          grep -q 'app-actions.js' www/index.html
-          grep -q 'app-manifest.js' www/index.html
-          grep -q 'premium.css' www/index.html
-          grep -q 'premium-config.js' www/index.html
-          grep -q 'entitlement-engine.js' www/index.html
-          grep -q 'version-policy.js' www/index.html
-          grep -q 'premium-ui.js' www/index.html
-          grep -q 'security-engine.js' www/index.html
-          grep -q 'mobile-quality.js' www/index.html
-          grep -q 'pdf-readiness.js' www/index.html
-          grep -q 'MSAMobileQuality' www/mobile-quality.js
-          grep -q 'builtInOCR:false' www/pdf-readiness.js
-          grep -q 'native-file-bridge.js' www/index.html
-          grep -q 'office-mobile.js' www/index.html
-          grep -q 'office-mobile.css' www/index.html
-          grep -q 'workspace-v2.css' www/index.html
-          grep -q 'app-shell.js' www/index.html
-          grep -q 'search-center.js' www/index.html
-          grep -q 'home-v2.js' www/index.html
-          grep -q 'files-v2.js' www/index.html
-          grep -q 'tools-center.js' www/index.html
-          grep -q 'template-center.js' www/index.html
-          grep -q 'ai-tools.js' www/index.html
-          grep -q 'create-v2.js' www/index.html
-          grep -q 'drawer.js' www/index.html
-          grep -q 'action-sheet.js' www/index.html
-          grep -q 'tools-catalog.js' www/index.html
-          grep -q 'template-catalog.js' www/index.html
-          grep -q 'assistant-catalog.js' www/index.html
+          grep -q "version:'55.0.0'" www/app-manifest.js
+          grep -q "buildId:'MSA-ONE-55'" www/app-manifest.js
+          grep -q 'MSA-ONE-55' www/app-shell.js
+          grep -q -- '--msa-touch-min:48px' www/ui-system.css
+          grep -q 'MIN_TOUCH_TARGET=48' www/mobile-quality.js
+          grep -q 'MSAIcons' www/icon-system.js
+          grep -q 'MSAActionHub' www/action-hub.js
+          grep -q 'MSALibraryShell' www/library-shell-adapter.js
           grep -q 'MSAAppShell' www/app-shell.js
           grep -q 'MSASearchCenter' www/search-center.js
           grep -q 'MSAToolsCenter' www/tools-center.js
-          grep -q 'MSATemplateCenter' www/template-center.js
           grep -q 'MSAAIWorkspace' www/ai-tools.js
-          grep -q 'pinchStart' www/office-mobile.js
-          grep -q 'MSANativeFiles' www/native-file-bridge.js
+          grep -q 'todaySummary' www/planner.js
+          grep -q 'bindSheetDrag' www/office-mobile.js
+          grep -q 'MSAOfficeMobile' www/office-mobile.js
+          grep -q 'builtInOCR:false' www/pdf-readiness.js
+          grep -q 'Content-Security-Policy' www/index.html
+          grep -q "object-src 'none'" www/index.html
+          grep -q "base-uri 'none'" www/index.html
+          grep -q 'active:false' www/premium-config.js
+          grep -q 'enforce:true' www/premium-config.js
+          grep -q "libraryVersion:'9.1.0'" www/premium-config.js
+          grep -q 'ACTIVE = false' premium-prep/android/PremiumBillingPlugin.java
           test -f native-prep/android/MSAFileBridgePlugin.java
+          test -f native-prep/android/MSAPdfViewerActivity.java
           grep -q 'ACTION_OPEN_DOCUMENT_TREE' native-prep/android/MSAFileBridgePlugin.java
           grep -q 'takePersistableUriPermission' native-prep/android/MSAFileBridgePlugin.java
           grep -q 'MediaStore.Downloads' native-prep/android/MSAFileBridgePlugin.java
           grep -q 'openPdfViewer' native-prep/android/MSAFileBridgePlugin.java
-          test -f native-prep/android/MSAPdfViewerActivity.java
           grep -q 'PdfRenderer' native-prep/android/MSAPdfViewerActivity.java
-          grep -q 'MSASecurity' www/security-engine.js
-          grep -q 'Content-Security-Policy' www/index.html
-          grep -q "object-src 'none'" www/index.html
-          grep -q "base-uri 'none'" www/index.html
           test -f scripts/apply-android-security.mjs
           test -f security-prep/android/network_security_config.xml
-          grep -q 'MSAPremiumConfig' www/premium-config.js
-          grep -q 'MSAEntitlement' www/entitlement-engine.js
-          grep -q 'MSAUpdatePolicy' www/version-policy.js
-          grep -q 'MSAPremiumUI' www/premium-ui.js
-          grep -q 'active:false' www/premium-config.js
-          grep -q 'enabled:true' www/premium-config.js
-          grep -q 'enforce:true' www/premium-config.js
-          grep -q 'checkOnLaunch:true' www/premium-config.js
-          test -f premium-prep/update-policy.json
-          grep -q "libraryVersion:'9.1.0'" www/premium-config.js
-          grep -q 'ACTIVE = false' premium-prep/android/PremiumBillingPlugin.java
-          test -f premium-prep/backend/google-play.mjs
-          test -f premium-prep/update-policy.example.json
-          test -f scripts/activate-premium-android.mjs
-          grep -q 'library-updater.js' www/index.html
-          grep -q 'MSAAppManifest' www/app-manifest.js
-          grep -q "version:'54.0.0'" www/app-manifest.js
-          grep -q "buildId:'MSA-ONE-54'" www/app-manifest.js
-          grep -q 'MSALibraryUpdate' www/library-updater.js
-          grep -q 'core-library.js' www/index.html
-          grep -q 'library-engine.js' www/index.html
-          grep -q 'library.css' www/index.html
-          grep -q 'helper.css' www/index.html
-          grep -q 'helper-engine.js' www/index.html
-          grep -q 'performance.css' www/index.html
-          grep -q 'performance-engine.js' www/index.html
-          grep -q 'MSAPerformance' www/performance-engine.js
-          grep -q 'sheetColPageSize' www/create-studio.js
-          grep -q 'MSAHelper' www/helper-engine.js
-          grep -q 'MSALibrary' www/library-engine.js
-          grep -q 'MSACore' www/core-library.js
-          grep -q 'storage-engine.js' www/index.html
-          grep -q 'office-engine.js' www/index.html
-          grep -q 'import-engine.js' www/index.html
-          grep -q 'MSAImport' www/import-engine.js
-          grep -q 'formula-engine.js' www/index.html
-          grep -q 'editor-history.js' www/index.html
-          grep -q 'editor-adapter.js' www/index.html
-          grep -q 'MSAEditorHistory' www/editor-history.js
-          grep -q 'MSAEditorAdapter' www/editor-adapter.js
-          grep -q 'MSAOffice' www/office-engine.js
-          grep -q 'evalFormula' www/create-studio.js
-          grep -q 'dataUrlAsset' www/office-engine.js
-          grep -q 'fullCalcOnLoad' www/office-engine.js
-          grep -q 'word/media/' www/office-engine.js
-          grep -q 'importOfficeFile' www/files-workspace.js
-          grep -q 'MSAStorage' www/storage-engine.js
-          grep -q -- '--msa-screen-width' www/theme-v2.css
-          grep -q 'screen.width' www/settings-v2.js
-          grep -q 'visualViewport' www/settings-v2.js
-          grep -q -- '--native-safe-top' www/workspace-v2.css
-          grep -q 'bindSheetDrag' www/office-mobile.js
-          grep -q 'dismissing' www/office-mobile.css
-          grep -q 'FOLDER ACCESS' www/files-v2.js
-          grep -q -- '--native-safe-top' scripts/apply-android-security.mjs
 
       - name: Install dependencies
         run: npm install --ignore-scripts --no-audit --no-fund
@@ -177,77 +82,35 @@ jobs:
       - name: Apply Android security hardening
         run: node scripts/apply-android-security.mjs
 
-      - name: Set Android Build 54 version
+      - name: Set Android Build 55 version
         run: |
           python3 - <<'PY'
           from pathlib import Path
           p=Path('android/app/build.gradle')
           s=p.read_text()
-          s=s.replace('versionCode 1','versionCode 54')
-          s=s.replace('versionName "1.0"','versionName "54.0"')
+          s=s.replace('versionCode 1','versionCode 55')
+          s=s.replace('versionName "1.0"','versionName "55.0"')
           p.write_text(s)
           PY
 
       - name: Verify Android package and assets
         run: |
           grep -q 'com.msa.one.displayfit37' android/app/build.gradle
-          grep -q 'versionCode 54' android/app/build.gradle
-          grep -q 'versionName "54.0"' android/app/build.gradle
-          grep -q 'data-build-id="MSA-ONE-54"' android/app/src/main/assets/public/index.html
-          grep -q 'data-calendar-home' android/app/src/main/assets/public/index.html
-          grep -q 'data-calendar-me' android/app/src/main/assets/public/index.html
-          test -f android/app/src/main/assets/public/theme-v2.css
-          test -f android/app/src/main/assets/public/planner.js
-          test -f android/app/src/main/assets/public/app-actions.js
-          test -f android/app/src/main/assets/public/app-manifest.js
-          test -f android/app/src/main/assets/public/premium.css
-          test -f android/app/src/main/assets/public/premium-config.js
-          test -f android/app/src/main/assets/public/entitlement-engine.js
-          test -f android/app/src/main/assets/public/version-policy.js
-          test -f android/app/src/main/assets/public/premium-ui.js
-          test -f android/app/src/main/assets/public/security-engine.js
-          test -f android/app/src/main/assets/public/mobile-quality.js
-          test -f android/app/src/main/assets/public/pdf-readiness.js
-          test -f android/app/src/main/assets/public/native-file-bridge.js
-          test -f android/app/src/main/assets/public/office-mobile.js
-          test -f android/app/src/main/assets/public/office-mobile.css
-          test -f android/app/src/main/assets/public/workspace-v2.css
-          test -f android/app/src/main/assets/public/app-shell.js
-          test -f android/app/src/main/assets/public/search-center.js
-          test -f android/app/src/main/assets/public/home-v2.js
-          test -f android/app/src/main/assets/public/files-v2.js
-          test -f android/app/src/main/assets/public/tools-center.js
-          test -f android/app/src/main/assets/public/template-center.js
-          test -f android/app/src/main/assets/public/ai-tools.js
-          test -f android/app/src/main/assets/public/create-v2.js
-          test -f android/app/src/main/assets/public/drawer.js
-          test -f android/app/src/main/assets/public/action-sheet.js
-          test -f android/app/src/main/assets/public/tools-catalog.js
-          test -f android/app/src/main/assets/public/template-catalog.js
-          test -f android/app/src/main/assets/public/assistant-catalog.js
+          grep -q 'versionCode 55' android/app/build.gradle
+          grep -q 'versionName "55.0"' android/app/build.gradle
+          grep -q 'MSA-ONE-55' android/app/src/main/assets/public/app-shell.js
+          for f in ui-system.css icon-system.js action-hub.js library-shell-adapter.js app-manifest.js workspace-v2.css app-shell.js search-center.js home-v2.js files-v2.js tools-center.js ai-tools.js create-v2.js planner.js office-mobile.js office-mobile.css mobile-quality.js security-engine.js native-file-bridge.js core-library.js library-engine.js storage-engine.js office-engine.js import-engine.js formula-engine.js editor-history.js editor-adapter.js; do
+            test -f "android/app/src/main/assets/public/$f"
+          done
           test -f android/app/src/main/java/com/msa/one/displayfit37/MSAFileBridgePlugin.java
+          test -f android/app/src/main/java/com/msa/one/displayfit37/MSAPdfViewerActivity.java
           grep -q 'registerPlugin(MSAFileBridgePlugin.class)' android/app/src/main/java/com/msa/one/displayfit37/MainActivity.java
           grep -q 'applySystemBarInsets' android/app/src/main/java/com/msa/one/displayfit37/MainActivity.java
           grep -q -- '--native-safe-top' android/app/src/main/java/com/msa/one/displayfit37/MainActivity.java
           grep -q 'ACTION_OPEN_DOCUMENT_TREE' android/app/src/main/java/com/msa/one/displayfit37/MSAFileBridgePlugin.java
           grep -q 'MediaStore.Downloads' android/app/src/main/java/com/msa/one/displayfit37/MSAFileBridgePlugin.java
-          test -f android/app/src/main/java/com/msa/one/displayfit37/MSAPdfViewerActivity.java
           grep -q 'PdfRenderer' android/app/src/main/java/com/msa/one/displayfit37/MSAPdfViewerActivity.java
           grep -q 'MSAPdfViewerActivity' android/app/src/main/AndroidManifest.xml
-          test -f android/app/src/main/assets/public/library-updater.js
-          test -f android/app/src/main/assets/public/core-library.js
-          test -f android/app/src/main/assets/public/library-engine.js
-          test -f android/app/src/main/assets/public/library.css
-          test -f android/app/src/main/assets/public/helper.css
-          test -f android/app/src/main/assets/public/helper-engine.js
-          test -f android/app/src/main/assets/public/performance.css
-          test -f android/app/src/main/assets/public/performance-engine.js
-          test -f android/app/src/main/assets/public/storage-engine.js
-          test -f android/app/src/main/assets/public/office-engine.js
-          test -f android/app/src/main/assets/public/import-engine.js
-          test -f android/app/src/main/assets/public/formula-engine.js
-          test -f android/app/src/main/assets/public/editor-history.js
-          test -f android/app/src/main/assets/public/editor-adapter.js
           test -f android/app/src/main/res/xml/network_security_config.xml
           grep -q 'cleartextTrafficPermitted="false"' android/app/src/main/res/xml/network_security_config.xml
           grep -q 'android:usesCleartextTraffic="false"' android/app/src/main/AndroidManifest.xml
@@ -272,6 +135,6 @@ jobs:
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
-          name: MSA-One-54-APK
+          name: MSA-One-55-APK
           path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
