@@ -7,6 +7,7 @@ const css=fs.readFileSync('www/workspace-v2.css','utf8');
 const planner=fs.readFileSync('www/planner.js','utf8');
 const drawer=fs.readFileSync('www/drawer.js','utf8');
 const library=fs.readFileSync('www/library-engine.js','utf8');
+const libraryAdapter=fs.existsSync('www/library-shell-adapter.js')?fs.readFileSync('www/library-shell-adapter.js','utf8'):'';
 const create=fs.readFileSync('www/create-v2.js','utf8');
 const swipe=fs.readFileSync('www/swipe-nav.js','utf8');
 
@@ -23,10 +24,11 @@ assert.ok(settings.includes('My Day')&&settings.includes('Tools')&&settings.incl
 assert.match(css,/@media\(min-width:1000px\)[\s\S]*\.ws-bottom/,'wide layout must keep a navigation-rail presentation');
 
 for(const [name,src] of [['Planner',planner],['Drawer',drawer],['Library',library],['Settings',settings],['Create',create]]) assert.ok(!src.includes("querySelector('.nav')"),`${name} must not own/mutate legacy .nav`);
-assert.ok(library.includes("MSAAppShell?.open?.('library')"),'Library open must route through AppShell');
-assert.ok(library.includes("MSAAppShell?.open?.('home')"),'Library close must return through AppShell');
+assert.ok(shell.includes('library-shell-adapter.js'),'AppShell must bootstrap the Library shell adapter');
+assert.ok(libraryAdapter.includes("open?.('library')")&&libraryAdapter.includes("open?.('home')"),'Library adapter must route open/close through AppShell');
+assert.ok(libraryAdapter.includes('data-library-back')&&libraryAdapter.includes('data-module'),'Library adapter must intercept legacy Library return/module navigation');
 assert.ok(create.includes('MSAAppShell?.topbarHTML'),'Create browse page must use shared shell header');
 assert.ok(!drawer.includes('globalThis.show'),'Drawer must not bypass AppShell');
-assert.ok(!swipe.includes("closest('input,textarea,select,[contenteditable=\"true\"],.studio-overlay,#lens,.nav"),'swipe navigation must not depend on hidden legacy .nav');
+assert.ok(!swipe.includes(".studio-overlay,#lens,.nav"),'swipe navigation must not depend on hidden legacy .nav');
 
 console.log('Build 55 shell contract passed');
