@@ -4,6 +4,7 @@ function icon(type){return({document:'📄',spreadsheet:'📊',presentation:'�
 function svg(id,fallback){return globalThis.MSAIcons?.svg?.(id)||fallback}
 function mount(){const page=document.getElementById('home');if(!page||page.dataset.v2)return;page.dataset.v2='1';globalThis.MSAAppShell?.registerPage?.({id:'home',title:'Home',kind:'root',parent:null,render});render()}
 function myDay(){try{return globalThis.MSAPlanner?.todaySummary?.()||{count:0,next:null}}catch{return{count:0,next:null}}}
+function openDocument(){if(globalThis.MSAActionHub?.run)return globalThis.MSAActionHub.run('document');return globalThis.MSAStudio?.open?.('document')}
 function render(){
  const page=document.getElementById('home');if(!page)return;const rec=projects().slice(0,6),day=myDay(),next=day.next;
  page.innerHTML=globalThis.MSAAppShell?.topbarHTML?.('Home')||'';
@@ -19,11 +20,11 @@ function wire(page){
  page.querySelector('[data-search-ask]')?.addEventListener('click',()=>globalThis.MSASearchCenter?.open());
  page.querySelector('[data-files]')?.addEventListener('click',()=>globalThis.MSAAppShell?.open?.('files'));
  page.querySelectorAll('[data-myday]').forEach(b=>b.addEventListener('click',()=>globalThis.MSAAppShell?.open?.('myday')));
- page.querySelector('[data-home-action="document"]')?.addEventListener('click',()=>globalThis.MSAActionHub?.run?.('document')||globalThis.MSAStudio?.open?.('document'));
+ page.querySelector('[data-home-action="document"]')?.addEventListener('click',openDocument);
  page.querySelector('[data-home-action="scan"]')?.addEventListener('click',()=>globalThis.MSAActions?.runAction?.('scan'));
  page.querySelector('[data-home-action="import"]')?.addEventListener('click',()=>globalThis.MSAFiles?.importOfficeFile?.());
  page.querySelector('[data-home-action="ai"]')?.addEventListener('click',()=>globalThis.MSAAppShell?.open?.('ai'));
- page.querySelector('[data-home-action-empty]')?.addEventListener('click',()=>globalThis.MSAActionHub?.run?.('document')||globalThis.MSAStudio?.open?.('document'));
+ page.querySelector('[data-home-action-empty]')?.addEventListener('click',openDocument);
  page.querySelector('[data-tools]')?.addEventListener('click',()=>globalThis.MSAAppShell?.open?.('tools'));
  page.querySelectorAll('[data-open]').forEach(b=>b.onclick=()=>globalThis.MSAFiles?.openProject?.(b.dataset.open));
  page.querySelectorAll('[data-tool]').forEach(b=>{const t=(globalThis.MSAToolsCatalog||[]).find(x=>x.id===b.dataset.tool);b.onclick=()=>globalThis.MSAToolsCenter?.run?.(t)})
