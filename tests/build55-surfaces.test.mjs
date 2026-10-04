@@ -26,4 +26,11 @@ for(const label of ['Open','Ask AI','Rename','Duplicate','Export / Save a Copy',
 assert.ok(files.includes("danger:true"),'Delete must remain destructive');
 for(const source of ['This Device','Downloads','Connected Folder','Re-scan Folder']) assert.ok(files.includes(source),`storage source ${source} must remain available`);
 
+const ai=fs.readFileSync('www/ai-tools.js','utf8');
+for(const mode of ['general','document','technical','coding']) assert.ok(ai.includes("id:'"+mode+"'")||ai.includes('id:"'+mode+'"'),`AI mode ${mode} must exist`);
+for(const control of ['data-attach','data-camera','data-voice','data-start']) assert.ok(ai.includes(control),`AI composer must expose ${control}`);
+assert.ok(ai.includes('Local / offline')||ai.includes('local / offline'),'AI workspace must state local/offline behavior explicitly');
+assert.ok(!ai.includes('＋ Add Your Assistant'),'unimplemented custom assistant must not look like a primary active action');
+assert.ok(!ai.includes('connected model active'),'AI UI must not falsely claim a connected model');
+
 console.log('Build 55 surface contract passed');
