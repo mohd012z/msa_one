@@ -1,5 +1,6 @@
 (()=>{'use strict';
   const APPROVED='APPROVED',CHANGES_REQUIRED='CHANGES_REQUIRED',BLOCKED='BLOCKED';
+  const MIN_TOUCH_TARGET=48;
   const MAX_IMPORT_SIZE=50*1024*1024;
   const EXTENSIONS=new Set(['docx','xlsx','pptx','pdf','csv','tsv','txt','rtf','html','htm','json','png','jpg','jpeg','webp']);
 
@@ -18,7 +19,7 @@
     root.querySelectorAll?.('button,a,input,select,textarea,[role="button"]').forEach(el=>{
       if(!visible(el))return;
       const r=el.getBoundingClientRect();
-      if(r.width<44||r.height<44)findings.push({type:'touch-target',tag:el.tagName,width:Math.round(r.width),height:Math.round(r.height),min:44});
+      if(r.width<MIN_TOUCH_TARGET||r.height<MIN_TOUCH_TARGET)findings.push({type:'touch-target',tag:el.tagName,width:Math.round(r.width),height:Math.round(r.height),min:MIN_TOUCH_TARGET});
     });
     return findings;
   }
@@ -99,5 +100,5 @@
     return d.status+' · '+issues+' finding'+(issues===1?'':'s')+' · '+d.build;
   }
 
-  globalThis.MSAMobileQuality={APPROVED,CHANGES_REQUIRED,BLOCKED,MAX_IMPORT_SIZE,safeImport,touchTargetCheck,accessibilityCheck,viewportCheck,storageCheck,securityCheck,diagnostics,summary};
+  globalThis.MSAMobileQuality={APPROVED,CHANGES_REQUIRED,BLOCKED,MIN_TOUCH_TARGET,MAX_IMPORT_SIZE,safeImport,touchTargetCheck,accessibilityCheck,viewportCheck,storageCheck,securityCheck,diagnostics,summary};
 })();
