@@ -12,12 +12,18 @@ assert.ok(planner.includes('todaySummary'),'MSAPlanner export must include today
 assert.ok(plannerCss.includes('var(--msa-touch-min,48px)'),'Planner controls must consume the shared touch token');
 
 const home=fs.readFileSync('www/home-v2.js','utf8');
-const order=['search','continue','myday','quick'];
-let cursor=-1;
+const order=['search','continue','myday','quick'];let cursor=-1;
 for(const id of order){const at=home.indexOf('data-home-section="'+id+'"');assert.ok(at>cursor,`Home section ${id} must appear in task-first order`);cursor=at}
 assert.ok(home.includes('todaySummary'),'Home must consume Planner today summary');
 const quickIds=[...home.matchAll(/data-home-action="([^"]+)"/g)].map(m=>m[1]);
 assert.deepEqual([...new Set(quickIds)],['document','scan','import','ai'],'Home must expose exactly four primary quick actions');
 assert.ok(home.includes('Search or ask MSA One'),'Home must lead with a Search/Ask entry');
+
+const files=fs.readFileSync('www/files-v2.js','utf8');
+assert.ok(!files.includes("type('image'")&&!files.includes("type('other'"),'unsupported image/other filters must not be displayed');
+assert.ok(!files.includes("if(['image','other'].includes(filter))filter='all'"),'a visible filter must never silently reset to All');
+for(const label of ['Open','Ask AI','Rename','Duplicate','Export / Save a Copy','Properties','Delete']) assert.ok(files.includes("label:'"+label+"'"),`file action ${label} must exist`);
+assert.ok(files.includes("danger:true"),'Delete must remain destructive');
+for(const source of ['This Device','Downloads','Connected Folder','Re-scan Folder']) assert.ok(files.includes(source),`storage source ${source} must remain available`);
 
 console.log('Build 55 surface contract passed');
