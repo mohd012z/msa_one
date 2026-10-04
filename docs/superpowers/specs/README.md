@@ -1,1 +1,0 @@
-Design specifications in this directory require review before implementation. Current Build 55 UI work is defined in `2026-10-04-build55-ui-consolidation-design.md`.
