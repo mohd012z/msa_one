@@ -1,0 +1,68 @@
+:root{
+  --msa-bg:#0b0f16;
+  --msa-surface:#151a22;
+  --msa-surface-2:#1d2430;
+  --msa-border:#ffffff14;
+  --msa-text:#f5f7fb;
+  --msa-text-muted:#9ca5b7;
+  --msa-accent:#6b8cff;
+  --msa-success:#5fe092;
+  --msa-ai:#9b7bff;
+  --msa-warning:#f2b84b;
+  --msa-danger:#ff747d;
+  --msa-focus:#9fc2ff;
+  --msa-touch-min:48px;
+  --msa-radius-sm:12px;
+  --msa-radius-md:16px;
+  --msa-radius-lg:22px;
+  --msa-space-1:4px;
+  --msa-space-2:8px;
+  --msa-space-3:12px;
+  --msa-space-4:16px;
+  --msa-space-5:20px;
+  --msa-space-6:24px;
+}
+
+:where(button,a,input,select,textarea,[role="button"]):focus-visible{
+  outline:2px solid var(--msa-focus);
+  outline-offset:2px;
+}
+
+/* Build 55 shared interactive geometry. Visual glyphs may remain smaller. */
+:where(.ws-icon,.ws-more,.ws-type,.ws-chip,.ws-chat,.ws-link,.back,.planner-today,.planner-new,.planner-add,.planner-x,.office-icon-btn,.office-home-btn,.office-ribbon-tools button){
+  min-width:var(--msa-touch-min);
+  min-height:var(--msa-touch-min);
+}
+
+.ws-chip,.ws-chat{height:auto}
+.ws-row,.ws-source,.ws-assistant-row{min-height:64px}
+.ws-bottom{min-height:68px}
+.ws-bottom button{min-height:56px}
+
+.msa-capability-badge{
+  display:inline-flex;
+  align-items:center;
+  min-height:24px;
+  padding:2px 8px;
+  border-radius:999px;
+  border:1px solid var(--msa-border);
+  color:var(--msa-text-muted);
+  font-size:10px;
+  font-weight:800;
+  letter-spacing:.02em;
+}
+.msa-capability-badge[data-state="Available"]{color:var(--msa-success)}
+.msa-capability-badge[data-state="Limited"],.msa-capability-badge[data-state="Requires file"]{color:var(--msa-warning)}
+.msa-capability-badge[data-state="Planned"],.msa-capability-badge[data-state="Desktop companion"]{color:var(--msa-text-muted)}
+
+.msa-sr-status{
+  position:absolute!important;
+  width:1px!important;
+  height:1px!important;
+  padding:0!important;
+  margin:-1px!important;
+  overflow:hidden!important;
+  clip:rect(0,0,0,0)!important;
+  white-space:nowrap!important;
+  border:0!important;
+}
