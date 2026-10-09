@@ -113,6 +113,54 @@
     out.innerHTML=html;
   }
 
+  // Looks like a question the user wants answered (not a "create a document" command).
+  function looksLikeQuestion(s){
+    const t=String(s||'');
+    if(/\?\s*$/.test(t))return true;
+    return /^\s*(what|who|whom|whose|when|where|why|how|how much|how many|who is|name|tell|explain|list|is |are |was |were |do |does |did |can |could |will |would |should|berapa|siapa|kenapa|bagaimana|apakah|di mana|kapan)/i.test(t);
+  }
+
+  /**
+   * Answer a plain (no-attachment) question offline against the user's saved
+   * documents. Returns true if it handled the input (showed an answer or an
+   * honest no-match), false if the input looks like a create-command instead.
+   */
+  function askSavedDocuments(q){
+    if(!window.MSAAIEngine)return false;
+    if(!looksLikeQuestion(q))return false;
+    const projects=(window.MSAProjects?.all?.()||[]);
+    const sources=[];
+    for(const p of projects){
+      try{
+        const {text,pdfTextUnavailable}=window.MSAAIEngine.extractProjectText(p);
+        if(pdfTextUnavailable)continue;
+        if(text&&text.trim())sources.push({title:p.title||'Untitled',id:p.id,text});
+      }catch(e){}
+    }
+    const esc=v=>String(v).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    if(!sources.length){
+      showAIResult('<b>No documents to search yet</b><p>Save a document in Files first, then ask about it here — or attach a file with the ＋ Files chip.</p>');
+      toast('No saved documents to answer from');
+      return true;
+    }
+    let best=null;
+    for(const src of sources){
+      const r=window.MSAAIEngine.ask(q,src.text);
+      if(r.confident&&r.matches.length){
+        const score=r.matches.length*10+r.matches[0].length;
+        if(!best||score>best.score)best={src,r,score};
+      }
+    }
+    if(best){
+      showAIResult('<b>From your document “'+esc(best.src.title)+'”</b><p>'+best.r.matches.map(esc).join('<br>')+'</p><small class="muted">Offline answer from your saved files.</small>');
+      toast('Answered offline from '+best.src.title);
+    }else{
+      showAIResult('<b>No confident match in your saved documents</b><p>I searched '+sources.length+' document'+(sources.length===1?'':'s')+' offline and found no clear answer to that. Try rephrasing, or attach the specific file.</p>');
+      toast('No match in saved documents');
+    }
+    return true;
+  }
+
   function routeTask(){
     const box=aiBox();
     const q=(box?.value||'').trim();
@@ -143,6 +191,15 @@
       window.MSAPlanner?.open();
       toast('Opened Calendar & Daily Planner');
       return;
+    }
+
+    // No file attached. Before falling back to "create a document", answer the
+    // question offline against the user's saved documents — this is the
+    // reported "AI won't answer" bug: a plain question with no attachment used
+    // to just open a blank editor and show nothing.
+    if(window.MSAStudio?.open){
+      const asked=askSavedDocuments(q);
+      if(asked)return;
     }
 
     let type='document';
