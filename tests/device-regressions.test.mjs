@@ -29,8 +29,12 @@ assert.ok(viewer.includes('setOnTouchListener((v, event) -> pinch.onTouchEvent(e
 // 2. Excel full view — the content area must be a flex fill of the real
 //    available space, not a static chrome-estimate height that clips the grid.
 assert.ok(/\.studio-overlay\.office-fullpage \.studio-body\{display:flex/.test(officeCss),'office full-page body must be a flex column so the work area uses the real available height');
-assert.ok(/\.studio-overlay\.office-fullpage \.studio-body \[data-work\]\{flex:1;min-height:0/.test(officeCss),'the spreadsheet work area must flex:1 + min-height:0 to claim exactly the available height (immune to the --office-chrome estimate)');
+assert.ok(/\.studio-overlay\.office-fullpage \.studio-body \[data-work\]\{flex:1;min-height:0;transform:none;display:flex;flex-direction:column;overflow:hidden\}/.test(officeCss),'the spreadsheet work area must flex:1 + min-height:0 AND be a flex column so its content child can claim exactly the available height (immune to the --office-chrome estimate)');
 assert.ok(/\.office-fullpage \.sheet-wrap\{flex:1;min-height:0;height:auto/.test(officeCss),'the sheet grid container must flex-fill + height:auto so it scrolls its own overflow instead of being clipped by a fixed height');
+assert.ok(/\.office-fullpage \.studio-editor\{flex:1;min-height:0;height:auto/.test(officeCss),'the document editor (full-page) must flex-fill the available height, not a static calc(100dvh - chrome) that clips on real devices');
+assert.ok(/\.office-fullpage \.studio-pdf-viewer\{flex:1;min-height:0;height:auto/.test(officeCss),'the full-page web-PDF viewer must flex-fill the available height');
+assert.ok(/\.office-fullpage \.slide-editor\{flex:1;min-height:0;height:auto/.test(officeCss),'the presentation editor (full-page) must flex-fill the available height');
+assert.ok(!/min-height:calc\(100dvh - var\(--office-chrome\)\)/.test(officeCss),'no content surface may keep a static calc(100dvh - --office-chrome) height — that estimate is what clipped Excel on the phone');
 
 // 3. AI assistant answers a plain (no-attachment) question offline instead of
 //    silently opening a blank editor.
