@@ -21,6 +21,16 @@
 .office-action-card{background:#343638;border-radius:22px;margin:10px 0;overflow:hidden}.office-action{width:100%;min-height:58px;border:0;border-bottom:1px solid #ffffff12;background:transparent;color:white;display:grid;grid-template-columns:34px 1fr auto;gap:10px;align-items:center;text-align:left;padding:10px 16px}.office-action:last-child{border-bottom:0}.office-action i{font-style:normal;font-size:20px}.office-action small{color:#b9bbbf}
 .office-fullpage .studio-editor{margin:0;min-height:calc(100dvh - var(--office-chrome));width:100%;border-radius:0;background:#fff;color:#111;padding:clamp(16px,4vw,48px);box-shadow:none}
 .office-fullpage .sheet-wrap{border-radius:0;max-height:none;height:calc(100dvh - var(--office-chrome));background:#fff}.office-fullpage .sheet-grid input{background:#fff;color:#111}.office-fullpage .sheet-grid th,.office-fullpage .sheet-grid tbody th{background:#eceff1;color:#333}.office-fullpage .formula-bar{margin:0;border-radius:0;background:#f4f5f6;color:#222;border-color:#d8dadd}
+/* Device fix (Excel "not full view"): the static height calc above under/over-fills
+   the real available space (the --office-chrome estimate doesn't match the ribbon +
+   topbar + safe-area on every device), so the grid was clipped and the user couldn't
+   reach all rows/columns. Make the studio body a flex column and let the work area
+   claim EXACTLY the available height — immune to the chrome estimate. The inner
+   .sheet-wrap then scrolls its own overflow (all columns/rows reachable). */
+.studio-overlay.office-fullpage{box-sizing:border-box}
+.studio-overlay.office-fullpage .studio-body{display:flex;flex-direction:column;overflow:hidden;padding:calc(116px + max(var(--safe-top,0px),var(--native-safe-top,0px))) 14px calc(68px + max(env(safe-area-inset-bottom,0px),var(--native-safe-bottom,0px)))}
+.studio-overlay.office-fullpage .studio-body [data-work]{flex:1;min-height:0;transform:none}
+.office-fullpage .sheet-wrap{flex:1;min-height:0;height:auto}
 .office-fullpage .studio-pdf-viewer{height:calc(100dvh - var(--office-chrome));min-height:0;border-radius:0}
 .office-fullpage .studio-pdf-text{display:block;margin:0;width:100%;min-height:calc(100dvh - var(--office-chrome));border-radius:0;background:#fff;color:#111;padding:clamp(16px,4vw,48px)}
 .office-fullpage .studio-tools{display:none}
