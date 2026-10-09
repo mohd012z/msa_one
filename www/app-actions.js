@@ -113,7 +113,141 @@
     out.innerHTML=html;
   }
 
-  function routeTask(){
+  // Looks like a question the user wants answered (not a "create a document" command).
+  function looksLikeQuestion(s){
+    const t=String(s||'');
+    if(/\?\s*$/.test(t))return true;
+    return /^\s*(what|who|whom|whose|when|where|why|how|how much|how many|who is|name|tell|explain|list|is |are |was |were |do |does |did |can |could |will |would |should|berapa|siapa|kenapa|bagaimana|apakah|di mana|kapan)/i.test(t);
+  }
+
+  // ---------- LOLA learned-facts store (learning loop persistence) ----------
+  const LOla_LEARNED_KEY='msaOneLolaLearnedV1';
+  function learnedStore(){
+    let d={entries:[]};
+    try{d=JSON.parse(localStorage.getItem(LOla_LEARNED_KEY)||'{"entries":[]}')}catch{}
+    if(!d||!Array.isArray(d.entries))d={entries:[]};
+    return d;
+  }
+  function learnPromote(question,answerText){
+    try{
+      const d=learnedStore();
+      const key=String(question||'').toLowerCase().trim();
+      d.entries=d.entries.filter(e=>e.q.toLowerCase()!==key);
+      d.entries.unshift({q:question,a:answerText,at:Date.now()});
+      if(d.entries.length>20)d.entries=d.entries.slice(0,20);
+      localStorage.setItem(LOla_LEARNED_KEY,JSON.stringify(d));
+      return true;
+    }catch{return false}
+  }
+
+  /**
+   * HYBRID AI answer via the LOLA cognitive loop (www/lola-cognitive.js).
+   * Returns true if it handled the input (question-like), false otherwise.
+   * Flow: offline extractive scan of saved documents (internal reasoning)
+   * -> research gate (novelty before external: external is allowed only when
+   * an internal hypothesis exists, else QUARANTINE) -> optional online fetch
+   * -> structured answer with evidence confidence (SUPPORTED / ... never a
+   * percentage) -> learning governor PROMOTEs verified answers into the
+   * learned store, which fast-triage then answers from directly.
+   */
+  async function askSavedDocuments(q){
+    if(!window.MSAAIEngine)return false;
+    if(!looksLikeQuestion(q))return false;
+    const lola=window.MSALolaCognitive;
+    const esc=v=>String(v).replace(/[&<>\"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+    const projects=(window.MSAProjects?.all?.()||[]);
+    const sources=[];
+    for(const p of projects){
+      try{
+        const {text,pdfTextUnavailable}=window.MSAAIEngine.extractProjectText(p);
+        if(pdfTextUnavailable)continue;
+        if(text&&text.trim())sources.push({title:p.title||'Untitled',id:p.id,text});
+      }catch(e){}
+    }
+    // internal reasoning: best offline match across all saved documents
+    let best=null;
+    for(const src of sources){
+      const r=window.MSAAIEngine.ask(q,src.text);
+      if(r.confident&&r.matches.length){
+        const score=r.matches.length*10+r.matches[0].length;
+        if(!best||score>best.score)best={src,r,score};
+      }
+    }
+    const offlineAnswer=best?{matches:best.r.matches,confident:true}:{matches:[],confident:false};
+    // learned/verified facts feed fast-triage (the ANSWER shortcut)
+    const learned=learnedStore().entries;
+    const verifiedState={};
+    for(const e of learned)verifiedState[e.q]=e.a;
+
+    if(!lola){
+      // graceful fallback (module not loaded): plain offline answer
+      if(best){
+        showAIResult('<b>From your document “'+esc(best.src.title)+'”</b><p>'+best.r.matches.map(esc).join('<br>')+'</p><small class="muted">Offline answer from your saved files.</small>');
+      }else{
+        showAIResult('<b>No confident match in your saved documents</b><p>I searched '+sources.length+' document'+(sources.length===1?'':'s')+' offline and found no clear answer to that. Try rephrasing, or attach the specific file.</p>');
+      }
+      return true;
+    }
+
+    // online tier (optional): fetch only when an endpoint is configured
+    let onFetchExternal=null;
+    try{
+      if(window.MSAAIEngine.onlineConfigured?.()){
+        onFetchExternal=async(question,context)=>{
+          const endpoint=localStorage.getItem('msaOneAIEndpointV1').trim();
+          const ctrl=new AbortController();
+          const timer=setTimeout(()=>ctrl.abort(),8000);
+          try{
+            const res=await fetch(endpoint,{method:'POST',headers:{'Content-Type':'application/json'},
+              body:JSON.stringify({question,context,source:'msa-one-hybrid'}),signal:ctrl.signal});
+            const data=await res.json().catch(()=>({}));
+            return data.text||data.message||data.answer||'';
+          }finally{clearTimeout(timer)}
+        };
+      }
+    }catch{}
+
+    showAIResult('<p class="muted">Thinking (LOLA loop) — offline documents'+(onFetchExternal?' + web':'')+'…</p>');
+    try{
+      const report=await lola.runCognitive({
+        question:q,
+        offlineAnswer,
+        verifiedState,
+        inspectable:sources.map(s=>s.id),
+        frozenHypothesis:offlineAnswer.confident?{frozen_before_external:true}:{frozen_before_external:false},
+        onFetchExternal
+      });
+      renderCognitiveReport(report,q,esc,sources.length,best);
+      // learning governor: verified, non-quarantined answers get PROMOTEd into
+      // the learned store; next matching question fast-triages straight to it.
+      const verdict=lola.learningGovernor({...report,transfer_passed:report.stopped_by==='ANSWERED_WITH_EVIDENCE',regression_passed:!report.quarantined});
+      if(verdict==='PROMOTE'&&report.matches.length){
+        learnPromote(q,report.matches.join('\n'));
+        toast('Learned: '+q.slice(0,40));
+      }
+    }catch(e){
+      showAIResult('<b>AI answered offline</b><p>'+(best?best.r.matches.map(esc).join('<br>'):'No confident match in your saved documents.')+'</p>');
+    }
+    return true;
+  }
+
+  function renderCognitiveReport(r,q,esc,docCount,best){
+    const confBadge={SUPPORTED:'✓ Supported by evidence',PARTIALLY_SUPPORTED:'◐ Partially supported',UNVERIFIED:'○ Unverified — no confident match',CONTRADICTED:'✕ Contradicted'}[r.confidence]||r.confidence;
+    const srcLabel=r.source==='hybrid'?'Offline documents + web knowledge':(r.source==='offline'?'Offline documents':(r.source==='external-quarantined'?'Web (unverified — quarantined)':'Verified knowledge'));
+    const title=r.route==='ANSWER'?'From your learned answers':(best?'From your document “'+esc(best.src.title)+'”':'Answer');
+    const matches=r.matches.length?r.matches.map(esc).join('<br>'):esc('I searched '+docCount+' document'+(docCount===1?'':'s')+' offline'+(r.external_sources_used?' and the web':'')+' and found no clear answer to that. Try rephrasing, or attach the specific file.');
+    const quarantinedNote=r.quarantined?'<small class="muted">⚠ Web result is shown but UNVERIFIED: your documents had no internal hypothesis to check it against (LOLA research gate).</small>':'';
+    const traceSteps=r.trace.map(t=>esc(t.step)).join(' · ');
+    showAIResult(
+      '<b>'+title+'</b>'+
+      '<p>'+matches+'</p>'+
+      '<small class="muted">'+esc(confBadge)+' · '+esc(srcLabel)+' · type: '+esc(r.answer_type)+'</small>'+
+      quarantinedNote+
+      '<details><summary class="muted" style="cursor:pointer">How it was answered (LOLA loop)</summary><small class="muted">'+traceSteps+'</small></details>'
+    );
+  }
+
+  async function routeTask(){
     const box=aiBox();
     const q=(box?.value||'').trim();
     if(!q){
@@ -143,6 +277,16 @@
       window.MSAPlanner?.open();
       toast('Opened Calendar & Daily Planner');
       return;
+    }
+
+    // No file attached. Before falling back to "create a document", answer the
+    // question with the HYBRID LOLA cognitive loop (offline saved documents +
+    // optional web, evidence confidence, learning) — this is also the fix for
+    // the reported "AI won't answer" bug: a plain question with no attachment
+    // used to just open a blank editor and show nothing.
+    if(window.MSAStudio?.open){
+      const asked=await askSavedDocuments(q);
+      if(asked)return;
     }
 
     let type='document';
