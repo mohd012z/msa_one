@@ -217,6 +217,29 @@
         frozenHypothesis:offlineAnswer.confident?{frozen_before_external:true}:{frozen_before_external:false},
         onFetchExternal
       });
+      // OFFLINE LLM TIER (PR B): if the on-device model is enabled, upgrade the
+      // extractive answer to a real reasoned one over ALL imported files (RAG).
+      const llm=window.MSAAIOfflineLLM;
+      if(llm&&llm.enabled()&&best){
+        try{
+          if(!llm.ready()){
+            showAIResult('<p class="muted">Downloading offline LLM model (one time)…</p>');
+            await llm.ensureModel((p)=>{
+              if(p.phase==='download'&&p.total)showAIResult('<p class="muted">Downloading offline model… '+Math.round(100*p.loaded/p.total)+'%</p>');
+            });
+          }
+          if(llm.ready()){
+            const context=buildRAGContext(best,sources,q);
+            showAIResult('<p class="muted">Reasoning with offline LLM (all imported files)…</p>');
+            const res=await llm.ask({question:q,context});
+            if(res.ok&&res.text&&res.text.toLowerCase()!=='i could not find that in your documents.'){
+              renderCognitiveReport(report,q,esc,sources.length,best,res.text,'offline-llm',res.ms);
+              llmLearn(q,res.text);
+              return;
+            }
+          }
+        }catch(e){/* fall through to the extractive answer below */}
+      }
       renderCognitiveReport(report,q,esc,sources.length,best);
       // learning governor: verified, non-quarantined answers get PROMOTEd into
       // the learned store; next matching question fast-triages straight to it.
@@ -231,17 +254,59 @@
     return true;
   }
 
-  function renderCognitiveReport(r,q,esc,docCount,best){
+  // RAG context: the best match's sentences, then top matches from every other
+  // imported file, up to the LLM's budget — so the model reads ALL files, not
+  // just the single best one.
+  function buildRAGContext(best,sources,question){
+    const budget=(window.MSAAIOfflineLLM&&window.MSAAIOfflineLLM.MAX_CONTEXT_CHARS)||6000;
+    const seen=new Set();const parts=[];
+    const add=(title,text)=>{
+      if(!text)return;
+      const t=String(text).replace(/\s+/g,' ').trim();
+      if(!t||seen.has(t))return;seen.add(t);
+      parts.push('['+title+'] '+t);
+    };
+    add(best.src.title,best.r.matches.join(' '));
+    for(const src of sources){
+      if(src.id===best.src.id)continue;
+      try{
+        const r=window.MSAAIEngine.ask(question,src.text);
+        if(r.confident)r.matches.slice(0,2).forEach(m=>add(src.title,m));
+      }catch(e){}
+    }
+    let out='';
+    for(const p of parts){if(out.length+p.length>budget)break;out+=(out?'\n':'')+p;}
+    return out;
+  }
+  // LLM answers are learned under a distinct key so they don't collide with
+  // extractive PROMOTEs in the verified store.
+  function llmLearn(q,text){
+    try{
+      const key='msaOneLolaLearnedV1';
+      let d={entries:[]};
+      try{d=JSON.parse(localStorage.getItem(key)||'{"entries":[]}')}catch{}
+      if(!Array.isArray(d.entries))d.entries=[];
+      const k='[llm] '+q.toLowerCase().trim();
+      d.entries=d.entries.filter(e=>e.q.toLowerCase()!==k);
+      d.entries.unshift({q:k,a:text,at:Date.now(),llm:true});
+      if(d.entries.length>20)d.entries=d.entries.slice(0,20);
+      localStorage.setItem(key,JSON.stringify(d));
+    }catch{}
+  }
+
+  function renderCognitiveReport(r,q,esc,docCount,best,llmText,sourceOverride,ms){
     const confBadge={SUPPORTED:'✓ Supported by evidence',PARTIALLY_SUPPORTED:'◐ Partially supported',UNVERIFIED:'○ Unverified — no confident match',CONTRADICTED:'✕ Contradicted'}[r.confidence]||r.confidence;
-    const srcLabel=r.source==='hybrid'?'Offline documents + web knowledge':(r.source==='offline'?'Offline documents':(r.source==='external-quarantined'?'Web (unverified — quarantined)':'Verified knowledge'));
+    const srcLabel=sourceOverride==='offline-llm'?'Offline LLM (all imported files)':(r.source==='hybrid'?'Offline documents + web knowledge':(r.source==='offline'?'Offline documents':(r.source==='external-quarantined'?'Web (unverified — quarantined)':'Verified knowledge')));
     const title=r.route==='ANSWER'?'From your learned answers':(best?'From your document “'+esc(best.src.title)+'”':'Answer');
-    const matches=r.matches.length?r.matches.map(esc).join('<br>'):esc('I searched '+docCount+' document'+(docCount===1?'':'s')+' offline'+(r.external_sources_used?' and the web':'')+' and found no clear answer to that. Try rephrasing, or attach the specific file.');
+    const bodyText=(llmText!==undefined?llmText:null);
+    const matches=bodyText!==null?esc(bodyText):(r.matches.length?r.matches.map(esc).join('<br>'):esc('I searched '+docCount+' document'+(docCount===1?'':'s')+' offline'+(r.external_sources_used?' and the web':'')+' and found no clear answer to that. Try rephrasing, or attach the specific file.'));
+    const speedNote=ms!=null?' · '+(ms/1000).toFixed(1)+'s':'';
     const quarantinedNote=r.quarantined?'<small class="muted">⚠ Web result is shown but UNVERIFIED: your documents had no internal hypothesis to check it against (LOLA research gate).</small>':'';
     const traceSteps=r.trace.map(t=>esc(t.step)).join(' · ');
     showAIResult(
       '<b>'+title+'</b>'+
       '<p>'+matches+'</p>'+
-      '<small class="muted">'+esc(confBadge)+' · '+esc(srcLabel)+' · type: '+esc(r.answer_type)+'</small>'+
+      '<small class="muted">'+esc(confBadge)+' · '+esc(srcLabel)+speedNote+' · type: '+esc(r.answer_type)+'</small>'+
       quarantinedNote+
       '<details><summary class="muted" style="cursor:pointer">How it was answered (LOLA loop)</summary><small class="muted">'+traceSteps+'</small></details>'
     );

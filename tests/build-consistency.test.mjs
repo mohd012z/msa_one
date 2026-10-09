@@ -23,9 +23,22 @@ assert.ok(premium.includes('enforce:true'),'force update must be active in Build
 assert.ok(premium.includes("libraryVersion:'9.1.0'"),'prepared billing version must be 9.1.0');
 
 assert.ok(html.includes('data-build-id="MSA-ONE-54"'),'source UI build ID must match build');
-for(const asset of ['library.css','helper.css','performance.css','premium.css','app-manifest.js','core-library.js','performance-engine.js','storage-engine.js','premium-config.js','entitlement-engine.js','version-policy.js','office-engine.js','import-engine.js','formula-engine.js','editor-history.js','editor-adapter.js','library-engine.js','library-updater.js','helper-engine.js','premium-ui.js','security-engine.js','mobile-quality.js','pdf-readiness.js','editor-history.js','editor-adapter.js','native-file-bridge.js','workspace-v2.css','tools-catalog.js','template-catalog.js','assistant-catalog.js','action-sheet.js','drawer.js','search-center.js','home-v2.js','files-v2.js','tools-center.js','template-center.js','ai-tools.js','create-v2.js','app-shell.js']){
+for(const asset of ['library.css','helper.css','performance.css','premium.css','app-manifest.js','core-library.js','performance-engine.js','storage-engine.js','premium-config.js','entitlement-engine.js','version-policy.js','office-engine.js','import-engine.js','formula-engine.js','editor-history.js','editor-adapter.js','library-engine.js','library-updater.js','helper-engine.js','premium-ui.js','security-engine.js','mobile-quality.js','pdf-readiness.js','editor-history.js','editor-adapter.js','native-file-bridge.js','workspace-v2.css','tools-catalog.js','template-catalog.js','assistant-catalog.js','action-sheet.js','drawer.js','search-center.js','home-v2.js','files-v2.js','tools-center.js','template-center.js','ai-tools.js','create-v2.js','app-shell.js','lola-cognitive.js','ai-llm.js','transformers-loader.mjs']){
   assert.ok(html.includes(asset),'source must load '+asset);
 }
+// The ORT WASM files are NOT referenced in index.html (Transformers.js loads
+// them at runtime) — they must exist on disk instead.
+for(const ortFile of ['ort-wasm-simd-threaded.jsep.mjs','ort-wasm-simd-threaded.jsep.wasm','ort.bundle.min.mjs']){
+  assert.ok(fs.existsSync('www/'+ortFile),'ONNX runtime asset must be vendored: '+ortFile);
+}
+// offline LLM tier: the vendored bundle must ship, and the loader must point
+// the WASM at the app root (www/) so Transformers.js finds the ort files.
+assert.ok(fs.existsSync('www/transformers.min.js'),'Transformers.js bundle must be vendored for offline use');
+const loader=fs.readFileSync('www/transformers-loader.mjs','utf8');
+assert.ok(loader.includes("wasmPaths='./'"), 'loader must point Transformers.js at the local WASM');
+assert.ok(loader.includes('numThreads=1'),'loader must run single-threaded (WebView-safe)');
+assert.ok(html.indexOf('transformers.min.js')<html.indexOf('ai-llm.js'),'Transformers.js bundle must load before the offline LLM tier');
+assert.ok(html.indexOf('lola-cognitive.js')<html.indexOf('ai-llm.js'),'LOLA cognitive core must load before the offline LLM tier');
 assert.ok(html.indexOf('core-library.js')<html.indexOf('office-engine.js'),'Core SDK must load before Office engine');
 assert.ok(html.indexOf('helper-engine.js')>html.indexOf('library-engine.js'),'Helper must load after Library registry');
 assert.ok(html.indexOf('performance-engine.js')>html.indexOf('core-library.js'),'Performance engine must load after Core SDK');

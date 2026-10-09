@@ -73,6 +73,15 @@ jobs:
           grep -q 'MSAMobileQuality' www/mobile-quality.js
           grep -q 'builtInOCR:false' www/pdf-readiness.js
           grep -q 'native-file-bridge.js' www/index.html
+          grep -q 'lola-cognitive.js' www/index.html
+          grep -q 'ai-llm.js' www/index.html
+          grep -q 'transformers-loader.mjs' www/index.html
+          test -s www/transformers.min.js
+          test -s www/transformers-loader.mjs
+          test -s www/ort-wasm-simd-threaded.jsep.mjs
+          test -s www/ort-wasm-simd-threaded.jsep.wasm
+          test -s www/ort.bundle.min.mjs
+          grep -q 'MSAAIOfflineLLM' www/ai-llm.js
           grep -q 'office-mobile.js' www/index.html
           grep -q 'office-mobile.css' www/index.html
           grep -q 'workspace-v2.css' www/index.html
