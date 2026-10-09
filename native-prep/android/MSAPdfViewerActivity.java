@@ -137,7 +137,14 @@ public class MSAPdfViewerActivity extends Activity {
         root.addView(bar, new LinearLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         image = new ImageView(this);
-        image.setAdjustViewBounds(true);
+        // P48-device: do NOT use adjustViewBounds. With adjustViewBounds +
+        // WRAP_CONTENT the ImageView auto-scales the bitmap down to fit the
+        // parent's width, so (a) the page can never be shown larger than the
+        // screen ("won't show full page") and (b) pinch/zoom re-renders a bigger
+        // bitmap but the view immediately shrinks it back ("can't pinch zoom").
+        // Instead we size the ImageView to the actual bitmap in renderPage(), so
+        // at 1x it fills the width and zoom grows the real view (scrollable).
+        image.setScaleType(ImageView.ScaleType.FIT_XY);
         image.setBackgroundColor(Color.WHITE);
 
         // Centers the page instead of letting it hug the top-left corner when it's
@@ -207,6 +214,15 @@ public class MSAPdfViewerActivity extends Activity {
         Bitmap bitmap = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
         bitmap.eraseColor(Color.WHITE);
         currentPage.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
+        // Size the ImageView to the ACTUAL bitmap so the view grows/shrinks with
+        // zoom. With FIT_XY the bitmap is shown 1:1 in this box (no extra
+        // auto-scaling), so at 1x the page exactly fills the width and at 2x the
+        // view is 2x wide — the H/V scroll views then let you reach the whole
+        // page, and pinch visibly enlarges it (this is what adjustViewBounds was
+        // undoing before: it kept rescaling the bitmap down to the parent width).
+        FrameLayout.LayoutParams lp = new FrameLayout.LayoutParams(w, h);
+        lp.gravity = Gravity.CENTER;
+        image.setLayoutParams(lp);
         image.setImageBitmap(bitmap);
         pageLabel.setText("Page " + (pageIndex + 1) + " / " + renderer.getPageCount());
     }
