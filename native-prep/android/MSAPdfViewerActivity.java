@@ -163,7 +163,6 @@ public class MSAPdfViewerActivity extends Activity {
         pinch = new ScaleGestureDetector(this, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
             @Override
             public boolean onScaleBegin(ScaleGestureDetector d) {
-                vertical.cancelScroll();
                 return true;
             }
 
@@ -173,7 +172,7 @@ public class MSAPdfViewerActivity extends Activity {
                 return true;
             }
         });
-        vertical.setOnTouchListener(v -> pinch.onTouchEvent(v));
+        vertical.setOnTouchListener((v, event) -> pinch.onTouchEvent(event));
     }
 
     private Button button(String text) {

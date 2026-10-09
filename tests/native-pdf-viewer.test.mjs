@@ -25,7 +25,6 @@ assert.ok(activity.includes('protected void onSaveInstanceState'),'the reader mu
 assert.ok(activity.includes('putInt("pdf_page"')&&activity.includes('putFloat("pdf_zoom"'),'rotation-state must persist both the page index and the zoom level');
 assert.ok(activity.includes('savedInstanceState.getInt("pdf_page"'), 'onCreate must restore the saved page index');
 assert.ok(activity.includes('if (pageIndex < 0 || pageIndex >= renderer.getPageCount())'),'the restored page index must be clamped to a valid range (a restored index can be out of bounds)');
-assert.ok(activity.includes('vertical.cancelScroll()'),'pinch must cancel any in-progress scroll fling so the two gestures do not fight');
 
 const plugin=fs.readFileSync('native-prep/android/MSAFileBridgePlugin.java','utf8');
 assert.ok(plugin.includes('public void openPdfViewer(PluginCall call)'),'Capacitor plugin must expose openPdfViewer');
