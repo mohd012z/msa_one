@@ -10,6 +10,7 @@ import android.os.Bundle;
 import android.os.ParcelFileDescriptor;
 import android.util.DisplayMetrics;
 import android.view.Gravity;
+import android.view.ScaleGestureDetector;
 import android.view.View;
 import android.view.WindowInsets;
 import android.view.ViewGroup;
@@ -41,11 +42,20 @@ public class MSAPdfViewerActivity extends Activity {
     private int pageIndex = 0;
     private float zoom = 1f;
     private float density = 1f;
+    private ScaleGestureDetector pinch;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         density = getResources().getDisplayMetrics().density;
+        if (savedInstanceState != null) {
+            // Preserve the reader's place + zoom across screen rotation /
+            // process recreation (a real PDF reader keeps its spot). The
+            // descriptor path is not parcelable, so it is reopened below from
+            // the original intent source.
+            pageIndex = savedInstanceState.getInt("pdf_page", 0);
+            zoom = savedInstanceState.getFloat("pdf_zoom", 1f);
+        }
         buildUi();
         String source = getIntent().getStringExtra("pdf_source");
         if (source == null || source.isEmpty()) {
@@ -59,6 +69,7 @@ public class MSAPdfViewerActivity extends Activity {
             if (descriptor == null) throw new IllegalStateException("Could not open PDF for reading.");
             renderer = new PdfRenderer(descriptor);
             if (renderer.getPageCount() == 0) throw new IllegalStateException("This PDF has no pages.");
+            if (pageIndex < 0 || pageIndex >= renderer.getPageCount()) pageIndex = 0;
             renderPage();
         } catch (Exception e) {
             Toast.makeText(this, "Cannot open PDF: " + e.getMessage(), Toast.LENGTH_LONG).show();
@@ -114,8 +125,8 @@ public class MSAPdfViewerActivity extends Activity {
         close.setOnClickListener(v -> finish());
         prev.setOnClickListener(v -> { if (pageIndex > 0) { pageIndex--; renderPage(); } });
         next.setOnClickListener(v -> { if (renderer != null && pageIndex < renderer.getPageCount() - 1) { pageIndex++; renderPage(); } });
-        minus.setOnClickListener(v -> { zoom = Math.max(0.5f, zoom - 0.25f); renderPage(); });
-        plus.setOnClickListener(v -> { zoom = Math.min(4f, zoom + 0.25f); renderPage(); });
+        minus.setOnClickListener(v -> applyZoom(zoom - 0.25f));
+        plus.setOnClickListener(v -> applyZoom(zoom + 0.25f));
 
         bar.addView(close);
         bar.addView(prev);
@@ -144,6 +155,24 @@ public class MSAPdfViewerActivity extends Activity {
 
         setContentView(root);
         applySystemBarInsets(root, bar);
+
+        // Real PDF readers zoom by pinching; this one only had +/- buttons. The
+        // ScaleGestureDetector listens on the outer ScrollView so a two-finger
+        // pinch is captured before the single-finger scroll steals it (we cancel
+        // any in-progress fling on scale so the two don't fight).
+        pinch = new ScaleGestureDetector(this, new ScaleGestureDetector.SimpleOnScaleGestureListener() {
+            @Override
+            public boolean onScaleBegin(ScaleGestureDetector d) {
+                return true;
+            }
+
+            @Override
+            public boolean onScale(ScaleGestureDetector d) {
+                applyZoom(zoom * d.getScaleFactor());
+                return true;
+            }
+        });
+        vertical.setOnTouchListener((v, event) -> pinch.onTouchEvent(event));
     }
 
     private Button button(String text) {
@@ -153,6 +182,12 @@ public class MSAPdfViewerActivity extends Activity {
         b.setMinWidth(dp(44));
         b.setMinHeight(dp(44));
         return b;
+    }
+
+    /** Clamp zoom to the supported range and re-render. Shared by the +/- buttons and pinch. */
+    private void applyZoom(float newZoom) {
+        zoom = Math.max(0.5f, Math.min(4f, newZoom));
+        renderPage();
     }
 
     private void renderPage() {
@@ -174,6 +209,13 @@ public class MSAPdfViewerActivity extends Activity {
         currentPage.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY);
         image.setImageBitmap(bitmap);
         pageLabel.setText("Page " + (pageIndex + 1) + " / " + renderer.getPageCount());
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle out) {
+        super.onSaveInstanceState(out);
+        out.putInt("pdf_page", pageIndex);
+        out.putFloat("pdf_zoom", zoom);
     }
 
     @Override
