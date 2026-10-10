@@ -2,19 +2,21 @@
   "schema": 1,
   "appId": "com.msa.one.displayfit37",
   "channel": "stable",
-  "latestVersion": "54.0.0",
+  "latestVersion": "55.0.0",
   "minSupportedVersion": "53.0.0",
   "forceUpdate": false,
   "requireExactVersion": false,
-  "title": "MSA One 54 available",
-  "message": "MSA One 54 fixes Android header overlap, reorganizes Storage, and adds swipe-down dismissal for Office More Options.",
+  "title": "MSA One 55 available",
+  "message": "MSA One 55 consolidates navigation, improves mobile touch targets, and makes tools and actions clearer.",
   "releaseNotes": [
-    "Android status-bar safe-area bridge prevents workspace/header overlap",
-    "Office More Options can be dragged or swiped down to dismiss",
-    "More Options height reduced to keep more document visible",
-    "Files Storage reorganized into Device and Folder Access groups",
-    "Storage rows now use consistent dark MSA One styling"
+    "Unified AppShell with Home, Files, Create, configurable fourth tab and AI",
+    "My Day integrated as a first-class planner destination",
+    "Multifunction Create Action Hub and Search/Command Center",
+    "48 px minimum mobile interaction contract and local SVG control icons",
+    "Truthful Available, Limited and Planned tool states",
+    "Simplified Home, Files and AI surfaces with preserved local-first engines",
+    "Office mobile ribbon, safe-area and More Options behavior retained and normalized"
   ],
-  "publishedAt": "2026-09-18T22:39:00+08:00",
+  "publishedAt": "2026-10-04T20:45:00+08:00",
   "storeUrl": "https://play.google.com/store/apps/details?id=com.msa.one.displayfit37"
 }

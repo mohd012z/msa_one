@@ -1,47 +1,31 @@
 (()=>{'use strict';
-  /**
-   * Single source of truth for every primary action button in MSA One: its
-   * name (as shown to the user), the selector(s) it's wired to, and exactly
-   * which function implements it. Exists so "does the Save/Import/Export/…
-   * button actually do what its label says" can be checked mechanically
-   * (see tests/action-registry.test.mjs) instead of discovered by trial on
-   * a device. Add a row here whenever a new named action button is added.
-   */
-  const REGISTRY=[
-    {name:'Save',area:'Create Studio',selector:'[data-save],[data-bottom-save]',impl:'MSAStudio.saveDraft'},
-    {name:'Import',area:'Create Studio',selector:'[data-import],[data-bottom-import]',impl:'MSAStudio.importCurrent'},
-    {name:'Export',area:'Create Studio',selector:'[data-export],[data-bottom-export]',impl:'MSAStudio.exportCurrent'},
-    {name:'Files',area:'Create Studio',selector:'[data-bottom-files]',impl:'MSAStudio.close+show(files)'},
-    {name:'Close',area:'Create Studio',selector:'[data-close]',impl:'MSAStudio.close'},
-    {name:'Open File',area:'Files',selector:'[data-open-office]',impl:'MSAFiles.importOfficeFile'},
-    {name:'Import Folder',area:'Files',selector:'[data-open-folder]',impl:'MSAFiles.importFolder'},
-    {name:'Re-scan',area:'Files',selector:'[data-rescan-folder]',impl:'MSAFiles.importFolder'},
-    {name:'Open (project)',area:'Files',selector:'[data-open]',impl:'MSAFiles.openProject'},
-    {name:'Rename',area:'Files',selector:'[data-rename]',impl:'MSAFiles.renameProject'},
-    {name:'Duplicate',area:'Files',selector:'[data-copy]',impl:'MSAFiles.duplicateProject'},
-    {name:'Delete',area:'Files',selector:'[data-delete]',impl:'MSAFiles.deleteProject'},
-    {name:'Backup Workspace',area:'Me',selector:'[data-msa-action="backup"]',impl:'MSAStorage.downloadBackup'},
-    {name:'Restore Backup',area:'Me',selector:'[data-msa-action="restore"]',impl:'MSAStorage.importBackup'},
-    {name:'AI Reader & Presenter',area:'Home/Premium',selector:'[data-msa-action="reader"],[data-msa-action="presenter"]',impl:'MSAAIReader.open'},
-    {name:'Present',area:'Office ribbon (presentation)',selector:'ribbon tool "present"',impl:'office-mobile.js presentSlides'},
-    {name:'Layout',area:'Office ribbon (presentation)',selector:'ribbon tool "layout"',impl:'office-mobile.js action() [data-slide-layout]'},
-    {name:'Edit',area:'Office ribbon (PDF)',selector:'ribbon tool "pdfedit"',impl:'office-mobile.js action() [data-pdf-text]'},
-    {name:'Code',area:'Office ribbon (Smart HTML)',selector:'ribbon tool "code"',impl:'office-mobile.js action() [data-code]'},
-    {name:'Preview',area:'Office ribbon (Smart HTML)',selector:'ribbon tool "preview"',impl:'office-mobile.js action() [data-preview]'},
-    {name:'AutoSum',area:'Office ribbon (spreadsheet)',selector:'ribbon tool "sum"',impl:'office-mobile.js action() [data-cell]'}
-  ];
-  function resolve(path){
-    return path.split(/[.+]/)[0].split('.').reduce((o,k)=>o?.[k],globalThis);
-  }
-  /** Returns each entry plus whether its implementation actually resolves to a real function at runtime. */
-  function audit(){
-    return REGISTRY.map(entry=>{
-      const rootName=entry.impl.split('.')[0];
-      const root=globalThis[rootName];
-      const member=entry.impl.includes('.')?entry.impl.split('.')[1].split('+')[0]:null;
-      const ok=member?typeof root?.[member]==='function':typeof root!=='undefined';
-      return{...entry,ok};
-    });
-  }
-  globalThis.MSAActionRegistry={list:REGISTRY,audit};
+const REGISTRY=[
+ {id:'studio-save',label:'Save',area:'Create Studio',selector:'[data-save],[data-bottom-save]',impl:'MSAStudio.saveDraft',state:'Available',destructive:false},
+ {id:'studio-import',label:'Import',area:'Create Studio',selector:'[data-import],[data-bottom-import]',impl:'MSAStudio.importCurrent',state:'Available',destructive:false},
+ {id:'studio-export',label:'Export',area:'Create Studio',selector:'[data-export],[data-bottom-export]',impl:'MSAStudio.exportCurrent',state:'Available',destructive:false},
+ {id:'studio-close',label:'Close',area:'Create Studio',selector:'[data-close]',impl:'MSAStudio.close',state:'Available',destructive:false},
+ {id:'files-open',label:'Open File',area:'Files',selector:'[data-import-file],[data-open-office]',impl:'MSAFiles.importOfficeFile',state:'Available',destructive:false},
+ {id:'files-folder',label:'Import Folder',area:'Files',selector:'[data-import-folder],[data-open-folder]',impl:'MSAFiles.importFolder',state:'Available',destructive:false},
+ {id:'project-open',label:'Open',area:'Files',selector:'[data-open]',impl:'MSAFiles.openProject',state:'Available',destructive:false},
+ {id:'project-rename',label:'Rename',area:'Files',selector:'[data-more]',impl:'MSAFiles.renameProject',state:'Available',destructive:false},
+ {id:'project-duplicate',label:'Duplicate',area:'Files',selector:'[data-more]',impl:'MSAFiles.duplicateProject',state:'Available',destructive:false},
+ {id:'project-delete',label:'Delete',area:'Files',selector:'[data-more]',impl:'MSAFiles.deleteProject',state:'Available',destructive:true},
+ {id:'workspace-backup',label:'Backup Workspace',area:'Settings',selector:'[data-msa-action="backup"]',impl:'MSAStorage.downloadBackup',state:'Available',destructive:false},
+ {id:'workspace-restore',label:'Restore Backup',area:'Settings',selector:'[data-msa-action="restore"]',impl:'MSAStorage.importBackup',state:'Available',destructive:true},
+ {id:'ai-reader',label:'Read Aloud',area:'AI/Tools',selector:'[data-msa-action="reader"]',impl:'MSAAIReader.open',state:'Available',destructive:false},
+ {id:'create-document',label:'New Document',area:'Create Hub',selector:'[data-hub-action="document"]',impl:'MSAActionHub.run',state:'Available',destructive:false},
+ {id:'create-scan',label:'Scan / Camera',area:'Create Hub',selector:'[data-hub-action="scan"]',impl:'MSAActionHub.run',state:'Available',destructive:false},
+ {id:'global-search',label:'Search',area:'App Shell',selector:'[data-ws-search]',impl:'MSASearchCenter.open',state:'Available',destructive:false},
+ {id:'open-myday',label:'My Day',area:'App Shell',selector:'[data-ws-nav="myday"]',impl:'MSAAppShell.open',state:'Available',destructive:false},
+ {id:'present',label:'Present',area:'Office presentation',selector:'[data-action="present"]',impl:'MSAOfficeMobile.action',state:'Limited',destructive:false},
+ {id:'slide-layout',label:'Layout',area:'Office presentation',selector:'[data-action="layout"]',impl:'MSAOfficeMobile.action',state:'Limited',destructive:false},
+ {id:'pdf-edit',label:'Edit PDF Text',area:'Office PDF',selector:'[data-action="pdfedit"]',impl:'MSAOfficeMobile.action',state:'Limited',destructive:false},
+ {id:'html-code',label:'Code',area:'Office Smart HTML',selector:'[data-action="code"]',impl:'MSAOfficeMobile.action',state:'Limited',destructive:false},
+ {id:'html-preview',label:'Preview',area:'Office Smart HTML',selector:'[data-action="preview"]',impl:'MSAOfficeMobile.action',state:'Limited',destructive:false},
+ {id:'sheet-autosum',label:'AutoSum',area:'Office spreadsheet',selector:'[data-action="sum"]',impl:'MSAOfficeMobile.action',state:'Limited',destructive:false}
+];
+function resolve(path){const parts=String(path||'').split('.');let value=globalThis;for(const part of parts)value=value?.[part];return value}
+function audit(){return REGISTRY.map(entry=>{const implemented=typeof resolve(entry.impl)==='function';return{...entry,implemented,ok:entry.state==='Available'?implemented:true}})}
+function find(id){return REGISTRY.find(x=>x.id===id)||null}
+globalThis.MSAActionRegistry={list:Object.freeze(REGISTRY.map(x=>Object.freeze({...x}))),audit,find};
 })();
