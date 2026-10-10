@@ -165,6 +165,11 @@
       }catch(e){}
     }
     // internal reasoning: best offline match across all saved documents
+    if(!sources.length){
+      showAIResult('<b>No documents to search yet</b><p>Save a document in Files first, then ask about it here — or attach a file with the ＋ Files chip.</p>');
+      toast('No saved documents to answer from');
+      return true;
+    }
     let best=null;
     for(const src of sources){
       const r=window.MSAAIEngine.ask(q,src.text);
