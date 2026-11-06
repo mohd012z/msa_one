@@ -52,5 +52,76 @@
     }
     return results;
   }
-  globalThis.MSADocumentSearch=Object.freeze({put,remove,clear,search,list:()=>load().map(({id,name,updatedAt,segments})=>({id,name,updatedAt,segments:segments.length}))});
+  const DB_NAME='msa-one-document-search',STORE='documents';
+  let dbPromise=null;
+  function database(){
+    if(!globalThis.indexedDB)return Promise.resolve(null);
+    if(dbPromise)return dbPromise;
+    dbPromise=new Promise(resolve=>{
+      let request;
+      try{request=indexedDB.open(DB_NAME,1)}catch{return resolve(null)}
+      request.onupgradeneeded=()=>{const db=request.result;if(!db.objectStoreNames.contains(STORE))db.createObjectStore(STORE,{keyPath:'id'})};
+      request.onsuccess=()=>resolve(request.result);
+      request.onerror=()=>resolve(null);
+      request.onblocked=()=>resolve(null);
+    });
+    return dbPromise;
+  }
+  async function idbAll(){
+    const db=await database();if(!db)return null;
+    return new Promise((resolve,reject)=>{
+      const req=db.transaction(STORE,'readonly').objectStore(STORE).getAll();
+      req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+    });
+  }
+  async function idbWrite(record,removeId){
+    const db=await database();if(!db)return false;
+    return new Promise((resolve,reject)=>{
+      const tx=db.transaction(STORE,'readwrite'),store=tx.objectStore(STORE);
+      if(removeId)store.delete(removeId);
+      if(record)store.put(record);
+      tx.oncomplete=()=>resolve(true);tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
+    });
+  }
+  async function migrate(){
+    const existing=await idbAll();
+    if(existing===null)return {backend:'localStorage',migrated:0};
+    const legacy=load();
+    let migrated=0;
+    for(const doc of legacy){
+      if(existing.some(x=>x.id===doc.id))continue;
+      await idbWrite(doc);migrated++;
+    }
+    return {backend:'indexedDB',migrated};
+  }
+  async function searchPersistent(query,options={}){
+    const docs=await idbAll();
+    if(docs===null)return search(query,options);
+    const term=safe(query).trim().toLocaleLowerCase();
+    if(!term)return [];
+    const limit=Math.max(1,Math.min(100,Number.isSafeInteger(options.limit)?options.limit:50));
+    const matches=[];
+    for(const doc of docs)for(const seg of doc.segments||[]){
+      const at=safe(seg.text).toLocaleLowerCase().indexOf(term);
+      if(at<0)continue;
+      matches.push({id:doc.id,name:doc.name,kind:seg.kind,index:seg.index,label:seg.label,snippet:seg.text.slice(Math.max(0,at-64),at+term.length+96),offset:at});
+      if(matches.length>=limit)return matches;
+    }
+    return matches;
+  }
+  async function putPersistent(record){
+    const id=safe(record.id).trim();
+    if(!id||id.length>180)throw new Error('INVALID_DOCUMENT_ID');
+    const doc={id,name:safe(record.name).slice(0,240),segments:normalizeSegments(record.segments),updatedAt:Date.now()};
+    const stored=await idbWrite(doc);
+    if(!stored)return put(record);
+    try{put(record)}catch{/* IndexedDB is authoritative if localStorage is full. */}
+    return {id,segments:doc.segments.length};
+  }
+  async function removePersistent(id){
+    await idbWrite(null,id);
+    try{remove(id)}catch{}
+    return true;
+  }
+  globalThis.MSADocumentSearch=Object.freeze({put,remove,clear,search,migrate,searchPersistent,putPersistent,removePersistent,list:()=>load().map(({id,name,updatedAt,segments})=>({id,name,updatedAt,segments:segments.length}))});
 })();
