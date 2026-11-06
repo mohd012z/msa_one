@@ -418,7 +418,7 @@
               }else if(imported.type==='presentation'){
                 segments=(imported.slides||[]).map((slide,i)=>({kind:'slide',index:i+1,label:slide.title||'Slide '+(i+1),text:[slide.title,slide.body].filter(Boolean).join('\n')}));
               }
-              window.MSADocumentSearch.put({id,name:file.name,segments});
+              await window.MSADocumentSearch.putPersistent({id,name:file.name,segments});
             }catch(error){console.warn('Offline search indexing unavailable',error)}
           }
           open(imported.type,id);return;
