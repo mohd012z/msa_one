@@ -170,6 +170,8 @@
       total+=rawSize;if(total>MAX_TOTAL_UNCOMPRESSED)throw new Error('Office file expands beyond the safe on-device limit.');
       if(p+46+nameLen+extraLen+commentLen>v.length)throw new Error('Invalid ZIP entry bounds.');
       const name=td.decode(v.subarray(p+46,p+46+nameLen));
+      const canonical=norm(name);
+      if(!canonical||name.startsWith('/')||name.includes('\\')||name.split('/').includes('..')||Object.prototype.hasOwnProperty.call(files,canonical))throw new Error('Unsafe or duplicate Office ZIP entry.');
       if(localOffset+30>v.length||u32(v,localOffset)!==0x04034b50)throw new Error('Invalid ZIP local header for '+name);
       const ln=u16(v,localOffset+26),le=u16(v,localOffset+28),dataStart=localOffset+30+ln+le;
       if(dataStart+compSize>v.length)throw new Error('Invalid ZIP data bounds for '+name);
@@ -178,8 +180,9 @@
       if(method===0)out=new Uint8Array(compressed);
       else if(method===8)out=await inflateRaw(compressed,rawSize);
       else throw new Error('Unsupported ZIP compression method '+method+' in '+name);
+      if(out.length!==rawSize)throw new Error('Office ZIP entry size does not match its declared size.');
       if(out.length>MAX_ENTRY_BYTES)throw new Error('An Office file part expanded beyond the safe import limit.');
-      files[norm(name)]=out;
+      files[canonical]=out;
       p+=46+nameLen+extraLen+commentLen;
       if((n+1)%12===0)await breathe(progress,'Reading Office package '+(n+1)+'/'+count+'…');
     }
