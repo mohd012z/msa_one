@@ -406,6 +406,21 @@
           else if(imported.type==='presentation')content=JSON.stringify({slides:imported.slides});
           else if(imported.type==='pdf')content=imported.blobUrl;
           put({id,type:imported.type,title:base,content,updated:Date.now()});
+          if(window.MSADocumentSearch&&imported.type!=='pdf'){
+            try{
+              let segments=[];
+              if(imported.type==='document'){
+                const node=document.createElement('div');
+                node.innerHTML=imported.html||'';
+                segments=[{kind:'section',index:1,label:'Document',text:node.textContent||''}];
+              }else if(imported.type==='spreadsheet'){
+                segments=(imported.sheets||[]).map((sheet,i)=>({kind:'sheet',index:i+1,label:sheet.name||'Sheet '+(i+1),text:(sheet.rows||[]).map(row=>row.join(' ')).join('\n')}));
+              }else if(imported.type==='presentation'){
+                segments=(imported.slides||[]).map((slide,i)=>({kind:'slide',index:i+1,label:slide.title||'Slide '+(i+1),text:[slide.title,slide.body].filter(Boolean).join('\n')}));
+              }
+              window.MSADocumentSearch.put({id,name:file.name,segments});
+            }catch(error){console.warn('Offline search indexing unavailable',error)}
+          }
           open(imported.type,id);return;
         }
         const title=document.querySelector('[data-title]');if(title)title.value=base;
