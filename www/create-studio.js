@@ -461,6 +461,26 @@
     }catch(e){friendlyError('Export failed: '+e.message)}
   }
 
-  window.MSAStudio={open,close,saveDraft,importCurrent,exportCurrent,openProject,createProject,evalFormula,pickDocumentImage,undo:undoStudio,redo:redoStudio,historyStatus:()=>window.MSAEditorHistory?.status?.(historyKey()),currentSlides};
+  function openAt(id,kind,index){
+    const p=get(id);
+    if(!p)return false;
+    if(!Number.isSafeInteger(index)||index<1)return false;
+    if(kind==='sheet'&&p.type==='spreadsheet'){
+      open('spreadsheet',id);
+      const sheets=normalizeSheets(json(p.content,{sheets:[]}));
+      if(index>sheets.length)return false;
+      state.sheet=index-1;state.rowStart=0;state.colStart=0;render();return true;
+    }
+    if(kind==='slide'&&p.type==='presentation'){
+      open('presentation',id);
+      const value=json(p.content,{slides:[]});
+      const slides=Array.isArray(value)?value:value.slides||[];
+      if(index>slides.length)return false;
+      state.slide=index-1;render();return true;
+    }
+    if(kind==='section'&&p.type==='document'&&index===1){open('document',id);return true}
+    return false;
+  }
+  window.MSAStudio={open,openAt,close,saveDraft,importCurrent,exportCurrent,openProject,createProject,evalFormula,pickDocumentImage,undo:undoStudio,redo:redoStudio,historyStatus:()=>window.MSAEditorHistory?.status?.(historyKey()),currentSlides};
   document.addEventListener('DOMContentLoaded',mount);setTimeout(mount,400);
 })();
